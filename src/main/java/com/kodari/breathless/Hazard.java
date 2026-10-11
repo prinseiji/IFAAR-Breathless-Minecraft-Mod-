@@ -165,7 +165,7 @@ public final class Hazard {
             }
             if (--rt.wheezeTimer <= 0) {
                rt.wheezeTimer = Tuning.WHEEZE_TICKS;
-               player.playNotifySound(Breathless.WHEEZE, SoundSource.PLAYERS, 1.0F, 1.0F);
+               level.playSound(null, player.blockPosition(), Breathless.WHEEZE, SoundSource.PLAYERS, 1.0F, 1.0F);
             }
          }
       } else {
