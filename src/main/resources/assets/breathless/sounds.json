@@ -1,0 +1,8 @@
+{
+  "wheeze": {
+    "subtitle": "subtitles.breathless.wheeze",
+    "sounds": [
+      { "name": "breathless:wheeze", "stream": false }
+    ]
+  }
+}
