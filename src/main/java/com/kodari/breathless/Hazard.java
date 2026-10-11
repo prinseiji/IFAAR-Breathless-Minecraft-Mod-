@@ -157,7 +157,7 @@ public final class Hazard {
             // Mask is on and the cure is already in the blood: purge now.
             exposure = Math.max(0.0F, exposure - Tuning.PURGE_AMOUNT);
             rt.antidoteTicks = 0;
-            player.displayClientMessage(Component.literal("The spores loosen their grip."), true);
+            player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          } else {
             if (++rt.damageTimer >= Tuning.DAMAGE_INTERVAL_TICKS) {
                rt.damageTimer = 0;
@@ -212,14 +212,14 @@ public final class Hazard {
    private static float onHealed(ServerPlayer player, Rt rt, float exposure, boolean maskOk) {
       if (maskOk) {
          if (exposure > 0.0F) {
-            player.displayClientMessage(Component.literal("The spores loosen their grip."), true);
+            player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          }
          rt.antidoteTicks = 0;
          return Math.max(0.0F, exposure - Tuning.PURGE_AMOUNT);
       }
       if (exposure >= 100.0F - 0.001F) {
          rt.antidoteTicks = Tuning.ANTIDOTE_TICKS;
-         player.displayClientMessage(Component.literal("The cure is in your blood. Get a gas mask on!"), true);
+         player.sendOverlayMessage(Component.literal("The cure is in your blood. Get a gas mask on!"));
       }
       return exposure;
    }
@@ -236,7 +236,7 @@ public final class Hazard {
       rt.damageTimer = 0;
       rt.wheezeTimer = 0;
       sync(player, rt, 0.0F);
-      player.displayClientMessage(Component.literal("The adrenaline burns the spores out, and you pay for it."), true);
+      player.sendOverlayMessage(Component.literal("The adrenaline burns the spores out, and you pay for it."));
       if (!player.isCreative() && !player.isSpectator()) {
          ServerLevel level = (ServerLevel)player.level();
          player.hurtServer(level, level.damageSources().genericKill(), Tuning.ADRENALINE_DAMAGE);

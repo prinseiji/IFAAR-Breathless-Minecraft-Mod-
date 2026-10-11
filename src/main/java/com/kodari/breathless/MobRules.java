@@ -36,7 +36,8 @@ public final class MobRules {
    private MobRules() {
    }
 
-   private static final String DIM_TAG = "breathless_dim";
+   /** Vanilla skeleton detection range. We set absolute values (not multiply), so reloads can never stack the penalty. */
+   private static final double SKELETON_NORMAL_RANGE = 16.0D;
    private static final Random RANDOM = new Random();
 
    private static final Set<Mob> ZOMBIES = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -200,18 +201,13 @@ public final class MobRules {
             skeletons.remove();
             continue;
          }
-         boolean inSpores = Masks.isUnderground(skeleton);
-         boolean dimmed = skeleton.getTags().contains(DIM_TAG);
          AttributeInstance range = skeleton.getAttribute(Attributes.FOLLOW_RANGE);
          if (range == null) {
             continue;
          }
-         if (inSpores && !dimmed) {
-            range.setBaseValue(range.getBaseValue() * Tuning.SKELETON_RANGE_FACTOR);
-            skeleton.addTag(DIM_TAG);
-         } else if (!inSpores && dimmed) {
-            range.setBaseValue(range.getBaseValue() / Tuning.SKELETON_RANGE_FACTOR);
-            skeleton.removeTag(DIM_TAG);
+         double target = Masks.isUnderground(skeleton) ? SKELETON_NORMAL_RANGE * Tuning.SKELETON_RANGE_FACTOR : SKELETON_NORMAL_RANGE;
+         if (Math.abs(range.getBaseValue() - target) > 0.01D) {
+            range.setBaseValue(target);
          }
       }
    }

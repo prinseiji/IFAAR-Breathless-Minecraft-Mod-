@@ -48,7 +48,7 @@ public final class Masks {
       if (damage >= head.getMaxDamage() - 1) {
          player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.GAS_MASK_EMPTY));
          player.level().playSound(null, player.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 0.8F, 1.2F);
-         player.displayClientMessage(Component.literal("Your filter is spent!"), true);
+         player.sendOverlayMessage(Component.literal("Your filter is spent!"));
       } else {
          head.setDamageValue(damage);
       }
