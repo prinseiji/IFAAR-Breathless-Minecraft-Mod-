@@ -1,5 +1,6 @@
 package com.kodari.combatinjuries;
 
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Player;
 
 /**
@@ -9,6 +10,8 @@ import net.minecraft.world.entity.player.Player;
 public final class CombatInjuries {
    private CombatInjuries() {
    }
+
+   public static SoundEvent ADRENALINE_INJECT;
 
    public static boolean hasInjury(Player player, String id) {
       return false;

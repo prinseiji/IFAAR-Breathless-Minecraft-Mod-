@@ -1,7 +1,6 @@
 package com.kodari.breathless;
 
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -11,8 +10,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * Right-click a filter while wearing a Gas Mask (No Filter) to slot it in.
- * The mask takes over the filter's remaining life.
+ * Right-click a filter while wearing a Gas Mask that has a free slot to slot it in.
+ * (In an inventory you can also click the filter onto a mask, see FilterClicks.)
  */
 public class FilterItem extends Item {
    public FilterItem(Item.Properties properties) {
@@ -23,17 +22,18 @@ public class FilterItem extends Item {
    public InteractionResult use(Level level, Player player, InteractionHand hand) {
       ItemStack filter = player.getItemInHand(hand);
       ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-      if (!head.is(ModItems.GAS_MASK_EMPTY)) {
+      if (!Masks.isMask(head) || Masks.getFilters(head).isFull()) {
          return InteractionResult.PASS;
       }
       if (!level.isClientSide()) {
-         ItemStack mask = new ItemStack(ModItems.GAS_MASK);
-         mask.setDamageValue(Math.min(filter.getDamageValue(), mask.getMaxDamage() - 2));
-         player.setItemSlot(EquipmentSlot.HEAD, mask);
+         int life = Tuning.FILTER_MAX - filter.getDamageValue();
+         player.setItemSlot(EquipmentSlot.HEAD, ModItems.maskWith(Masks.getFilters(head).with(life)));
          if (!player.isCreative()) {
             filter.shrink(1);
          }
-         level.playSound(null, player.blockPosition(), SoundEvents.GLASS_PLACE, SoundSource.PLAYERS, 1.0F, 0.8F);
+         if (player instanceof ServerPlayer serverPlayer) {
+            Masks.playAt(serverPlayer, ModSounds.FILTER_ON, 1.0F, 1.0F);
+         }
       }
       return InteractionResult.SUCCESS;
    }

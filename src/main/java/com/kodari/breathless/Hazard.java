@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
@@ -14,14 +15,17 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 
+import com.kodari.combatinjuries.CombatInjuries;
 import com.kodari.combatinjuries.CombatInjuriesApi;
 
-/** Server side of the spore hazard: the exposure meter, the critical state and the cure. */
+/** Server side of the spore hazard: the exposure meter, the critical state, the cure and the F13ND purge. */
 public final class Hazard {
    private Hazard() {
    }
@@ -32,11 +36,21 @@ public final class Hazard {
       int healCooldown;
       int damageTimer;
       int wheezeTimer;
+      int critTicks;
+      boolean wasCritical;
       float lastHealth = -1.0F;
       float lastSent = -1.0F;
       boolean drinkingHeal;
       boolean pendingHeal;
       int drinkRemaining;
+      // ambience / warnings
+      int ambienceTimer;
+      boolean ambienceMuffled;
+      boolean wasExposedNoMask;
+      int exposedCooldown;
+      int slowTimer;
+      // F13ND pop-up sequence (-1 = not running); the server only schedules the sounds, the client draws it
+      int fiendTick = -1;
    }
 
    private static final Map<UUID, Rt> RUNTIME = new HashMap<>();
@@ -49,8 +63,14 @@ public final class Hazard {
          RUNTIME.remove(newPlayer.getUUID());
          newPlayer.removeAttached(Breathless.EXPOSURE);
       });
-      // IFAAR hook: an adrenaline shot while critical wipes the infection, at a price.
-      CombatInjuriesApi.RUSH_STARTED.register(Hazard::onRushStarted);
+      // "Putting the mask on" sound.
+      ServerEntityEvents.EQUIPMENT_CHANGE.register((entity, slot, previous, current) -> {
+         if (slot == EquipmentSlot.HEAD && entity instanceof ServerPlayer player && Masks.isMask(current) && !Masks.isMask(previous)) {
+            Masks.playAt(player, ModSounds.MASK_ON, 1.0F, 1.0F);
+         }
+      });
+      // IFAAR hook: an Adrenaline Shot while critical is a one-time cure (no rush, no minigame).
+      CombatInjuriesApi.BEFORE_SHOT.register(Hazard::onBeforeShot);
    }
 
    // ---- meter access ----
@@ -84,6 +104,11 @@ public final class Hazard {
       RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt()).pendingHeal = true;
    }
 
+   /** Called by the /breathless command to test the F13ND sequence without needing a shot. */
+   public static void testFiend(ServerPlayer player) {
+      startFiend(player, RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt()), false);
+   }
+
    // ---- main tick ----
 
    private static void tick(MinecraftServer server) {
@@ -103,6 +128,8 @@ public final class Hazard {
       boolean maskOk = Masks.hasWorkingMask(player);
       float start = getExposure(player);
       float exposure = start;
+
+      tickFiendSounds(player, rt);
 
       // 1) Did the player just get healed by an Instant Health potion?
       if (rt.healCooldown > 0) {
@@ -136,15 +163,25 @@ public final class Hazard {
       }
 
       // 2) Rising (only below Y=0 with no working mask)
-      if (!exempt && underground && !maskOk && exposure < 100.0F) {
+      boolean exposedNow = !exempt && underground && !maskOk;
+      if (exposedNow && exposure < 100.0F) {
          float rate = 100.0F / (Tuning.FILL_SECONDS * 20.0F);
          if (player.isSprinting() || !player.onGround()) {
             rate *= Tuning.ACTIVE_MULTIPLIER;
          }
          exposure = Math.min(100.0F, exposure + rate);
       }
+      if (rt.exposedCooldown > 0) {
+         rt.exposedCooldown--;
+      }
+      if (exposedNow && !rt.wasExposedNoMask && rt.exposedCooldown <= 0) {
+         // The spores reach you with nothing over your face.
+         Masks.playAt(player, ModSounds.NO_MASK_EXPOSED, 1.0F, 1.0F);
+         rt.exposedCooldown = 600;
+      }
+      rt.wasExposedNoMask = exposedNow;
 
-      // 3) The filter wears down while the mask is doing its job
+      // 3) The filters wear down while the mask is doing its job
       if (!exempt && underground && maskOk && player.tickCount % Tuning.DRAIN_INTERVAL_TICKS == 0) {
          Masks.drainFilter(player, player.isSprinting() ? Tuning.SPRINT_DRAIN : 1);
          maskOk = Masks.hasWorkingMask(player);
@@ -157,23 +194,53 @@ public final class Hazard {
             // Mask is on and the cure is already in the blood: purge now.
             exposure = Math.max(0.0F, exposure - Tuning.PURGE_AMOUNT);
             rt.antidoteTicks = 0;
+            Masks.playAt(player, ModSounds.SIGH_RELIEF, 1.0F, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          } else {
+            if (!rt.wasCritical) {
+               Masks.playAt(player, ModSounds.TENDRILS, 1.0F, 1.0F);
+            }
+            rt.critTicks++;
             if (++rt.damageTimer >= Tuning.DAMAGE_INTERVAL_TICKS) {
                rt.damageTimer = 0;
-               player.hurtServer(level, level.damageSources().drown(), Tuning.DAMAGE_AMOUNT);
+               float ramp = Math.min(1.0F, rt.critTicks / (float)(Tuning.DAMAGE_RAMP_SECONDS * 20));
+               float damage = Tuning.DAMAGE_START + (Tuning.DAMAGE_MAX - Tuning.DAMAGE_START) * ramp;
+               Masks.playAt(player, ModSounds.SPORE_DAMAGE, 1.0F, 1.0F);
+               player.hurtServer(level, level.damageSources().drown(), damage);
             }
             if (--rt.wheezeTimer <= 0) {
                rt.wheezeTimer = Tuning.WHEEZE_TICKS;
-               level.playSound(null, player.blockPosition(), Breathless.WHEEZE, SoundSource.PLAYERS, 1.0F, 1.0F);
+               Masks.playAt(player, ModSounds.WHEEZE, 1.0F, 1.0F);
             }
          }
       } else {
          rt.damageTimer = 0;
          rt.wheezeTimer = 0;
+         rt.critTicks = 0;
+      }
+      rt.wasCritical = exposure >= 100.0F - 0.001F && !exempt;
+
+      // 5) Slowness that gets worse with exposure
+      if (!exempt && ++rt.slowTimer >= 15) {
+         rt.slowTimer = 0;
+         int amplifier = slowLevel(exposure);
+         if (amplifier >= 0) {
+            player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, amplifier, false, false));
+         }
       }
 
-      // 5) Save + tell the client
+      // 6) Ambience while below Y=0 (muffled behind a working mask, open air without one)
+      if (!exempt && underground) {
+         if (--rt.ambienceTimer <= 0 || rt.ambienceMuffled != maskOk) {
+            rt.ambienceTimer = Tuning.AMBIENCE_TICKS;
+            rt.ambienceMuffled = maskOk;
+            level.playSound(null, player.blockPosition(), maskOk ? ModSounds.AMBIENCE_MUFFLED : ModSounds.AMBIENCE_OPEN, SoundSource.AMBIENT, 0.8F, 1.0F);
+         }
+      } else {
+         rt.ambienceTimer = 0;
+      }
+
+      // 7) Save + tell the client
       if (exposure != start) {
          setExposure(player, exposure);
       }
@@ -181,6 +248,22 @@ public final class Hazard {
       if (rt.lastSent < 0.0F || Math.abs(shown - rt.lastSent) >= 0.25F || (player.tickCount % 20 == 0 && shown != rt.lastSent)) {
          sync(player, rt, shown);
       }
+   }
+
+   private static int slowLevel(float exposure) {
+      if (exposure >= Tuning.SLOW_TIER_CRIT - 0.001F) {
+         return 3;
+      }
+      if (exposure >= Tuning.SLOW_TIER_3) {
+         return 2;
+      }
+      if (exposure >= Tuning.SLOW_TIER_2) {
+         return 1;
+      }
+      if (exposure >= Tuning.SLOW_TIER_1) {
+         return 0;
+      }
+      return -1;
    }
 
    // ---- healing / cure ----
@@ -212,6 +295,7 @@ public final class Hazard {
    private static float onHealed(ServerPlayer player, Rt rt, float exposure, boolean maskOk) {
       if (maskOk) {
          if (exposure > 0.0F) {
+            Masks.playAt(player, ModSounds.SIGH_RELIEF, 1.0F, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          }
          rt.antidoteTicks = 0;
@@ -224,22 +308,67 @@ public final class Hazard {
       return exposure;
    }
 
-   // ---- IFAAR adrenaline hook ----
+   // ---- F13ND: the adrenaline purge ----
 
-   private static void onRushStarted(ServerPlayer player) {
+   /**
+    * IFAAR asks us first, before it does anything with the shot. While critical we take the shot over:
+    * it is used up, F13ND burns the spores out (meter to 0, four hearts of damage) and NO adrenaline rush starts.
+    * In every other situation we say "not handled" and IFAAR behaves exactly as before.
+    */
+   private static boolean onBeforeShot(ServerPlayer player, ItemStack stack) {
       if (!isCritical(player)) {
+         return false;
+      }
+      if (CombatInjuriesApi.rushShots(player) > 0 || CombatInjuriesApi.isStunned(player) || player.getCooldowns().isOnCooldown(stack)) {
+         return false;
+      }
+      ItemStack cooldownStack = stack.copy();
+      if (!player.isCreative()) {
+         stack.consume(1, player);
+      }
+      player.getCooldowns().addCooldown(cooldownStack, Tuning.ADRENALINE_COOLDOWN_TICKS);
+      ServerLevel level = (ServerLevel)player.level();
+      level.playSound(null, player.getX(), player.getY(), player.getZ(), CombatInjuries.ADRENALINE_INJECT, SoundSource.PLAYERS, 1.0F, 1.0F);
+      startFiend(player, RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt()), true);
+      return true;
+   }
+
+   private static void startFiend(ServerPlayer player, Rt rt, boolean realCure) {
+      // The pop-up packet goes first so the client can freeze the bar at its old value before the reset arrives.
+      if (Tuning.POPUPS_ENABLED) {
+         rt.fiendTick = 0;
+         ServerPlayNetworking.send(player, new FiendPayload(player.getRandom().nextInt()));
+      }
+      if (realCure) {
+         setExposure(player, 0.0F);
+         rt.antidoteTicks = 0;
+         rt.damageTimer = 0;
+         rt.wheezeTimer = 0;
+         rt.critTicks = 0;
+         rt.wasCritical = false;
+         sync(player, rt, 0.0F);
+         if (!player.isCreative() && !player.isSpectator()) {
+            ServerLevel level = (ServerLevel)player.level();
+            player.hurtServer(level, level.damageSources().genericKill(), Tuning.ADRENALINE_DAMAGE);
+         }
+      }
+   }
+
+   /** The server only plays the pop-up sounds on the same schedule the client draws them on. */
+   private static void tickFiendSounds(ServerPlayer player, Rt rt) {
+      if (rt.fiendTick < 0) {
          return;
       }
-      setExposure(player, 0.0F);
-      Rt rt = RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt());
-      rt.antidoteTicks = 0;
-      rt.damageTimer = 0;
-      rt.wheezeTimer = 0;
-      sync(player, rt, 0.0F);
-      player.sendOverlayMessage(Component.literal("The adrenaline burns the spores out, and you pay for it."));
-      if (!player.isCreative() && !player.isSpectator()) {
-         ServerLevel level = (ServerLevel)player.level();
-         player.hurtServer(level, level.damageSources().genericKill(), Tuning.ADRENALINE_DAMAGE);
+      int t = rt.fiendTick++;
+      int sinceFirst = t - Tuning.POPUP_FIRST_TICK;
+      if (sinceFirst >= 0 && sinceFirst % Tuning.POPUP_INTERVAL == 0 && sinceFirst / Tuning.POPUP_INTERVAL < Tuning.POPUP_COUNT) {
+         Masks.playAt(player, ModSounds.POPUP_SPAM, 1.0F, 0.9F + player.getRandom().nextFloat() * 0.3F);
+      }
+      if (t == Tuning.POPUP_FINAL_TICK) {
+         Masks.playAt(player, ModSounds.POPUP_FINAL, 1.0F, 1.0F);
+      }
+      if (t >= Tuning.POPUP_END_TICK) {
+         rt.fiendTick = -1;
       }
    }
 }

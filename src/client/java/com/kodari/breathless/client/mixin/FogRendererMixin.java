@@ -18,9 +18,16 @@ import com.kodari.breathless.Masks;
 import com.kodari.breathless.Tuning;
 import com.kodari.breathless.client.ClientState;
 
-/** The real fog: white with a dark cyan tint below Y=0, thicker as your exposure climbs. */
+/**
+ * The real fog: a thick blue gas that pools below Y=0. It eases in over about 12 blocks (smoothstep, no hard line),
+ * gets denser and darker the deeper you go, and closes in as your exposure climbs.
+ */
 @Mixin(FogRenderer.class)
 public abstract class FogRendererMixin {
+   /** The gas starts to show this many blocks above Y=0, and is at full strength 12 blocks lower. */
+   private static final double FADE_BLOCKS = 12.0D;
+   private static final double BLEED_ABOVE = 1.5D;
+
    @Inject(method = "setupFog", at = @At("RETURN"))
    private void breathless$sporeFog(Camera camera, int renderDistance, DeltaTracker tracker, float partialTick, ClientLevel level, CallbackInfoReturnable<FogData> cir) {
       Minecraft mc = Minecraft.getInstance();
@@ -28,22 +35,28 @@ public abstract class FogRendererMixin {
          return;
       }
       double y = mc.player.getY();
-      if (y >= Tuning.HAZARD_Y) {
+      double t = Mth.clamp((Tuning.HAZARD_Y + BLEED_ABOVE - y) / FADE_BLOCKS, 0.0D, 1.0D);
+      if (t <= 0.0D) {
          return;
       }
       FogData fog = cir.getReturnValue();
-      float blend = (float)Math.min(1.0D, -y / 6.0D);
-      // 26 blocks of sight at first, closing in to 11 at full exposure. A working mask helps you see a bit further.
-      float end = Mth.lerp(Math.min(1.0F, ClientState.exposure / 100.0F), 26.0F, 11.0F);
+      float blend = (float)(t * t * (3.0D - 2.0D * t)); // smoothstep
+      float depth = (float)Mth.clamp(-y / 64.0D, 0.0D, 1.0D);
+
+      // 22 blocks of sight right under the line, thinning with depth, and closing in with exposure.
+      float end = Mth.lerp(Math.min(1.0F, ClientState.exposure / 100.0F), 22.0F, 9.0F);
+      end *= 1.0F - 0.35F * depth;
       if (Masks.hasWorkingMask(mc.player)) {
-         end += 8.0F;
+         end += 7.0F;
       }
       fog.environmentalStart = Mth.lerp(blend, fog.environmentalStart, 0.0F);
       fog.environmentalEnd = Mth.lerp(blend, fog.environmentalEnd, end);
       fog.renderDistanceStart = Mth.lerp(blend, fog.renderDistanceStart, 0.0F);
       fog.renderDistanceEnd = Mth.lerp(blend, fog.renderDistanceEnd, end);
-      fog.color.x = Mth.lerp(blend, fog.color.x, 0.62F);
-      fog.color.y = Mth.lerp(blend, fog.color.y, 0.82F);
-      fog.color.z = Mth.lerp(blend, fog.color.z, 0.84F);
+      // Blue, and a little darker the deeper you go.
+      float dark = 1.0F - 0.4F * depth;
+      fog.color.x = Mth.lerp(blend, fog.color.x, 0.10F * dark);
+      fog.color.y = Mth.lerp(blend, fog.color.y, 0.46F * dark);
+      fog.color.z = Mth.lerp(blend, fog.color.z, 0.70F * dark);
    }
 }

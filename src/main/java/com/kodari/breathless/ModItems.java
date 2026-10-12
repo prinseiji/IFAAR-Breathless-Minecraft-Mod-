@@ -1,23 +1,28 @@
 package com.kodari.breathless;
 
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.equipment.Equippable;
 
 public final class ModItems {
    private ModItems() {
    }
 
-   /** Worn mask WITH a filter inside. Its durability bar is the filter's life. */
+   /** What is inside a mask (two filter slots). Absent = no filters. */
+   public static DataComponentType<MaskFilters> FILTERS;
+
+   /** Worn mask with at least one filter inside. Same name as the empty one, different inventory icon. */
    public static Item GAS_MASK;
-   /** Worn mask with no filter. Does not protect. */
+   /** Worn mask with no filters. Does not protect. */
    public static Item GAS_MASK_EMPTY;
-   /** Loose filter. Right-click while wearing the empty mask to install. */
+   /** Loose filter. Click it onto a mask (or right-click it while wearing a mask) to insert it. */
    public static Item GAS_MASK_FILTER;
 
    private static ResourceKey<Item> key(String path) {
@@ -33,11 +38,17 @@ public final class ModItems {
    }
 
    public static void register() {
+      FILTERS = Registry.register(
+         BuiltInRegistries.DATA_COMPONENT_TYPE,
+         Breathless.id("filters"),
+         DataComponentType.<MaskFilters>builder().persistent(MaskFilters.CODEC).networkSynchronized(MaskFilters.STREAM_CODEC).build()
+      );
+
       ResourceKey<Item> maskKey = key("gas_mask");
       GAS_MASK = Registry.register(
          BuiltInRegistries.ITEM,
          maskKey,
-         new Item(new Item.Properties().setId(maskKey).durability(Tuning.FILTER_MAX).component(DataComponents.EQUIPPABLE, headEquippable()))
+         new Item(new Item.Properties().setId(maskKey).stacksTo(1).component(DataComponents.EQUIPPABLE, headEquippable()))
       );
 
       ResourceKey<Item> emptyKey = key("gas_mask_empty");
@@ -53,5 +64,22 @@ public final class ModItems {
          filterKey,
          new FilterItem(new Item.Properties().setId(filterKey).durability(Tuning.FILTER_MAX))
       );
+   }
+
+   /** A mask holding these filters (the right item and the component set). */
+   public static ItemStack maskWith(MaskFilters filters) {
+      if (filters.count() <= 0) {
+         return new ItemStack(GAS_MASK_EMPTY);
+      }
+      ItemStack stack = new ItemStack(GAS_MASK);
+      stack.set(FILTERS, filters);
+      return stack;
+   }
+
+   /** A loose filter with this much life left. */
+   public static ItemStack filterWith(int life) {
+      ItemStack stack = new ItemStack(GAS_MASK_FILTER);
+      stack.setDamageValue(Math.max(0, Tuning.FILTER_MAX - Math.max(1, life)));
+      return stack;
    }
 }

@@ -82,16 +82,18 @@ public final class MobRules {
             return;
          }
          ItemStack head = mob.getItemBySlot(EquipmentSlot.HEAD);
-         if (!head.is(ModItems.GAS_MASK)) {
+         if (!Masks.isMask(head)) {
             return;
          }
-         int damage = head.getDamageValue() + Math.max(1, Math.round(damageTaken * Tuning.ZOMBIE_MASK_WEAR_PER_DAMAGE));
-         if (damage >= head.getMaxDamage() - 1) {
-            // The mask breaks: from now on this zombie breathes spores like everyone else.
+         MaskFilters filters = Masks.getFilters(head);
+         int wear = Math.max(1, Math.round(damageTaken * Tuning.ZOMBIE_MASK_WEAR_PER_DAMAGE));
+         MaskFilters worn = new MaskFilters(Math.max(0, filters.first() - wear), Math.max(0, filters.second() - wear));
+         if (!worn.working()) {
+            // The mask gives out: from now on this zombie breathes spores like everyone else.
             mob.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
             mob.level().playSound(null, mob.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 0.8F, 1.1F);
          } else {
-            head.setDamageValue(damage);
+            head.set(ModItems.FILTERS, worn);
          }
       });
    }
@@ -115,35 +117,34 @@ public final class MobRules {
       }
    }
 
-   /** A gas mask whose filter is nearly dead: 90% of the time 3-25% left, 10% of the time 25-50%. */
-   private static ItemStack rollZombieMask() {
-      ItemStack mask = new ItemStack(ModItems.GAS_MASK);
+   /** Remaining life of one zombie filter: 90% of the time 3-25% left, 10% of the time 25-50%. */
+   private static int rollFilterLife() {
       float remaining = RANDOM.nextFloat() < Tuning.ZOMBIE_MASK_LOW_CHANCE
          ? 0.03F + RANDOM.nextFloat() * 0.22F
          : 0.25F + RANDOM.nextFloat() * 0.25F;
-      int max = mask.getMaxDamage();
-      mask.setDamageValue(max - Math.max(3, Math.round(remaining * max)));
-      return mask;
+      return Math.max(3, Math.round(remaining * Tuning.FILTER_MAX));
+   }
+
+   /** A gas mask with two nearly dead filters. */
+   private static ItemStack rollZombieMask() {
+      return ModItems.maskWith(new MaskFilters(rollFilterLife(), rollFilterLife()));
    }
 
    private static void dropMask(Mob zombie) {
       ItemStack head = zombie.getItemBySlot(EquipmentSlot.HEAD);
+      if (!Masks.isMask(head)) {
+         return;
+      }
       ItemStack drop = ItemStack.EMPTY;
-      if (head.is(ModItems.GAS_MASK)) {
-         float roll = RANDOM.nextFloat();
-         if (roll < Tuning.ZOMBIE_DROP_MASK) {
-            drop = head.copy();
-         } else if (roll < Tuning.ZOMBIE_DROP_MASK + Tuning.ZOMBIE_DROP_FILTER) {
-            drop = new ItemStack(ModItems.GAS_MASK_FILTER);
-            drop.setDamageValue(head.getDamageValue());
-         }
-      } else if (head.is(ModItems.GAS_MASK_EMPTY) && RANDOM.nextFloat() < 0.7F) {
+      float roll = RANDOM.nextFloat();
+      MaskFilters filters = Masks.getFilters(head);
+      if (roll < Tuning.ZOMBIE_DROP_MASK) {
          drop = head.copy();
+      } else if (roll < Tuning.ZOMBIE_DROP_MASK + Tuning.ZOMBIE_DROP_FILTER && filters.count() > 0) {
+         drop = ModItems.filterWith(filters.lastLife());
       }
-      if (head.is(ModItems.GAS_MASK) || head.is(ModItems.GAS_MASK_EMPTY)) {
-         // Clear the slot so vanilla's own equipment drop cannot give a second copy.
-         zombie.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
-      }
+      // Clear the slot so vanilla's own equipment drop cannot give a second copy.
+      zombie.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
       if (!drop.isEmpty() && zombie.level() instanceof ServerLevel level) {
          level.addFreshEntity(new ItemEntity(level, zombie.getX(), zombie.getY() + 0.3D, zombie.getZ(), drop));
       }

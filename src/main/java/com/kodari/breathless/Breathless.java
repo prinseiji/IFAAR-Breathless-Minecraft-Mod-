@@ -10,12 +10,9 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.commands.Commands;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 
@@ -29,24 +26,24 @@ public class Breathless implements ModInitializer {
    /** The player's spore exposure, 0..100. Saved with the player. */
    public static final AttachmentType<Float> EXPOSURE = AttachmentRegistry.createPersistent(id("spore_exposure"), Codec.FLOAT);
 
-   public static SoundEvent WHEEZE;
-
    public static Identifier id(String path) {
       return Identifier.fromNamespaceAndPath(MOD_ID, path);
    }
 
    @Override
    public void onInitialize() {
+      ModSounds.register();
       ModItems.register();
-      WHEEZE = Registry.register(BuiltInRegistries.SOUND_EVENT, id("wheeze"), SoundEvent.createVariableRangeEvent(id("wheeze")));
       PayloadTypeRegistry.clientboundPlay().register(ExposurePayload.TYPE, ExposurePayload.CODEC);
+      PayloadTypeRegistry.clientboundPlay().register(FiendPayload.TYPE, FiendPayload.CODEC);
+      FilterClicks.init();
 
       Hazard.init();
       MobRules.init();
 
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> {
          entries.accept(ModItems.GAS_MASK_EMPTY);
-         entries.accept(ModItems.GAS_MASK);
+         entries.accept(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX)));
          entries.accept(ModItems.GAS_MASK_FILTER);
       });
 
@@ -56,7 +53,8 @@ public class Breathless implements ModInitializer {
    /**
     * Test commands:
     *   /breathless exposure <0-100>   set your meter
-    *   /breathless give               gas masks + filters (one with a nearly dead filter)
+    *   /breathless give               an empty mask, a loaded mask, a nearly dead mask, and loose filters
+    *   /breathless fiend              play the F13ND pop-up sequence (no damage, no reset)
     */
    private static void registerCommands() {
       CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> dispatcher.register(
@@ -71,13 +69,18 @@ public class Breathless implements ModInitializer {
             })))
             .then(Commands.literal("give").executes(context -> {
                ServerPlayer player = context.getSource().getPlayerOrException();
-               ItemStack weakFilter = new ItemStack(ModItems.GAS_MASK_FILTER);
-               weakFilter.setDamageValue(Tuning.FILTER_MAX - 150);
                player.getInventory().add(new ItemStack(ModItems.GAS_MASK_EMPTY));
-               player.getInventory().add(new ItemStack(ModItems.GAS_MASK));
-               player.getInventory().add(new ItemStack(ModItems.GAS_MASK_FILTER));
-               player.getInventory().add(weakFilter);
+               player.getInventory().add(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX)));
+               player.getInventory().add(ModItems.maskWith(new MaskFilters(150, 150)));
+               player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX));
+               player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX));
+               player.getInventory().add(ModItems.filterWith(150));
                context.getSource().sendSuccess(() -> Component.literal("Gave gas masks and filters."), false);
+               return 1;
+            }))
+            .then(Commands.literal("fiend").executes(context -> {
+               Hazard.testFiend(context.getSource().getPlayerOrException());
+               context.getSource().sendSuccess(() -> Component.literal("F13ND sequence started (test)."), false);
                return 1;
             }))
       ));
