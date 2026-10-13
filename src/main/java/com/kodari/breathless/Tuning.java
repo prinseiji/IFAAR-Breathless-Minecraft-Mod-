@@ -41,8 +41,10 @@ public final class Tuning {
    public static final int BLUR_PERIOD_TICKS = 140;
 
    // ---- Cure ----
-   /** How much a healing potion lowers the meter (needs a working mask). */
-   public static final float PURGE_AMOUNT = 60.0F;
+   /** How much an Instant Health potion lowers the meter (needs a working mask), by potion level: I, II, III or more. */
+   public static final float PURGE_LEVEL_1 = 30.0F;
+   public static final float PURGE_LEVEL_2 = 60.0F;
+   public static final float PURGE_LEVEL_3 = 100.0F;
    /** If you heal first and put the mask on later, the cure is remembered this long. */
    public static final int ANTIDOTE_TICKS = 2400;
 

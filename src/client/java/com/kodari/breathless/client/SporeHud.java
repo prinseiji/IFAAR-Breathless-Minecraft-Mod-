@@ -28,7 +28,6 @@ public final class SporeHud {
    private static final Identifier MASK_CRACKS_1 = Breathless.id("textures/misc/gas_mask_cracks_1.png");
    private static final Identifier MASK_CRACKS_2 = Breathless.id("textures/misc/gas_mask_cracks_2.png");
    private static final Identifier GAUGE = Breathless.id("textures/gui/gauge.png");
-   private static final Identifier SPORE_SHEET = Breathless.id("textures/gui/spore_sheet.png");
    private static final Identifier[] POPUPS = new Identifier[6];
    private static final Identifier POPUP_FINAL = Breathless.id("textures/gui/popup_final.png");
 
@@ -42,7 +41,7 @@ public final class SporeHud {
    private static final int[] POPUP_W = {331, 195, 185, 394, 150, 202};
    private static final int POPUP_FINAL_W = 184;
    private static final int POPUP_H = 83;
-   private static final float POPUP_SCALE = 0.75F;
+   private static final float POPUP_SCALE = 0.5F;
 
    // Gauge picture is 94x404; the dark tube inside it starts here.
    private static final int GAUGE_W = 94;
@@ -51,13 +50,14 @@ public final class SporeHud {
    private static final int TUBE_Y = 78;
    private static final int TUBE_W = 33;
    private static final int TUBE_H = 294;
-   private static final float GAUGE_SCALE = 0.5F;
-
-   /** Top-left corners (in the 32px sheet grid, row, column) of the sprites used as floating spores. */
-   private static final int[][] MOTE_CELLS = {{2, 5}, {2, 6}, {1, 5}, {7, 2}, {7, 4}, {2, 7}};
+   private static final float GAUGE_SCALE = 0.36F;
 
    private static int argb(int alpha, int rgb) {
       return (Math.max(0, Math.min(255, alpha)) << 24) | (rgb & 0xFFFFFF);
+   }
+
+   private static float smooth(float t) {
+      return t * t * (3.0F - 2.0F * t);
    }
 
    private static float bump(float x, float center, float width) {
@@ -98,11 +98,6 @@ public final class SporeHud {
          }
       }
 
-      // Spores drifting in front of your eyes (sprites from the particle sheet).
-      if (exposure >= 15.0F && !Masks.hasWorkingMask(player)) {
-         drawMotes(g, w, h, exposure);
-      }
-
       // Mask visor, first person only (like the pumpkin). Cracks sit at the edges.
       ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
       if (Masks.isMask(head) && mc.options.getCameraType().isFirstPerson()) {
@@ -133,22 +128,6 @@ public final class SporeHud {
       int dh = (int)(h * scale);
       int shake = (int)(4.0F * k) * ((ClientState.clock % 2 == 0) ? 1 : -1);
       g.blit(RenderPipelines.GUI_TEXTURED, texture, (w - dw) / 2 + shake, (h - dh) / 2 - shake, 0.0F, 0.0F, dw, dh, dw, dh);
-   }
-
-   private static void drawMotes(GuiGraphicsExtractor g, int w, int h, float exposure) {
-      int count = 4 + (int)(exposure / 12.0F);
-      for (int i = 0; i < count; i++) {
-         Random r = new Random(1000L + i * 7919L);
-         float baseX = r.nextFloat() * w;
-         float baseY = r.nextFloat() * h;
-         float vx = (r.nextFloat() - 0.2F) * 0.5F;
-         float vy = (r.nextFloat() - 0.7F) * 0.3F;
-         float t = ClientState.clock + i * 37;
-         int x = (int)(((baseX + t * vx) % w + w) % w) - 16;
-         int y = (int)(((baseY + t * vy + Math.sin(t * 0.05F + i) * 14.0F) % h + h) % h) - 16;
-         int[] cell = MOTE_CELLS[i % MOTE_CELLS.length];
-         g.blit(RenderPipelines.GUI_TEXTURED, SPORE_SHEET, x, y, cell[1] * 32.0F, cell[0] * 32.0F, 32, 32, 256, 256);
-      }
    }
 
    // ---- exposure gauge + F13ND pop-ups ----
@@ -213,7 +192,7 @@ public final class SporeHud {
          for (int i = 0; i < Tuning.POPUP_COUNT; i++) {
             int born = Tuning.POPUP_FIRST_TICK + i * Tuning.POPUP_INTERVAL;
             int kind = i < kinds.size() ? kinds.get(i) : rnd.nextInt(POPUPS.length);
-            float ox = (rnd.nextFloat() - 0.5F) * 150.0F;
+            float ox = (rnd.nextFloat() - 0.5F) * 60.0F;
             // Stratified over the gauge height so the whole bar ends up covered, with some mess on top.
             float oy = (((i * 5) % 6) / 5.0F - 0.5F) * (gaugeHeight - dh) + (rnd.nextFloat() - 0.5F) * 14.0F;
             float phase = rnd.nextFloat() * 6.28F;
@@ -231,8 +210,9 @@ public final class SporeHud {
       } else if (t >= Tuning.POPUP_FINAL_TICK && t < Tuning.POPUP_END_TICK) {
          int dw = Math.round(POPUP_FINAL_W * POPUP_SCALE);
          int shake = t - Tuning.POPUP_FINAL_TICK < 5 ? ((t % 2 == 0) ? 3 : -3) : 0;
-         int px = Math.max(2, Math.round(cx - dw / 2.0F) + shake);
-         int py = Math.round(cy - dh / 2.0F);
+         // The final pop-up sits in the middle of the screen, not on the gauge.
+         int px = Math.round(screenW / 2.0F - dw / 2.0F) + shake;
+         int py = Math.round(screenH / 2.0F - dh / 2.0F);
          g.blit(RenderPipelines.GUI_TEXTURED, POPUP_FINAL, px, py, 0.0F, 0.0F, dw, dh, dw, dh);
       }
    }
@@ -248,9 +228,11 @@ public final class SporeHud {
       if (ft >= 0) {
          float red = 0.0F;
          if (ft < Tuning.POPUP_CLEAR_TICK) {
-            red = 0.8F * Math.min(1.0F, (ft + 1) / 3.0F);
+            // Fades in, so it does not slam onto the screen.
+            red = 0.8F * smooth(Math.min(1.0F, (ft + 1) / 14.0F));
          } else if (ft >= Tuning.POPUP_FINAL_TICK && ft < Tuning.POPUP_END_TICK) {
-            red = 0.95F * (1.0F - (ft - Tuning.POPUP_FINAL_TICK) / (float)(Tuning.POPUP_END_TICK - Tuning.POPUP_FINAL_TICK));
+            float rise = smooth(Math.min(1.0F, (ft - Tuning.POPUP_FINAL_TICK + 1) / 7.0F));
+            red = 0.95F * rise * (1.0F - (ft - Tuning.POPUP_FINAL_TICK) / (float)(Tuning.POPUP_END_TICK - Tuning.POPUP_FINAL_TICK));
          }
          if (red > 0.0F) {
             drawVignette(g, w, h, 0xB0101A, red, 0.5F);

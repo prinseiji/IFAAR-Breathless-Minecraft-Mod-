@@ -19,7 +19,6 @@ public final class ModSounds {
    public static SoundEvent TENDRILS;
    public static SoundEvent SPORE_DAMAGE;
    public static SoundEvent SIGH_RELIEF;
-   public static SoundEvent NO_MASK_EXPOSED;
    public static SoundEvent AMBIENCE_MUFFLED;
    public static SoundEvent AMBIENCE_OPEN;
    public static SoundEvent POPUP_SPAM;
@@ -40,7 +39,6 @@ public final class ModSounds {
       TENDRILS = reg("tendrils");
       SPORE_DAMAGE = reg("spore_damage");
       SIGH_RELIEF = reg("sigh_relief");
-      NO_MASK_EXPOSED = reg("no_mask_exposed");
       AMBIENCE_MUFFLED = reg("ambience_muffled");
       AMBIENCE_OPEN = reg("ambience_open");
       POPUP_SPAM = reg("popup_spam");

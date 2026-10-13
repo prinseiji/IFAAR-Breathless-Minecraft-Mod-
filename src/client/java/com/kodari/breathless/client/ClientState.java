@@ -41,8 +41,9 @@ public final class ClientState {
    private static boolean lastHeadWasMask;
 
    private static final Random RNG = new Random();
-   private static final DustParticleOptions SPORE = new DustParticleOptions(0x2FB4E6, 1.1F);
-   private static final DustParticleOptions MIST = new DustParticleOptions(0x2A8FD0, 2.4F);
+   // Small cave-style floating motes, a bright blue so they read against the dark fog; and big soft mist puffs.
+   private static final DustParticleOptions SPORE = new DustParticleOptions(0x3CCBFF, 0.3F);
+   private static final DustParticleOptions MIST = new DustParticleOptions(0x34C2F5, 3.4F);
 
    static void startFiend(int seed) {
       fiendFrozen = exposure;
@@ -121,34 +122,39 @@ public final class ClientState {
       Vec3 eye = mc.player.getEyePosition();
       boolean masked = Masks.hasWorkingMask(mc.player);
 
-      // Spores in the air below Y=0. Without a mask they stream toward your face.
       if (Masks.isUnderground(mc.player)) {
-         for (int i = 0; i < 9; i++) {
-            double x = mc.player.getX() + (RNG.nextDouble() - 0.5D) * 16.0D;
-            double y = py + (RNG.nextDouble() - 0.35D) * 6.0D;
-            double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 16.0D;
-            double vx = (RNG.nextDouble() - 0.5D) * 0.01D;
-            double vy = (RNG.nextDouble() - 0.5D) * 0.01D;
-            double vz = (RNG.nextDouble() - 0.5D) * 0.01D;
-            if (!masked) {
+         // Tiny motes hanging in the air, like the dust in a cave.
+         for (int i = 0; i < 14; i++) {
+            double x = mc.player.getX() + (RNG.nextDouble() - 0.5D) * 22.0D;
+            double y = py + (RNG.nextDouble() - 0.35D) * 8.0D;
+            double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 22.0D;
+            mc.level.addParticle(SPORE, x, y, z, (RNG.nextDouble() - 0.5D) * 0.02D, (RNG.nextDouble() - 0.5D) * 0.02D, (RNG.nextDouble() - 0.5D) * 0.02D);
+         }
+         // With no working mask the spores come for you: they start close and are pulled to your face.
+         // (Dust particles keep only a tenth of the speed they are given, so the pull is big on purpose.)
+         if (!masked) {
+            for (int i = 0; i < 10; i++) {
+               double angle = RNG.nextDouble() * Math.PI * 2.0D;
+               double dist = 3.0D + RNG.nextDouble() * 6.0D;
+               double x = eye.x + Math.cos(angle) * dist;
+               double y = eye.y + (RNG.nextDouble() - 0.5D) * 4.0D;
+               double z = eye.z + Math.sin(angle) * dist;
                Vec3 toward = eye.subtract(x, y, z);
                double len = Math.max(0.5D, toward.length());
-               double pull = 0.07D;
-               vx += toward.x / len * pull;
-               vy += toward.y / len * pull;
-               vz += toward.z / len * pull;
+               double pull = 0.9D;
+               mc.level.addParticle(SPORE, x, y, z, toward.x / len * pull, toward.y / len * pull, toward.z / len * pull);
             }
-            mc.level.addParticle(SPORE, x, y, z, vx, vy, vz);
          }
       }
 
-      // The mist sheet: a thick blue layer lying on the Y=0 line, where the gas pools.
-      if (py < Tuning.HAZARD_Y + 14.0D && py > Tuning.HAZARD_Y - 40.0D) {
-         for (int i = 0; i < 10; i++) {
-            double x = mc.player.getX() + (RNG.nextDouble() - 0.5D) * 26.0D;
-            double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 26.0D;
-            double y = Tuning.HAZARD_Y - 0.9D + RNG.nextDouble() * 1.1D;
-            mc.level.addParticle(MIST, x, y, z, (RNG.nextDouble() - 0.5D) * 0.012D, 0.0D, (RNG.nextDouble() - 0.5D) * 0.012D);
+      // The mist sheet: a thick bright layer along the Y=0 line, thinning out downward, so the gas is visible from above too.
+      if (py < Tuning.HAZARD_Y + 20.0D && py > Tuning.HAZARD_Y - 40.0D) {
+         for (int i = 0; i < 22; i++) {
+            double x = mc.player.getX() + (RNG.nextDouble() - 0.5D) * 44.0D;
+            double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 44.0D;
+            double r = RNG.nextDouble();
+            double y = Tuning.HAZARD_Y - 0.2D - r * r * 5.0D;
+            mc.level.addParticle(MIST, x, y, z, (RNG.nextDouble() - 0.5D) * 0.02D, 0.0D, (RNG.nextDouble() - 0.5D) * 0.02D);
          }
       }
    }

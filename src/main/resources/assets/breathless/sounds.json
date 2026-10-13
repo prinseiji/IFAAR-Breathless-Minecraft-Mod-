@@ -89,15 +89,6 @@
     ],
     "subtitle": "subtitles.breathless.sigh_relief"
   },
-  "no_mask_exposed": {
-    "sounds": [
-      {
-        "name": "breathless:no_mask_exposed",
-        "stream": false
-      }
-    ],
-    "subtitle": "subtitles.breathless.exposed"
-  },
   "popup_spam": {
     "sounds": [
       {

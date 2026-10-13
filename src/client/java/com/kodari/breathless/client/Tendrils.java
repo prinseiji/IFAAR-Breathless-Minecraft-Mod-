@@ -26,8 +26,9 @@ final class Tendrils {
       builtW = w;
       builtH = h;
       Random r = new Random(7331L);
-      float step = Math.max(3.0F, Math.min(w, h) / 120.0F);
-      int mainCount = 16;
+      // Small steps and a smoothed turn rate: long curved strands made of many tiny dabs instead of a few big blocks.
+      float step = 1.5F;
+      int mainCount = 14;
       for (int t = 0; t < mainCount; t++) {
          float x;
          float y;
@@ -38,17 +39,15 @@ final class Tendrils {
             default -> { x = 0; y = r.nextFloat() * h; }
          }
          float angle = (float)Math.atan2(h / 2.0F - y, w / 2.0F - x) + (r.nextFloat() - 0.5F) * 1.0F;
-         int len = 26 + r.nextInt(30);
+         int len = 120 + r.nextInt(80);
          Path main = walk(r, x, y, angle, len, step, 0.0F);
          PATHS.add(main);
-         // a couple of side branches
-         for (int b = 0; b < 2; b++) {
-            int at = 6 + r.nextInt(Math.max(1, len - 12));
-            float side = (r.nextBoolean() ? 1.0F : -1.0F) * (0.6F + r.nextFloat() * 0.5F);
-            float bx = main.xs[at];
-            float by = main.ys[at];
-            float bAngle = angle + side;
-            PATHS.add(walk(r, bx, by, bAngle, len / 2, step, 0.15F + 0.7F * at / len));
+         // one or two thinner side branches
+         int branches = 1 + r.nextInt(2);
+         for (int b = 0; b < branches; b++) {
+            int at = 30 + r.nextInt(Math.max(1, len - 60));
+            float side = (r.nextBoolean() ? 1.0F : -1.0F) * (0.5F + r.nextFloat() * 0.5F);
+            PATHS.add(walk(r, main.xs[at], main.ys[at], angle + side, len / 3, step, 0.15F + 0.7F * at / len));
          }
       }
    }
@@ -58,10 +57,12 @@ final class Tendrils {
       p.xs = new float[len];
       p.ys = new float[len];
       p.delay = delay;
+      float turn = 0.0F;
       for (int i = 0; i < len; i++) {
          p.xs[i] = x;
          p.ys[i] = y;
-         angle += (float)r.nextGaussian() * 0.28F;
+         turn = turn * 0.94F + (float)r.nextGaussian() * 0.035F;
+         angle += turn;
          x += (float)Math.cos(angle) * step;
          y += (float)Math.sin(angle) * step;
       }
@@ -88,13 +89,15 @@ final class Tendrils {
          int n = Math.min(len, (int)(len * Math.min(1.0F, local)));
          for (int i = 0; i < n; i++) {
             float prog = i / (float)len;
-            int size = Math.round((3.4F * (1.0F - prog) + 1.0F) * (1.0F + 0.45F * pulse));
+            // 2 px at the root, 1 px toward the tip; a heartbeat swells it a little.
+            int size = Math.max(1, Math.round((1.6F * (1.0F - prog) + 0.9F) * (1.0F + 0.3F * pulse)));
             int x = (int)p.xs[i];
             int y = (int)p.ys[i];
-            if (i % 2 == 0) {
+            if (i % 4 == 0) {
                g.fill(x - 1, y - 1, x + size + 1, y + size + 1, (glowAlpha << 24) | 0x2FB8D0);
             }
-            g.fill(x, y, x + size, y + size, (coreAlpha << 24) | 0x0B3A66);
+            int a = (int)(coreAlpha * (1.0F - 0.55F * prog));
+            g.fill(x, y, x + size, y + size, (a << 24) | 0x0B3A66);
          }
       }
    }

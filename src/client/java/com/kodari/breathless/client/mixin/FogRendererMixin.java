@@ -43,11 +43,12 @@ public abstract class FogRendererMixin {
       float blend = (float)(t * t * (3.0D - 2.0D * t)); // smoothstep
       float depth = (float)Mth.clamp(-y / 64.0D, 0.0D, 1.0D);
 
-      // 22 blocks of sight right under the line, thinning with depth, and closing in with exposure.
+      // Unmasked: 22 blocks of sight right under the line, thinning with depth, and closing in with exposure.
+      // A working mask clears the air a lot: you can see about twice as far.
       float end = Mth.lerp(Math.min(1.0F, ClientState.exposure / 100.0F), 22.0F, 9.0F);
       end *= 1.0F - 0.35F * depth;
       if (Masks.hasWorkingMask(mc.player)) {
-         end += 7.0F;
+         end = end * 1.9F + 8.0F;
       }
       fog.environmentalStart = Mth.lerp(blend, fog.environmentalStart, 0.0F);
       fog.environmentalEnd = Mth.lerp(blend, fog.environmentalEnd, end);

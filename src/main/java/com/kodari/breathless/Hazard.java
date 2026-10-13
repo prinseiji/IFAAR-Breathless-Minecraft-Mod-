@@ -40,14 +40,13 @@ public final class Hazard {
       boolean wasCritical;
       float lastHealth = -1.0F;
       float lastSent = -1.0F;
-      boolean drinkingHeal;
-      boolean pendingHeal;
+      int drinkLevel = -1;
+      int pendingLevel = -1;
       int drinkRemaining;
+      int antidoteLevel;
       // ambience / warnings
       int ambienceTimer;
       boolean ambienceMuffled;
-      boolean wasExposedNoMask;
-      int exposedCooldown;
       int slowTimer;
       // F13ND pop-up sequence (-1 = not running); the server only schedules the sounds, the client draws it
       int fiendTick = -1;
@@ -100,8 +99,9 @@ public final class Hazard {
    }
 
    /** Called by HealMixin the moment an Instant Health effect lands on a player (drunk or splashed). */
-   public static void notifyInstantHealth(ServerPlayer player) {
-      RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt()).pendingHeal = true;
+   public static void notifyInstantHealth(ServerPlayer player, int amplifier) {
+      Rt rt = RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt());
+      rt.pendingLevel = Math.max(rt.pendingLevel, amplifier);
    }
 
    /** Called by the /breathless command to test the F13ND sequence without needing a shot. */
@@ -135,51 +135,41 @@ public final class Hazard {
       if (rt.healCooldown > 0) {
          rt.healCooldown--;
       }
-      boolean healed = false;
+      int healLevel = -1;
       float health = player.getHealth();
       if (rt.lastHealth >= 0.0F && health - rt.lastHealth >= 1.99F) {
-         healed = true;
+         healLevel = 0;
       }
       rt.lastHealth = health;
       if (player.isUsingItem()) {
-         rt.drinkingHeal = isHealingPotion(player.getUseItem());
+         rt.drinkLevel = healingLevel(player.getUseItem());
          rt.drinkRemaining = player.getUseItemRemainingTicks();
       } else {
-         if (rt.drinkingHeal && rt.drinkRemaining <= 2) {
-            healed = true;
+         if (rt.drinkLevel >= 0 && rt.drinkRemaining <= 2) {
+            healLevel = Math.max(healLevel, rt.drinkLevel);
          }
-         rt.drinkingHeal = false;
+         rt.drinkLevel = -1;
       }
-      if (rt.pendingHeal) {
-         healed = true;
-         rt.pendingHeal = false;
+      if (rt.pendingLevel >= 0) {
+         healLevel = Math.max(healLevel, rt.pendingLevel);
+         rt.pendingLevel = -1;
       }
-      if (healed && rt.healCooldown <= 0) {
+      if (healLevel >= 0 && rt.healCooldown <= 0) {
          rt.healCooldown = 10;
-         exposure = onHealed(player, rt, exposure, maskOk);
+         exposure = onHealed(player, rt, exposure, maskOk, healLevel);
       }
       if (rt.antidoteTicks > 0) {
          rt.antidoteTicks--;
       }
 
       // 2) Rising (only below Y=0 with no working mask)
-      boolean exposedNow = !exempt && underground && !maskOk;
-      if (exposedNow && exposure < 100.0F) {
+      if (!exempt && underground && !maskOk && exposure < 100.0F) {
          float rate = 100.0F / (Tuning.FILL_SECONDS * 20.0F);
          if (player.isSprinting() || !player.onGround()) {
             rate *= Tuning.ACTIVE_MULTIPLIER;
          }
          exposure = Math.min(100.0F, exposure + rate);
       }
-      if (rt.exposedCooldown > 0) {
-         rt.exposedCooldown--;
-      }
-      if (exposedNow && !rt.wasExposedNoMask && rt.exposedCooldown <= 0) {
-         // The spores reach you with nothing over your face.
-         Masks.playAt(player, ModSounds.NO_MASK_EXPOSED, 1.0F, 1.0F);
-         rt.exposedCooldown = 600;
-      }
-      rt.wasExposedNoMask = exposedNow;
 
       // 3) The filters wear down while the mask is doing its job
       if (!exempt && underground && maskOk && player.tickCount % Tuning.DRAIN_INTERVAL_TICKS == 0) {
@@ -187,12 +177,12 @@ public final class Hazard {
          maskOk = Masks.hasWorkingMask(player);
       }
 
-      // 4) Critical state
-      boolean critical = exposure >= 100.0F - 0.001F;
-      if (critical && !exempt) {
+      // 4) Critical state (the sounds also play in creative so you can test them; the damage does not)
+      boolean critical = exposure >= 100.0F - 0.001F && !player.isSpectator();
+      if (critical) {
          if (maskOk && rt.antidoteTicks > 0) {
             // Mask is on and the cure is already in the blood: purge now.
-            exposure = Math.max(0.0F, exposure - Tuning.PURGE_AMOUNT);
+            exposure = Math.max(0.0F, exposure - purgeFor(rt.antidoteLevel));
             rt.antidoteTicks = 0;
             Masks.playAt(player, ModSounds.SIGH_RELIEF, 1.0F, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
@@ -206,7 +196,9 @@ public final class Hazard {
                float ramp = Math.min(1.0F, rt.critTicks / (float)(Tuning.DAMAGE_RAMP_SECONDS * 20));
                float damage = Tuning.DAMAGE_START + (Tuning.DAMAGE_MAX - Tuning.DAMAGE_START) * ramp;
                Masks.playAt(player, ModSounds.SPORE_DAMAGE, 1.0F, 1.0F);
-               player.hurtServer(level, level.damageSources().drown(), damage);
+               if (!exempt) {
+                  player.hurtServer(level, level.damageSources().drown(), damage);
+               }
             }
             if (--rt.wheezeTimer <= 0) {
                rt.wheezeTimer = Tuning.WHEEZE_TICKS;
@@ -218,7 +210,7 @@ public final class Hazard {
          rt.wheezeTimer = 0;
          rt.critTicks = 0;
       }
-      rt.wasCritical = exposure >= 100.0F - 0.001F && !exempt;
+      rt.wasCritical = exposure >= 100.0F - 0.001F && !player.isSpectator();
 
       // 5) Slowness that gets worse with exposure
       if (!exempt && ++rt.slowTimer >= 15) {
@@ -230,7 +222,7 @@ public final class Hazard {
       }
 
       // 6) Ambience while below Y=0 (muffled behind a working mask, open air without one)
-      if (!exempt && underground) {
+      if (!player.isSpectator() && underground) {
          if (--rt.ambienceTimer <= 0 || rt.ambienceMuffled != maskOk) {
             rt.ambienceTimer = Tuning.AMBIENCE_TICKS;
             rt.ambienceMuffled = maskOk;
@@ -272,37 +264,48 @@ public final class Hazard {
       return instance.getEffect().unwrapKey().map(key -> key.identifier().getPath()).orElse("");
    }
 
-   private static boolean isHealingPotion(ItemStack stack) {
+   /** The Instant Health level of a potion in hand (0 = I, 1 = II ...), or -1 if it is not an Instant Health potion. */
+   private static int healingLevel(ItemStack stack) {
       if (!stack.is(Items.POTION)) {
-         return false;
+         return -1;
       }
       PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
       if (contents == null) {
-         return false;
+         return -1;
       }
+      int level = -1;
       for (MobEffectInstance instance : contents.getAllEffects()) {
          if ("instant_health".equals(effectPath(instance))) {
-            return true;
+            level = Math.max(level, instance.getAmplifier());
          }
       }
-      return false;
+      return level;
+   }
+
+   private static float purgeFor(int level) {
+      if (level <= 0) {
+         return Tuning.PURGE_LEVEL_1;
+      }
+      return level == 1 ? Tuning.PURGE_LEVEL_2 : Tuning.PURGE_LEVEL_3;
    }
 
    /**
     * Both halves are needed to cure the critical state: a working mask AND a healing event.
     * Mask first, then heal: purge right now. Heal first, then mask: the cure is remembered for a while.
+    * A stronger potion purges more (Tuning.PURGE_LEVEL_*).
     */
-   private static float onHealed(ServerPlayer player, Rt rt, float exposure, boolean maskOk) {
+   private static float onHealed(ServerPlayer player, Rt rt, float exposure, boolean maskOk, int level) {
       if (maskOk) {
          if (exposure > 0.0F) {
             Masks.playAt(player, ModSounds.SIGH_RELIEF, 1.0F, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          }
          rt.antidoteTicks = 0;
-         return Math.max(0.0F, exposure - Tuning.PURGE_AMOUNT);
+         return Math.max(0.0F, exposure - purgeFor(level));
       }
       if (exposure >= 100.0F - 0.001F) {
          rt.antidoteTicks = Tuning.ANTIDOTE_TICKS;
+         rt.antidoteLevel = level;
          player.sendOverlayMessage(Component.literal("The cure is in your blood. Get a gas mask on!"));
       }
       return exposure;
@@ -311,12 +314,13 @@ public final class Hazard {
    // ---- F13ND: the adrenaline purge ----
 
    /**
-    * IFAAR asks us first, before it does anything with the shot. While critical we take the shot over:
+    * IFAAR asks us first, before it does anything with the shot. While the meter is above 0 we take the shot over:
     * it is used up, F13ND burns the spores out (meter to 0, four hearts of damage) and NO adrenaline rush starts.
     * In every other situation we say "not handled" and IFAAR behaves exactly as before.
     */
    private static boolean onBeforeShot(ServerPlayer player, ItemStack stack) {
-      if (!isCritical(player)) {
+      // The IFAAR rush minigame is only for a completely clean meter. Any exposure at all and the shot clears it instead.
+      if (getExposure(player) <= 0.001F) {
          return false;
       }
       if (CombatInjuriesApi.rushShots(player) > 0 || CombatInjuriesApi.isStunned(player) || player.getCooldowns().isOnCooldown(stack)) {
@@ -349,7 +353,13 @@ public final class Hazard {
          sync(player, rt, 0.0F);
          if (!player.isCreative() && !player.isSpectator()) {
             ServerLevel level = (ServerLevel)player.level();
+            float before = player.getHealth();
             player.hurtServer(level, level.damageSources().genericKill(), Tuning.ADRENALINE_DAMAGE);
+            // Safety net: if something swallowed the hit, take the health directly (never to the point of killing).
+            if (player.isAlive() && player.getHealth() >= before - 0.01F && before - Tuning.ADRENALINE_DAMAGE > 0.0F) {
+               player.setHealth(before - Tuning.ADRENALINE_DAMAGE);
+            }
+            player.sendOverlayMessage(Component.literal("The spores are gone, and it cost you."));
          }
       }
    }

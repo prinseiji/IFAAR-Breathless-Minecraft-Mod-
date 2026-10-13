@@ -22,7 +22,7 @@ public abstract class HealMixin {
    @Inject(method = "applyInstantaneousEffect", at = @At("HEAD"))
    private void breathless$onInstantEffect(ServerLevel level, Entity source, Entity indirectSource, LivingEntity target, int amplifier, double scale, CallbackInfo ci) {
       if ((Object)this == MobEffects.INSTANT_HEALTH.value() && target instanceof ServerPlayer player) {
-         Hazard.notifyInstantHealth(player);
+         Hazard.notifyInstantHealth(player, amplifier);
       }
    }
 }
