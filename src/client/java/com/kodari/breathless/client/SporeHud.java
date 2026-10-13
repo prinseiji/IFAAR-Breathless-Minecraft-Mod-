@@ -43,6 +43,16 @@ public final class SporeHud {
    private static final int POPUP_H = 83;
    private static final float POPUP_SCALE = 0.5F;
 
+   // The loading pop-up: 30 animation frames in a 6 x 5 sheet, each 184 x 134.
+   private static final Identifier POPUP_LOADING = Breathless.id("textures/gui/popup_loading.png");
+   private static final int LOAD_W = 184;
+   private static final int LOAD_H = 134;
+   private static final int LOAD_COLS = 6;
+   private static final int LOAD_FRAMES = 30;
+   private static final int LOAD_SHEET_W = 1104;
+   private static final int LOAD_SHEET_H = 670;
+   private static final int LOAD_TICKS_PER_FRAME = 3;
+
    // Gauge picture is 94x404; the dark tube inside it starts here.
    private static final int GAUGE_W = 94;
    private static final int GAUGE_H = 404;
@@ -50,7 +60,7 @@ public final class SporeHud {
    private static final int TUBE_Y = 78;
    private static final int TUBE_W = 33;
    private static final int TUBE_H = 294;
-   private static final float GAUGE_SCALE = 0.36F;
+   private static final float GAUGE_SCALE = 0.30F;
 
    private static int argb(int alpha, int rgb) {
       return (Math.max(0, Math.min(255, alpha)) << 24) | (rgb & 0xFFFFFF);
@@ -167,11 +177,20 @@ public final class SporeHud {
          }
          g.fill(tx, ty + th - filled, tx + tw, ty + th, color);
       }
-      String label = Math.round(exposure) + "%";
+      int pct = Math.round(exposure);
+      int ft = ClientState.fiendTick;
+      if (fiend && ft >= Tuning.BUILDUP_START_TICK && ft < Tuning.POPUP_CLEAR_TICK) {
+         // The number warbles while F13ND works on it.
+         Random warble = new Random(ClientState.fiendSeed * 31L + ft / 2);
+         pct = Math.max(0, Math.min(100, pct + warble.nextInt(2 * Tuning.WARBLE_PERCENT + 1) - Tuning.WARBLE_PERCENT));
+      }
+      String label = pct + "%";
       g.text(mc.font, label, x + gw / 2 - mc.font.width(label) / 2, y + gh + 3, 0xFF9FD9DD);
 
       if (fiend) {
-         drawPopups(g, x + gw / 2, y + gh / 2, gh);
+         // The cover area includes the percentage label under the gauge, so nothing peeks out.
+         int cover = gh + 16;
+         drawPopups(g, x + gw / 2, y + cover / 2, cover);
       }
    }
 
@@ -183,6 +202,13 @@ public final class SporeHud {
       int dh = Math.round(POPUP_H * POPUP_SCALE);
 
       if (t < Tuning.POPUP_CLEAR_TICK) {
+         // The loading pop-up sits in the middle of the screen for the whole build-up.
+         if (t >= Tuning.BUILDUP_START_TICK) {
+            int frame = ((t - Tuning.BUILDUP_START_TICK) / LOAD_TICKS_PER_FRAME) % LOAD_FRAMES;
+            float u = (frame % LOAD_COLS) * LOAD_W;
+            float v = (frame / LOAD_COLS) * LOAD_H;
+            g.blit(RenderPipelines.GUI_TEXTURED, POPUP_LOADING, Math.round(screenW / 2.0F - LOAD_W / 2.0F), Math.round(screenH / 2.0F - LOAD_H / 2.0F), u, v, LOAD_W, LOAD_H, LOAD_SHEET_W, LOAD_SHEET_H);
+         }
          Random rnd = new Random(ClientState.fiendSeed);
          List<Integer> kinds = new ArrayList<>();
          for (int i = 0; i < POPUPS.length; i++) {
@@ -190,16 +216,19 @@ public final class SporeHud {
          }
          Collections.shuffle(kinds, rnd);
          for (int i = 0; i < Tuning.POPUP_COUNT; i++) {
-            int born = Tuning.POPUP_FIRST_TICK + i * Tuning.POPUP_INTERVAL;
+            int born = Tuning.popupBornTick(i);
             int kind = i < kinds.size() ? kinds.get(i) : rnd.nextInt(POPUPS.length);
-            float ox = (rnd.nextFloat() - 0.5F) * 60.0F;
-            // Stratified over the gauge height so the whole bar ends up covered, with some mess on top.
-            float oy = (((i * 5) % 6) / 5.0F - 0.5F) * (gaugeHeight - dh) + (rnd.nextFloat() - 0.5F) * 14.0F;
+            int dw = Math.round(POPUP_W[kind] * POPUP_SCALE);
+            // Narrow pop-ups stay centered on the gauge so they always cover it; wide ones may wander sideways.
+            float wander = Math.max(0.0F, Math.min(30.0F, dw / 2.0F - 16.0F));
+            float ox = (rnd.nextFloat() - 0.5F) * 2.0F * wander;
+            // Stratified over the cover height (gauge + label) with a little overshoot at both ends, plus some mess.
+            float span = gaugeHeight - dh + 12.0F;
+            float oy = (((i * 5) % 6) / 5.0F - 0.5F) * span + (rnd.nextFloat() - 0.5F) * 8.0F;
             float phase = rnd.nextFloat() * 6.28F;
             if (t < born) {
                continue;
             }
-            int dw = Math.round(POPUP_W[kind] * POPUP_SCALE);
             // They shift around a little after landing.
             float sx = (float)Math.sin((t + i * 5) * 0.35F + phase) * 3.0F;
             float sy = (float)Math.cos((t + i * 3) * 0.30F + phase) * 2.0F;
@@ -223,13 +252,21 @@ public final class SporeHud {
       int w = g.guiWidth();
       int h = g.guiHeight();
 
-      // F13ND: constant red vignette while the pop-ups cover the bar, then a sudden flash with the final pop-up.
+      // F13ND: a red flash at the injection, a red vignette that fades in and stays while the pop-ups cover the bar,
+      // fades out when they vanish, then a sudden flash with the final pop-up.
       int ft = ClientState.fiendTick;
       if (ft >= 0) {
+         if (ft < Tuning.FLASH_TICKS) {
+            float k = 1.0F - ft / (float)Tuning.FLASH_TICKS;
+            g.fill(0, 0, w, h, argb((int)(190.0F * k), 0xC01020));
+         }
          float red = 0.0F;
-         if (ft < Tuning.POPUP_CLEAR_TICK) {
-            // Fades in, so it does not slam onto the screen.
+         if (ft < Tuning.POPUP_CLEAR_TICK + Tuning.VIGNETTE_FADEOUT_TICKS) {
             red = 0.8F * smooth(Math.min(1.0F, (ft + 1) / 14.0F));
+            if (ft >= Tuning.POPUP_CLEAR_TICK) {
+               float out = (ft - Tuning.POPUP_CLEAR_TICK) / (float)Tuning.VIGNETTE_FADEOUT_TICKS;
+               red *= 1.0F - smooth(Math.min(1.0F, out));
+            }
          } else if (ft >= Tuning.POPUP_FINAL_TICK && ft < Tuning.POPUP_END_TICK) {
             float rise = smooth(Math.min(1.0F, (ft - Tuning.POPUP_FINAL_TICK + 1) / 7.0F));
             red = 0.95F * rise * (1.0F - (ft - Tuning.POPUP_FINAL_TICK) / (float)(Tuning.POPUP_END_TICK - Tuning.POPUP_FINAL_TICK));

@@ -45,7 +45,7 @@ public final class FilterClicks {
             slot.set(ModItems.maskWith(filters.withoutLast()));
             cursorAccess.set(out);
             if (player instanceof ServerPlayer serverPlayer) {
-               Masks.playAt(serverPlayer, ModSounds.FILTER_OFF, 1.0F, 1.0F);
+               Masks.playAt(serverPlayer, ModSounds.FILTER_ON, 1.0F, 1.0F);
             }
             return EventResult.DENY;
          }

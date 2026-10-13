@@ -97,6 +97,24 @@
       }
     ]
   },
+  "inject": {
+    "sounds": [
+      {
+        "name": "breathless:inject",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.inject"
+  },
+  "buildup": {
+    "sounds": [
+      {
+        "name": "breathless:buildup",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.buildup"
+  },
   "popup_final": {
     "sounds": [
       {

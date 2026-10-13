@@ -1,6 +1,7 @@
 package com.kodari.breathless;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -49,6 +50,11 @@ public final class Masks {
 
    public static void playAt(Entity at, SoundEvent sound, float volume, float pitch) {
       at.level().playSound(null, at.blockPosition(), sound, SoundSource.PLAYERS, volume, pitch);
+   }
+
+   /** Plays a sound that stays glued to the player (centered, never panning, full volume wherever they walk). */
+   public static void playFollow(ServerPlayer player, SoundEvent sound, SoundSource source, float volume, float pitch) {
+      player.connection.send(new ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound), source, player, volume, pitch, player.getRandom().nextLong()));
    }
 
    /** Percent (0..100) for display. */

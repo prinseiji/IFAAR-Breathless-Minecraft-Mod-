@@ -23,6 +23,8 @@ public final class ModSounds {
    public static SoundEvent AMBIENCE_OPEN;
    public static SoundEvent POPUP_SPAM;
    public static SoundEvent POPUP_FINAL;
+   public static SoundEvent INJECT;
+   public static SoundEvent BUILDUP;
 
    private static SoundEvent reg(String name) {
       return Registry.register(BuiltInRegistries.SOUND_EVENT, Breathless.id(name), SoundEvent.createVariableRangeEvent(Breathless.id(name)));
@@ -43,5 +45,7 @@ public final class ModSounds {
       AMBIENCE_OPEN = reg("ambience_open");
       POPUP_SPAM = reg("popup_spam");
       POPUP_FINAL = reg("popup_final");
+      INJECT = reg("inject");
+      BUILDUP = reg("buildup");
    }
 }

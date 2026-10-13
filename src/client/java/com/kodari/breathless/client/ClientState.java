@@ -3,7 +3,9 @@ package com.kodari.breathless.client;
 import java.util.Random;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -43,7 +45,9 @@ public final class ClientState {
    private static final Random RNG = new Random();
    // Small cave-style floating motes, a bright blue so they read against the dark fog; and big soft mist puffs.
    private static final DustParticleOptions SPORE = new DustParticleOptions(0x3CCBFF, 0.3F);
-   private static final DustParticleOptions MIST = new DustParticleOptions(0x34C2F5, 3.4F);
+   private static final DustParticleOptions MIST = new DustParticleOptions(0x1F8FC4, 3.4F);
+   // The bright surface of the gas, right at Y=0.
+   private static final DustParticleOptions SURFACE = new DustParticleOptions(0x7BE3FF, 4.0F);
 
    static void startFiend(int seed) {
       fiendFrozen = exposure;
@@ -51,10 +55,19 @@ public final class ClientState {
       fiendTick = 0;
    }
 
-   /** The bar value to draw: frozen at the old value until the pop-ups lift. */
+   /** Progress (0..1) of the build-up: the bar drains and the pop-ups pile on during it. */
+   public static float buildupProgress() {
+      if (fiendTick < Tuning.BUILDUP_START_TICK) {
+         return 0.0F;
+      }
+      return Math.min(1.0F, (fiendTick - Tuning.BUILDUP_START_TICK) / (float)Tuning.BUILDUP_TICKS);
+   }
+
+   /** The bar value to draw: it slowly drains from the old value to empty while the pop-ups pile on, then the real value takes over. */
    public static float shownExposure() {
       if (fiendTick >= 0 && fiendTick < Tuning.POPUP_CLEAR_TICK) {
-         return fiendFrozen;
+         float p = buildupProgress();
+         return fiendFrozen * (1.0F - p * p * (3.0F - 2.0F * p));
       }
       return exposure;
    }
@@ -130,32 +143,49 @@ public final class ClientState {
             double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 22.0D;
             mc.level.addParticle(SPORE, x, y, z, (RNG.nextDouble() - 0.5D) * 0.02D, (RNG.nextDouble() - 0.5D) * 0.02D, (RNG.nextDouble() - 0.5D) * 0.02D);
          }
-         // With no working mask the spores come for you: they start close and are pulled to your face.
-         // (Dust particles keep only a tenth of the speed they are given, so the pull is big on purpose.)
+         // With no working mask the spores come for you. These are "fly toward a point" particles
+         // (like the ones around an enchanting table), so they really do stream into your face.
          if (!masked) {
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 7; i++) {
                double angle = RNG.nextDouble() * Math.PI * 2.0D;
-               double dist = 3.0D + RNG.nextDouble() * 6.0D;
-               double x = eye.x + Math.cos(angle) * dist;
-               double y = eye.y + (RNG.nextDouble() - 0.5D) * 4.0D;
-               double z = eye.z + Math.sin(angle) * dist;
-               Vec3 toward = eye.subtract(x, y, z);
-               double len = Math.max(0.5D, toward.length());
-               double pull = 0.9D;
-               mc.level.addParticle(SPORE, x, y, z, toward.x / len * pull, toward.y / len * pull, toward.z / len * pull);
+               double dist = 2.5D + RNG.nextDouble() * 4.5D;
+               double dx = Math.cos(angle) * dist;
+               double dy = (RNG.nextDouble() - 0.5D) * 3.0D;
+               double dz = Math.sin(angle) * dist;
+               mc.level.addParticle(ParticleTypes.NAUTILUS, eye.x, eye.y, eye.z, dx, dy, dz);
             }
          }
       }
 
-      // The mist sheet: a thick bright layer along the Y=0 line, thinning out downward, so the gas is visible from above too.
-      if (py < Tuning.HAZARD_Y + 20.0D && py > Tuning.HAZARD_Y - 40.0D) {
-         for (int i = 0; i < 22; i++) {
-            double x = mc.player.getX() + (RNG.nextDouble() - 0.5D) * 44.0D;
-            double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 44.0D;
-            double r = RNG.nextDouble();
-            double y = Tuning.HAZARD_Y - 0.2D - r * r * 5.0D;
-            mc.level.addParticle(MIST, x, y, z, (RNG.nextDouble() - 0.5D) * 0.02D, 0.0D, (RNG.nextDouble() - 0.5D) * 0.02D);
+      // The brine pool: a flat, bright, crisp surface exactly at Y=0 with sparse gas hanging below it.
+      // These particles are created directly so they can be held perfectly still (no drifting), which keeps the top edge sharp.
+      if (py < Tuning.HAZARD_Y + 24.0D && py > Tuning.HAZARD_Y - 40.0D) {
+         double px = mc.player.getX();
+         double pz = mc.player.getZ();
+         // The surface skin.
+         for (int i = 0; i < 46; i++) {
+            double x = px + (RNG.nextDouble() - 0.5D) * 40.0D;
+            double z = pz + (RNG.nextDouble() - 0.5D) * 40.0D;
+            double y = Tuning.HAZARD_Y - 0.04D - RNG.nextDouble() * 0.05D;
+            spawnStill(mc, SURFACE, x, y, z, 70);
          }
+         // The gas body under it: thinner, darker, hanging in the dark.
+         for (int i = 0; i < 10; i++) {
+            double x = px + (RNG.nextDouble() - 0.5D) * 40.0D;
+            double z = pz + (RNG.nextDouble() - 0.5D) * 40.0D;
+            double r = RNG.nextDouble();
+            double y = Tuning.HAZARD_Y - 0.8D - r * r * 6.0D;
+            spawnStill(mc, MIST, x, y, z, 90);
+         }
+      }
+   }
+
+   /** Spawns a particle that does not move and lives exactly this many ticks. */
+   private static void spawnStill(Minecraft mc, DustParticleOptions options, double x, double y, double z, int lifetime) {
+      Particle particle = mc.particleEngine.createParticle(options, x, y, z, 0.0D, 0.0D, 0.0D);
+      if (particle != null) {
+         particle.setParticleSpeed(0.0D, 0.0D, 0.0D);
+         particle.setLifetime(lifetime);
       }
    }
 }

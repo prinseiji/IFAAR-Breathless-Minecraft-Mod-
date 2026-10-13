@@ -25,3 +25,19 @@ Everything. See DEVELOPMENT.md.
 - Adrenaline Shot: IFAAR's rush only works at 0 exposure; with any exposure the shot is the F13ND cure.
 - FOUND the cause of the silent sounds: the mp3s had cover art, so the converted OGGs had a hidden video stream and Minecraft would not play them. All sounds re-converted without it, and raised in volume (several were very quiet).
 - Adrenaline cure: if the 4-heart hit is swallowed for any reason, health is taken directly; overlay message added.
+
+## Batch 3 (untested)
+- Ambience: now glued to you (centered, no panning, doesn't fall behind when you walk). Unmasked is loud (1.0), masked is muffled and quieter (0.55). Volumes in Tuning.
+- Sigh and spore-damage sounds quieter (0.6).
+- Taking a filter out of a mask now plays the same sound as putting one in.
+- Gauge smaller (0.30).
+- Y=0: a brine-pool surface. A flat, bright, perfectly still sheet of particles exactly on the line (they are held still so the edge stays sharp), with thinner darker gas hanging below it.
+- Unmasked spores: now "fly toward a point" particles (enchanting-table style) that stream into your face. Dust could not do it, it lived about half a second.
+- F13ND: pop-ups also cover the % label under the gauge, and narrow ones can't leave the bar peeking out. They now peel off one by one (newest first, one every 2 ticks) as the red vignette fades out, revealing the empty bar. Then a short pause, then the final pop-up.
+- New F13ND timeline (ticks, 20 = 1 s): first pop-up 4, last lands 37, peeling starts 50, bar empty at 74 (3.7 s), final pop-up at 90 (4.5 s), over at 145 (7.25 s). All in Tuning.
+
+## Batch 4 (untested, includes batch 3b)
+- New sounds: syringe injection (trimmed to its 2 s of real sound, replaces IFAAR's inject sound for the cure) and your 6.3 s build-up.
+- F13ND sequence rebuilt around the build-up: red flash + syringe at the injection; at 0.5 s the build-up sound starts together with the animated loading pop-up (middle of the screen); the cover pop-ups start slow and speed up; the bar slowly drains while the % number warbles; at 6.8 s the bar is empty and ALL pop-ups vanish at once while the red vignette fades out; short pause; final pop-up at 7.6 s; over at 10.35 s.
+- Loading pop-up: your GIF, 30 sampled frames in a sheet (textures/gui/popup_loading.png), one frame per 3 ticks.
+- Everything is in Tuning (BUILDUP_START_TICK, BUILDUP_TICKS, POPUP_SPEEDUP, WARBLE_PERCENT, volumes).

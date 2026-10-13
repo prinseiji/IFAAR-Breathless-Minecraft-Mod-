@@ -184,7 +184,7 @@ public final class Hazard {
             // Mask is on and the cure is already in the blood: purge now.
             exposure = Math.max(0.0F, exposure - purgeFor(rt.antidoteLevel));
             rt.antidoteTicks = 0;
-            Masks.playAt(player, ModSounds.SIGH_RELIEF, 1.0F, 1.0F);
+            Masks.playAt(player, ModSounds.SIGH_RELIEF, Tuning.SIGH_VOLUME, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          } else {
             if (!rt.wasCritical) {
@@ -195,7 +195,7 @@ public final class Hazard {
                rt.damageTimer = 0;
                float ramp = Math.min(1.0F, rt.critTicks / (float)(Tuning.DAMAGE_RAMP_SECONDS * 20));
                float damage = Tuning.DAMAGE_START + (Tuning.DAMAGE_MAX - Tuning.DAMAGE_START) * ramp;
-               Masks.playAt(player, ModSounds.SPORE_DAMAGE, 1.0F, 1.0F);
+               Masks.playAt(player, ModSounds.SPORE_DAMAGE, Tuning.DAMAGE_SOUND_VOLUME, 1.0F);
                if (!exempt) {
                   player.hurtServer(level, level.damageSources().drown(), damage);
                }
@@ -226,7 +226,7 @@ public final class Hazard {
          if (--rt.ambienceTimer <= 0 || rt.ambienceMuffled != maskOk) {
             rt.ambienceTimer = Tuning.AMBIENCE_TICKS;
             rt.ambienceMuffled = maskOk;
-            level.playSound(null, player.blockPosition(), maskOk ? ModSounds.AMBIENCE_MUFFLED : ModSounds.AMBIENCE_OPEN, SoundSource.AMBIENT, 0.8F, 1.0F);
+            Masks.playFollow(player, maskOk ? ModSounds.AMBIENCE_MUFFLED : ModSounds.AMBIENCE_OPEN, SoundSource.AMBIENT, maskOk ? Tuning.AMBIENCE_VOLUME_MASKED : Tuning.AMBIENCE_VOLUME_OPEN, 1.0F);
          }
       } else {
          rt.ambienceTimer = 0;
@@ -297,7 +297,7 @@ public final class Hazard {
    private static float onHealed(ServerPlayer player, Rt rt, float exposure, boolean maskOk, int level) {
       if (maskOk) {
          if (exposure > 0.0F) {
-            Masks.playAt(player, ModSounds.SIGH_RELIEF, 1.0F, 1.0F);
+            Masks.playAt(player, ModSounds.SIGH_RELIEF, Tuning.SIGH_VOLUME, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          }
          rt.antidoteTicks = 0;
@@ -331,14 +331,13 @@ public final class Hazard {
          stack.consume(1, player);
       }
       player.getCooldowns().addCooldown(cooldownStack, Tuning.ADRENALINE_COOLDOWN_TICKS);
-      ServerLevel level = (ServerLevel)player.level();
-      level.playSound(null, player.getX(), player.getY(), player.getZ(), CombatInjuries.ADRENALINE_INJECT, SoundSource.PLAYERS, 1.0F, 1.0F);
       startFiend(player, RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt()), true);
       return true;
    }
 
    private static void startFiend(ServerPlayer player, Rt rt, boolean realCure) {
       // The pop-up packet goes first so the client can freeze the bar at its old value before the reset arrives.
+      Masks.playFollow(player, ModSounds.INJECT, SoundSource.PLAYERS, Tuning.INJECT_VOLUME, 1.0F);
       if (Tuning.POPUPS_ENABLED) {
          rt.fiendTick = 0;
          ServerPlayNetworking.send(player, new FiendPayload(player.getRandom().nextInt()));
@@ -370,9 +369,13 @@ public final class Hazard {
          return;
       }
       int t = rt.fiendTick++;
-      int sinceFirst = t - Tuning.POPUP_FIRST_TICK;
-      if (sinceFirst >= 0 && sinceFirst % Tuning.POPUP_INTERVAL == 0 && sinceFirst / Tuning.POPUP_INTERVAL < Tuning.POPUP_COUNT) {
-         Masks.playAt(player, ModSounds.POPUP_SPAM, 1.0F, 0.9F + player.getRandom().nextFloat() * 0.3F);
+      if (t == Tuning.BUILDUP_START_TICK) {
+         Masks.playFollow(player, ModSounds.BUILDUP, SoundSource.PLAYERS, Tuning.BUILDUP_VOLUME, 1.0F);
+      }
+      for (int i = 0; i < Tuning.POPUP_COUNT; i++) {
+         if (t == Tuning.popupBornTick(i)) {
+            Masks.playAt(player, ModSounds.POPUP_SPAM, Tuning.POPUP_SPAM_VOLUME, 0.9F + player.getRandom().nextFloat() * 0.3F);
+         }
       }
       if (t == Tuning.POPUP_FINAL_TICK) {
          Masks.playAt(player, ModSounds.POPUP_FINAL, 1.0F, 1.0F);

@@ -54,19 +54,44 @@ public final class Tuning {
    /** Cooldown put on the Adrenaline Shot item after it is used as a cure. */
    public static final int ADRENALINE_COOLDOWN_TICKS = 100;
 
-   // ---- F13ND pop-up sequence (all in ticks, counted from the injection) ----
+   // ---- F13ND pop-up sequence (all in ticks, counted from the injection; 20 ticks = 1 second) ----
    /** Master switch. false = no pop-ups, the cure still works. */
    public static final boolean POPUPS_ENABLED = true;
-   /** How many cover pop-ups are thrown onto the bar, one every POPUP_INTERVAL ticks. */
+   /** Red flash on screen at the moment of the injection. */
+   public static final int FLASH_TICKS = 9;
+   /** The build-up sound and the loading pop-up start this many ticks after the injection. */
+   public static final int BUILDUP_START_TICK = 10;
+   /** Length of the build-up sound (6.3 s). The bar drains and the pop-ups pile on during exactly this time. */
+   public static final int BUILDUP_TICKS = 126;
+   /** How many cover pop-ups pile onto the bar. They start slow and speed up toward the end of the build-up. */
    public static final int POPUP_COUNT = 12;
-   public static final int POPUP_FIRST_TICK = 4;
-   public static final int POPUP_INTERVAL = 3;
-   /** Tick when all cover pop-ups vanish and the empty bar is revealed (and the red vignette stops). */
-   public static final int POPUP_CLEAR_TICK = POPUP_FIRST_TICK + POPUP_COUNT * POPUP_INTERVAL + 14;
+   public static final int POPUP_FIRST_TICK = BUILDUP_START_TICK + 6;
+   /** Tick when the last cover pop-up lands (the bar is completely covered). */
+   public static final int POPUP_LAST_TICK = BUILDUP_START_TICK + BUILDUP_TICKS - 14;
+   /** How strongly the pop-ups bunch up toward the end (1 = evenly spaced, higher = slower start, faster finish). */
+   public static final float POPUP_SPEEDUP = 1.6F;
+   /** Tick when the bar is empty: all cover pop-ups and the loading pop-up vanish at once. */
+   public static final int POPUP_CLEAR_TICK = BUILDUP_START_TICK + BUILDUP_TICKS;
+   /** The red vignette fades out over this many ticks, starting when the cover pop-ups vanish. */
+   public static final int VIGNETTE_FADEOUT_TICKS = 12;
+   /** The short pause (ticks) before the final pop-up. */
+   public static final int POPUP_PAUSE_TICKS = 16;
    /** Tick when the final "event run unsuccessful" pop-up appears (with a red flash). */
-   public static final int POPUP_FINAL_TICK = POPUP_CLEAR_TICK + 22;
+   public static final int POPUP_FINAL_TICK = POPUP_CLEAR_TICK + POPUP_PAUSE_TICKS;
    /** Tick when the final pop-up (and the flash) is gone. The whole sequence ends here. */
    public static final int POPUP_END_TICK = POPUP_FINAL_TICK + 55;
+   /** How far (in percent points) the % number warbles up and down while the bar drains. */
+   public static final int WARBLE_PERCENT = 10;
+   public static final float BUILDUP_VOLUME = 0.9F;
+   public static final float INJECT_VOLUME = 1.0F;
+   public static final float POPUP_SPAM_VOLUME = 0.6F;
+
+   /** The tick cover pop-up number i (0-based) lands on. Shared by the sounds (server) and the drawing (client). */
+   public static int popupBornTick(int i) {
+      float u = POPUP_COUNT <= 1 ? 0.0F : i / (float)(POPUP_COUNT - 1);
+      float eased = 1.0F - (float)Math.pow(1.0F - u, POPUP_SPEEDUP);
+      return POPUP_FIRST_TICK + Math.round((POPUP_LAST_TICK - POPUP_FIRST_TICK) * eased);
+   }
 
    // ---- Gas mask / filter ----
    /** Filter life units. One unit is used every DRAIN_INTERVAL_TICKS * 2 ticks (the two filters take turns). */
@@ -100,4 +125,11 @@ public final class Tuning {
 
    // ---- Ambience (server plays an 8 second chunk this often while below Y=0) ----
    public static final int AMBIENCE_TICKS = 154;
+   /** Open-air (no mask) is loud, behind a working mask it is muffled and quieter. */
+   public static final float AMBIENCE_VOLUME_OPEN = 1.0F;
+   public static final float AMBIENCE_VOLUME_MASKED = 0.55F;
+
+   // ---- Sound volumes ----
+   public static final float SIGH_VOLUME = 0.6F;
+   public static final float DAMAGE_SOUND_VOLUME = 0.6F;
 }
