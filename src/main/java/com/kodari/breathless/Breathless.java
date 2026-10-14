@@ -33,6 +33,7 @@ public class Breathless implements ModInitializer {
    @Override
    public void onInitialize() {
       ModSounds.register();
+      ModEffects.register();
       ModItems.register();
       PayloadTypeRegistry.clientboundPlay().register(ExposurePayload.TYPE, ExposurePayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(FiendPayload.TYPE, FiendPayload.CODEC);

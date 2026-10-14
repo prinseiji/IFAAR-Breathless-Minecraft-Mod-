@@ -31,8 +31,13 @@ public class BreathlessClient implements ClientModInitializer {
       HudElementRegistry.attachElementBefore(VanillaHudElements.MISC_OVERLAYS, Breathless.id("fog_and_mask"), SporeHud::renderFogAndMask);
       // The visible exposure gauge, with the F13ND pop-ups on top of it.
       HudElementRegistry.attachElementAfter(VanillaHudElements.INFO_BAR, Breathless.id("spore_meter"), SporeHud::renderMeter);
+      // Durability of the two filters, under the gauge.
+      HudElementRegistry.attachElementAfter(VanillaHudElements.INFO_BAR, Breathless.id("filter_meter"), SporeHud::renderFilters);
       // Critical state and the F13ND vignette: black fade, pulsing vignette, creeping veins. Drawn over the HUD, under chat.
       HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("spore_critical"), SporeHud::renderCritical);
+
+      // 5-L0's silent, stacked text. Over the black fade so it can still be seen.
+      HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("sloth_text"), SlothText::render);
 
       // Percentage lines under the item name.
       ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> addTooltip(stack, lines));

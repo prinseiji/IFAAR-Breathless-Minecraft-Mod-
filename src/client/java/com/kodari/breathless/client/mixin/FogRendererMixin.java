@@ -24,9 +24,9 @@ import com.kodari.breathless.client.ClientState;
  */
 @Mixin(FogRenderer.class)
 public abstract class FogRendererMixin {
-   /** The gas starts to show this many blocks above Y=0, and is at full strength 12 blocks lower. */
-   private static final double FADE_BLOCKS = 12.0D;
-   private static final double BLEED_ABOVE = 1.5D;
+   /** Right under Y=0 the air is already a little foggy (this share of full strength), building to full strength this many blocks lower. */
+   private static final double FADE_BLOCKS = 24.0D;
+   private static final double SURFACE_SHARE = 0.30D;
 
    @Inject(method = "setupFog", at = @At("RETURN"))
    private void breathless$sporeFog(Camera camera, int renderDistance, DeltaTracker tracker, float partialTick, ClientLevel level, CallbackInfoReturnable<FogData> cir) {
@@ -35,12 +35,17 @@ public abstract class FogRendererMixin {
          return;
       }
       double y = mc.player.getY();
-      double t = Mth.clamp((Tuning.HAZARD_Y + BLEED_ABOVE - y) / FADE_BLOCKS, 0.0D, 1.0D);
+      // A short ramp across the surface itself (no pop), then a slow build-up with depth.
+      double surface = Mth.clamp((Tuning.HAZARD_Y + 0.5D - y) / 1.0D, 0.0D, 1.0D);
+      surface = surface * surface * (3.0D - 2.0D * surface);
+      double deep = Mth.clamp((Tuning.HAZARD_Y - y) / FADE_BLOCKS, 0.0D, 1.0D);
+      deep = deep * deep * (3.0D - 2.0D * deep);
+      double t = surface * (SURFACE_SHARE + (1.0D - SURFACE_SHARE) * deep);
       if (t <= 0.0D) {
          return;
       }
       FogData fog = cir.getReturnValue();
-      float blend = (float)(t * t * (3.0D - 2.0D * t)); // smoothstep
+      float blend = (float)t;
       float depth = (float)Mth.clamp(-y / 64.0D, 0.0D, 1.0D);
 
       // Unmasked: 22 blocks of sight right under the line, thinning with depth, and closing in with exposure.

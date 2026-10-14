@@ -40,6 +40,10 @@ public final class ClientState {
    /** The crack stage that just appeared (1 or 2) while crackAnim runs. */
    public static int crackAnimStage;
    private static int lastStage;
+   /** Ticks left to keep showing the filter meter after a change (when not below Y=0). */
+   public static int filterShow;
+   private static int lastFirst;
+   private static int lastSecond;
    private static boolean lastHeadWasMask;
 
    private static final Random RNG = new Random();
@@ -47,7 +51,7 @@ public final class ClientState {
    private static final DustParticleOptions SPORE = new DustParticleOptions(0x3CCBFF, 0.3F);
    private static final DustParticleOptions MIST = new DustParticleOptions(0x1F8FC4, 3.4F);
    // The bright surface of the gas, right at Y=0.
-   private static final DustParticleOptions SURFACE = new DustParticleOptions(0x7BE3FF, 4.0F);
+   private static final DustParticleOptions SURFACE = new DustParticleOptions(0x7BE3FF, 5.0F);
 
    static void startFiend(int seed) {
       fiendFrozen = exposure;
@@ -118,6 +122,18 @@ public final class ClientState {
          crackAnim = CRACK_ANIM_TICKS;
          crackAnimStage = stage;
       }
+      // Show the filter meter for a while when a mask goes on or a filter goes in or out.
+      MaskFilters held = isMask ? Masks.getFilters(head) : MaskFilters.EMPTY;
+      boolean maskJustOn = isMask && !lastHeadWasMask;
+      boolean changed = Math.abs(held.first() - lastFirst) > 40 || Math.abs(held.second() - lastSecond) > 40
+         || (held.first() > 0) != (lastFirst > 0) || (held.second() > 0) != (lastSecond > 0);
+      if (isMask && (maskJustOn || changed)) {
+         filterShow = 160;
+      } else if (filterShow > 0) {
+         filterShow--;
+      }
+      lastFirst = held.first();
+      lastSecond = held.second();
       lastStage = stage;
       lastHeadWasMask = isMask;
       if (crackAnim > 0) {
@@ -125,6 +141,7 @@ public final class ClientState {
       }
 
       spawnParticles(mc);
+      SlothText.tick(mc);
    }
 
    private static void spawnParticles(Minecraft mc) {
@@ -145,14 +162,24 @@ public final class ClientState {
          }
          // With no working mask the spores come for you. These are "fly toward a point" particles
          // (like the ones around an enchanting table), so they really do stream into your face.
+         // They sink 1.2 blocks by the end of their flight, so the target is raised by that much to land on your head,
+         // and it is shifted ahead by your own movement so they keep up when you walk or run.
          if (!masked) {
-            for (int i = 0; i < 7; i++) {
+            Vec3 move = mc.player.getDeltaMovement();
+            int life = Tuning.SPORE_STREAM_TICKS;
+            double tx = eye.x + move.x * life * 0.8D;
+            double ty = eye.y + 1.2D;
+            double tz = eye.z + move.z * life * 0.8D;
+            for (int i = 0; i < 9; i++) {
                double angle = RNG.nextDouble() * Math.PI * 2.0D;
                double dist = 2.5D + RNG.nextDouble() * 4.5D;
                double dx = Math.cos(angle) * dist;
-               double dy = (RNG.nextDouble() - 0.5D) * 3.0D;
+               double dy = (RNG.nextDouble() - 0.5D) * 2.5D;
                double dz = Math.sin(angle) * dist;
-               mc.level.addParticle(ParticleTypes.NAUTILUS, eye.x, eye.y, eye.z, dx, dy, dz);
+               Particle particle = mc.particleEngine.createParticle(ParticleTypes.NAUTILUS, tx, ty, tz, dx, dy, dz);
+               if (particle != null) {
+                  particle.setLifetime(life + RNG.nextInt(4));
+               }
             }
          }
       }
@@ -163,18 +190,18 @@ public final class ClientState {
          double px = mc.player.getX();
          double pz = mc.player.getZ();
          // The surface skin.
-         for (int i = 0; i < 46; i++) {
-            double x = px + (RNG.nextDouble() - 0.5D) * 40.0D;
-            double z = pz + (RNG.nextDouble() - 0.5D) * 40.0D;
+         for (int i = 0; i < 70; i++) {
+            double x = px + (RNG.nextDouble() - 0.5D) * 44.0D;
+            double z = pz + (RNG.nextDouble() - 0.5D) * 44.0D;
             double y = Tuning.HAZARD_Y - 0.04D - RNG.nextDouble() * 0.05D;
-            spawnStill(mc, SURFACE, x, y, z, 70);
+            spawnStill(mc, SURFACE, x, y, z, 80);
          }
          // The gas body under it: thinner, darker, hanging in the dark.
-         for (int i = 0; i < 10; i++) {
-            double x = px + (RNG.nextDouble() - 0.5D) * 40.0D;
-            double z = pz + (RNG.nextDouble() - 0.5D) * 40.0D;
+         for (int i = 0; i < 22; i++) {
+            double x = px + (RNG.nextDouble() - 0.5D) * 44.0D;
+            double z = pz + (RNG.nextDouble() - 0.5D) * 44.0D;
             double r = RNG.nextDouble();
-            double y = Tuning.HAZARD_Y - 0.8D - r * r * 6.0D;
+            double y = Tuning.HAZARD_Y - 0.5D - r * r * 6.0D;
             spawnStill(mc, MIST, x, y, z, 90);
          }
       }

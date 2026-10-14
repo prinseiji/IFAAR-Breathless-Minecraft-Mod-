@@ -48,6 +48,7 @@ public final class Hazard {
       int ambienceTimer;
       boolean ambienceMuffled;
       int slowTimer;
+      int effectStage = -2;
       // F13ND pop-up sequence (-1 = not running); the server only schedules the sounds, the client draws it
       int fiendTick = -1;
    }
@@ -219,6 +220,18 @@ public final class Hazard {
          if (amplifier >= 0) {
             player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, amplifier, false, false));
          }
+      }
+
+      // 5b) The "Spore Exposure" marker effect: shown while the meter is above 0, wherever you are.
+      int stage = exposure > 0.001F ? Math.min(4, (int)(exposure / 25.0F)) : -1;
+      if (stage != rt.effectStage || (stage >= 0 && player.tickCount % 40 == 0)) {
+         if (stage != rt.effectStage) {
+            player.removeEffect(ModEffects.SPORE_EXPOSURE);
+         }
+         if (stage >= 0 && !player.isSpectator()) {
+            player.addEffect(new MobEffectInstance(ModEffects.SPORE_EXPOSURE, 100, stage, false, false, true));
+         }
+         rt.effectStage = stage;
       }
 
       // 6) Ambience while below Y=0 (muffled behind a working mask, open air without one)

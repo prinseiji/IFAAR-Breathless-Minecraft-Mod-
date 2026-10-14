@@ -130,6 +130,28 @@ public final class Tuning {
    public static final float AMBIENCE_VOLUME_MASKED = 0.55F;
 
    // ---- Sound volumes ----
-   public static final float SIGH_VOLUME = 0.6F;
+   public static final float SIGH_VOLUME = 0.35F;
    public static final float DAMAGE_SOUND_VOLUME = 0.6F;
+
+   /** How many ticks the unmasked spore streams take to reach your head (lower = faster, tighter following). */
+   public static final int SPORE_STREAM_TICKS = 14;
+
+   // ---- 5-L0 (SLOTH) text: silent, stacked letters that only appear while there is exposure in your head ----
+   /** Ticks a line takes to fade in, stay, and fade out. */
+   public static final int SLOTH_FADE_IN = 30;
+   public static final int SLOTH_HOLD = 55;
+   public static final int SLOTH_FADE_OUT = 40;
+   /** Minimum ticks between any two (non-purge) lines, so it never gets annoying. */
+   public static final int SLOTH_COOLDOWN_TICKS = 20 * 25;
+   /** Chance (0..1) that a trigger actually speaks. */
+   public static final float SLOTH_CHANCE_FIRST_CONTACT = 0.70F;
+   public static final float SLOTH_CHANCE_STAGE = 0.65F;
+   public static final float SLOTH_CHANCE_CRITICAL = 0.90F;
+   public static final float SLOTH_CHANCE_MASK_ON = 0.60F;
+   /** Per second, while sprinting with exposure. */
+   public static final float SLOTH_CHANCE_SPRINT = 0.06F;
+   /** Per second, while wearing a working mask with exposure. */
+   public static final float SLOTH_CHANCE_MASKED_IDLE = 0.015F;
+   /** Chance for a second line during a purge. The first one always comes. */
+   public static final float SLOTH_CHANCE_PURGE_SECOND = 0.40F;
 }

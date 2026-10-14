@@ -15,6 +15,8 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import com.kodari.breathless.MaskFilters;
+
 import com.kodari.breathless.Breathless;
 import com.kodari.breathless.Masks;
 import com.kodari.breathless.Tuning;
@@ -43,14 +45,14 @@ public final class SporeHud {
    private static final int POPUP_H = 83;
    private static final float POPUP_SCALE = 0.5F;
 
-   // The loading pop-up: 30 animation frames in a 6 x 5 sheet, each 184 x 134.
+   // The loading pop-up: 30 animation frames in a 6 x 5 sheet, each 110 x 80.
    private static final Identifier POPUP_LOADING = Breathless.id("textures/gui/popup_loading.png");
-   private static final int LOAD_W = 184;
-   private static final int LOAD_H = 134;
+   private static final int LOAD_W = 110;
+   private static final int LOAD_H = 80;
    private static final int LOAD_COLS = 6;
    private static final int LOAD_FRAMES = 30;
-   private static final int LOAD_SHEET_W = 1104;
-   private static final int LOAD_SHEET_H = 670;
+   private static final int LOAD_SHEET_W = 660;
+   private static final int LOAD_SHEET_H = 400;
    private static final int LOAD_TICKS_PER_FRAME = 3;
 
    // Gauge picture is 94x404; the dark tube inside it starts here.
@@ -138,6 +140,65 @@ public final class SporeHud {
       int dh = (int)(h * scale);
       int shake = (int)(4.0F * k) * ((ClientState.clock % 2 == 0) ? 1 : -1);
       g.blit(RenderPipelines.GUI_TEXTURED, texture, (w - dw) / 2 + shake, (h - dh) / 2 - shake, 0.0F, 0.0F, dw, dh, dw, dh);
+   }
+
+   // ---- filter durability meter (under the gauge, while a mask is worn) ----
+
+   private static final Identifier FILTER_ICONS = Breathless.id("textures/gui/filters.png");
+   /** The icons are your 16x16 art drawn at 2x. Cell = one icon. */
+   private static final int FILTER_CELL = 32;
+   private static final int FILTER_GAP = 6;
+   private static final int BAR_H = 6;
+
+   static void renderFilters(GuiGraphicsExtractor g, DeltaTracker tracker) {
+      Minecraft mc = Minecraft.getInstance();
+      LocalPlayer player = mc.player;
+      if (player == null || mc.level == null) {
+         return;
+      }
+      ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
+      if (!Masks.isMask(head) || !(Masks.isUnderground(player) || ClientState.filterShow > 0)) {
+         return;
+      }
+      if (ClientState.fiendTick >= 0) {
+         return;
+      }
+      MaskFilters filters = Masks.getFilters(head);
+      int gh = Math.round(GAUGE_H * GAUGE_SCALE);
+      int x0 = 6;
+      int y0 = g.guiHeight() / 2 - gh / 2 + gh + 18;
+      for (int slot = 0; slot < 2; slot++) {
+         int life = slot == 0 ? filters.first() : filters.second();
+         int cx = x0 + slot * (FILTER_CELL + FILTER_GAP);
+         if (life > 0) {
+            g.blit(RenderPipelines.GUI_TEXTURED, FILTER_ICONS, cx, y0, slot * 32.0F, 0.0F, FILTER_CELL, FILTER_CELL, 64, 64);
+         } else {
+            // an empty slot: just a faint outline
+            int o = 0x50A8C8D0;
+            g.fill(cx + 4, y0 + 4, cx + FILTER_CELL - 4, y0 + 5, o);
+            g.fill(cx + 4, y0 + FILTER_CELL - 5, cx + FILTER_CELL - 4, y0 + FILTER_CELL - 4, o);
+            g.fill(cx + 4, y0 + 4, cx + 5, y0 + FILTER_CELL - 4, o);
+            g.fill(cx + FILTER_CELL - 5, y0 + 4, cx + FILTER_CELL - 4, y0 + FILTER_CELL - 4, o);
+         }
+         int by = y0 + FILTER_CELL + 3;
+         g.fill(cx - 1, by - 1, cx + FILTER_CELL + 1, by + BAR_H + 1, 0xFF000000);
+         g.fill(cx, by, cx + FILTER_CELL, by + BAR_H, 0xFF272740);
+         float fr = life > 0 ? filters.fraction(slot) : 0.0F;
+         int fw = Math.round(FILTER_CELL * fr);
+         if (life > 0 && fw < 1) {
+            fw = 1;
+         }
+         int color = fr > Tuning.CRACK_STAGE_1 ? 0xFF4CD964 : (fr > Tuning.CRACK_STAGE_2 ? 0xFFE6C229 : 0xFFD93A3A);
+         if (life > 0 && fr <= Tuning.CRACK_STAGE_2 && (ClientState.clock / 6) % 2 == 0) {
+            color = 0xFFFF7070;
+         }
+         if (fw > 0) {
+            g.fill(cx, by, cx + fw, by + BAR_H, color);
+            g.fill(cx, by, cx + fw, by + 1, 0x55FFFFFF);
+         }
+         String label = Masks.percent(life) + "%";
+         g.text(mc.font, label, cx + FILTER_CELL / 2 - mc.font.width(label) / 2, by + BAR_H + 3, life > 0 ? color : 0xFF6A7A80);
+      }
    }
 
    // ---- exposure gauge + F13ND pop-ups ----

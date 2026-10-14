@@ -41,3 +41,13 @@ Everything. See DEVELOPMENT.md.
 - F13ND sequence rebuilt around the build-up: red flash + syringe at the injection; at 0.5 s the build-up sound starts together with the animated loading pop-up (middle of the screen); the cover pop-ups start slow and speed up; the bar slowly drains while the % number warbles; at 6.8 s the bar is empty and ALL pop-ups vanish at once while the red vignette fades out; short pause; final pop-up at 7.6 s; over at 10.35 s.
 - Loading pop-up: your GIF, 30 sampled frames in a sheet (textures/gui/popup_loading.png), one frame per 3 ticks.
 - Everything is in Tuning (BUILDUP_START_TICK, BUILDUP_TICKS, POPUP_SPEEDUP, WARBLE_PERCENT, volumes).
+
+## Batch 5 (untested)
+- Loading pop-up much smaller (110 x 80).
+- Fog: right under Y=0 the air is already a little foggy (30% strength) and builds to full over 24 blocks, instead of fading in over 12 blocks. The surface skin is denser and its particles bigger, so you can't see into it from above.
+- Spores: they were sinking 1.2 blocks at the end of their flight (that is built into this particle), so they landed on your legs. Target is now raised to your head, shifted ahead by your own movement, and the flight is shorter (Tuning.SPORE_STREAM_TICKS = 14) so they keep up when you run.
+- Sigh quieter (0.35). Filter removal still uses the insert sound until your unscrewing sound arrives.
+- NEW: "Spore Exposure" status effect (third-row, third heart). Shown whenever the meter is above 0, even outside the spores; level goes up every 25%. Re-applied every 2 s, so milk or /effect clear can't remove it without clearing the exposure.
+- NEW: filter durability meter under the gauge: your two filter icons drawn at 2x with a green/yellow/red bar and % under each. Shows while a mask is on and you are below Y=0, and for 8 s after a mask goes on or a filter goes in/out.
+- NEW: 5-L0 (SLOTH) text. Silent stacked letters in sculk blue that quiver every tick and fade in/out. Only while exposure is above 0. Lines: LEAVE (first contact / walking back down), BREATHE 25%, STAY STILL 50%, ALMOST 75%, JOIN US / DON'T RESIST at critical, TOO LATE / WE ARE STILL HERE / CLEVER with a mask on, LOUD / STOP / WALK / NOISE / QUIET while sprinting. Chance-based with a 25 s cooldown and no immediate repeats (all in Tuning). Multi-word lines are spread: one tower per word.
+- During a purge: one line from IT BURNS / THE FIEND / STOP / CHEATER / MINE / YOU (40% chance of a second), glitching from blue to red as the bar drains, on the right side of the screen, cut off when the bar is empty.
