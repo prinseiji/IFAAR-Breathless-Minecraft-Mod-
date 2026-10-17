@@ -167,9 +167,16 @@ public final class ClientState {
          if (!masked) {
             Vec3 move = mc.player.getDeltaMovement();
             int life = Tuning.SPORE_STREAM_TICKS;
-            double tx = eye.x + move.x * life * 0.8D;
-            double ty = eye.y + 1.2D;
-            double tz = eye.z + move.z * life * 0.8D;
+            // They converge on a point just in front of your face (so they never block your view), a little lower than the eyes,
+            // shifted ahead by your own movement so they keep up when you walk or run.
+            double yaw = Math.toRadians(mc.player.getYRot());
+            double pitch = Math.toRadians(mc.player.getXRot());
+            double fx = -Math.sin(yaw) * Math.cos(pitch);
+            double fy = -Math.sin(pitch);
+            double fz = Math.cos(yaw) * Math.cos(pitch);
+            double tx = eye.x + fx * 0.8D + move.x * life * 0.8D;
+            double ty = eye.y + fy * 0.8D - 0.1D + 1.2D;
+            double tz = eye.z + fz * 0.8D + move.z * life * 0.8D;
             for (int i = 0; i < 9; i++) {
                double angle = RNG.nextDouble() * Math.PI * 2.0D;
                double dist = 2.5D + RNG.nextDouble() * 4.5D;
@@ -189,8 +196,8 @@ public final class ClientState {
       if (py < Tuning.HAZARD_Y + 24.0D && py > Tuning.HAZARD_Y - 40.0D) {
          double px = mc.player.getX();
          double pz = mc.player.getZ();
-         // The surface skin.
-         for (int i = 0; i < 70; i++) {
+         // A light shimmer on the surface (the sheet itself is drawn by LevelSheet).
+         for (int i = 0; i < 12; i++) {
             double x = px + (RNG.nextDouble() - 0.5D) * 44.0D;
             double z = pz + (RNG.nextDouble() - 0.5D) * 44.0D;
             double y = Tuning.HAZARD_Y - 0.04D - RNG.nextDouble() * 0.05D;

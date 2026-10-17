@@ -51,3 +51,18 @@ Everything. See DEVELOPMENT.md.
 - NEW: filter durability meter under the gauge: your two filter icons drawn at 2x with a green/yellow/red bar and % under each. Shows while a mask is on and you are below Y=0, and for 8 s after a mask goes on or a filter goes in/out.
 - NEW: 5-L0 (SLOTH) text. Silent stacked letters in sculk blue that quiver every tick and fade in/out. Only while exposure is above 0. Lines: LEAVE (first contact / walking back down), BREATHE 25%, STAY STILL 50%, ALMOST 75%, JOIN US / DON'T RESIST at critical, TOO LATE / WE ARE STILL HERE / CLEVER with a mask on, LOUD / STOP / WALK / NOISE / QUIET while sprinting. Chance-based with a 25 s cooldown and no immediate repeats (all in Tuning). Multi-word lines are spread: one tower per word.
 - During a purge: one line from IT BURNS / THE FIEND / STOP / CHEATER / MINE / YOU (40% chance of a second), glitching from blue to red as the bar drains, on the right side of the screen, cut off when the bar is empty.
+
+## Batch 6 (untested)
+- Status effect icon bigger (the heart now fills the icon). Provisional name: "Calcification" (levels I-V).
+- Filter meter: smaller (your art at its own 16 px size), placed right next to the gauge, level with its middle, so it can never run off the bottom of the screen.
+- Loading pop-up: re-made from the GIF at 3x resolution (it was being shrunk too hard), and moved right and up, away from the cover pop-ups.
+- Spores now converge on a point just in front of your face (not above your head) so they never block your view; still lead your movement.
+- SLOTH purge text sits further right (80-96% of the screen width).
+
+## Batch 7 (untested)
+- Loading pop-up now uses your 4 static frames (loading. / .. / ... / ....) and cycles them like a GIF, one change every 7 ticks. Drawn at half size (103x42), same style as the cover pop-ups.
+
+## Batch 8 (untested)
+- **Real Y=0 sheet.** A flat, see-through, sculk-cyan sheet is now drawn exactly at Y=0 (new file `LevelSheet.java`, registered in `BreathlessClient`). It uses the game's own flat-quad drawing, as a tile grid around you that fades with distance so the edge melts away, and it shows from above and below. It is strongest when you are near the line and fainter further away. The surface dust is cut down to a light shimmer.
+- **SLOTH text now uses Minecraft's own font**, scaled up by whole numbers, with a soft glow. Quiver, chance rules and the blue-to-red purge glitch are unchanged.
+- This batch was checked against the real 26.1 game files (names and call shapes), but not run.

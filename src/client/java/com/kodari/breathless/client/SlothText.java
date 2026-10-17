@@ -1,13 +1,12 @@
 package com.kodari.breathless.client;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.EquipmentSlot;
 
@@ -19,7 +18,7 @@ import com.kodari.breathless.Tuning;
  * while the exposure meter is above 0. The letters are stacked on top of each other like a tower, quiver in place,
  * and fade in and out in sculk blue. During a F13ND purge the letters glitch from blue to red as the spores burn away.
  *
- * Everything is drawn with filled squares from a built-in 5x7 pixel font, so no font file is needed.
+ * Drawn with Minecraft's own font, scaled up by whole numbers.
  */
 public final class SlothText {
    private SlothText() {
@@ -189,7 +188,7 @@ public final class SlothText {
          float xf;
          if (purge) {
             // Keep to the right side; the pop-ups are on the left and the loading box is in the middle.
-            xf = 0.66F + 0.28F * ((i + 0.2F + r.nextFloat() * 0.6F) / n);
+            xf = 0.80F + 0.16F * ((i + 0.2F + r.nextFloat() * 0.6F) / n);
          } else if (n == 1) {
             xf = r.nextBoolean() ? 0.07F + r.nextFloat() * 0.16F : 0.77F + r.nextFloat() * 0.16F;
          } else {
@@ -249,11 +248,8 @@ public final class SlothText {
 
    private static void drawTower(GuiGraphicsExtractor g, Tower t, int cx, int top, int k, float alpha, float purgeProgress) {
       String word = t.word();
+      Font font = Minecraft.getInstance().font;
       for (int i = 0; i < word.length(); i++) {
-         String[] rows = FONT.get(word.charAt(i));
-         if (rows == null) {
-            continue;
-         }
          // Frantic quivering: every letter jumps a little every single tick.
          Random q = new Random(t.seed() * 131L + clock * 7L + i * 31L);
          int amp = Math.max(1, k);
@@ -268,22 +264,30 @@ public final class SlothText {
             }
             color = lerpColor(CYAN, RED, mix);
          }
-         int x0 = cx - (5 * k) / 2 + jx;
-         int y0 = top + i * 9 * k + jy;
-         for (int ry = 0; ry < 7; ry++) {
-            String row = rows[ry];
-            for (int rx = 0; rx < 5; rx++) {
-               if (row.charAt(rx) != '#') {
-                  continue;
-               }
-               int px = x0 + rx * k;
-               int py = y0 + ry * k;
-               // soft glow, then the bright core
-               g.fill(px - 1, py - 1, px + k + 1, py + k + 1, argb((int)(40.0F * alpha), color));
-               g.fill(px, py, px + k, py + k, argb((int)(235.0F * alpha), color));
-            }
+         // Minecraft's own font, scaled up by whole numbers so the letters stay crisp and blocky.
+         String ch = String.valueOf(word.charAt(i));
+         float gw = font.width(ch) * (float)k;
+         float x0 = cx - gw / 2.0F + jx;
+         float y0 = top + i * 9 * k + jy;
+         // A soft glow (four faint copies a pixel away), then the bright core.
+         int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+         for (int[] o : offsets) {
+            drawLetter(g, font, ch, x0 + o[0], y0 + o[1], k, argb((int)(46.0F * alpha), color));
          }
+         drawLetter(g, font, ch, x0, y0, k, argb((int)(240.0F * alpha), color));
       }
+   }
+
+   private static void drawLetter(GuiGraphicsExtractor g, Font font, String ch, float x, float y, int k, int color) {
+      // The game treats a nearly-invisible text colour as fully solid, so skip anything that faint.
+      if ((color >>> 24) < 8) {
+         return;
+      }
+      g.pose().pushMatrix();
+      g.pose().translate(x, y);
+      g.pose().scale((float)k, (float)k);
+      g.text(font, ch, 0, 0, color, false);
+      g.pose().popMatrix();
    }
 
    private static int lerpColor(int a, int b, float t) {
@@ -301,45 +305,5 @@ public final class SlothText {
    private static float smooth(float t) {
       float c = Math.max(0.0F, Math.min(1.0F, t));
       return c * c * (3.0F - 2.0F * c);
-   }
-
-   // ---------------------------------------------------------------- the 5x7 font
-
-   private static final Map<Character, String[]> FONT = new HashMap<>();
-
-   private static void glyph(char c, String... rows) {
-      FONT.put(c, rows);
-   }
-
-   static {
-      glyph('A', ".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#");
-      glyph('B', "####.", "#...#", "#...#", "####.", "#...#", "#...#", "####.");
-      glyph('C', ".####", "#....", "#....", "#....", "#....", "#....", ".####");
-      glyph('D', "####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####.");
-      glyph('E', "#####", "#....", "#....", "####.", "#....", "#....", "#####");
-      glyph('F', "#####", "#....", "#....", "####.", "#....", "#....", "#....");
-      glyph('G', ".####", "#....", "#....", "#..##", "#...#", "#...#", ".###.");
-      glyph('H', "#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#");
-      glyph('I', "#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####");
-      glyph('J', "..###", "...#.", "...#.", "...#.", "...#.", "#..#.", ".##..");
-      glyph('K', "#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#");
-      glyph('L', "#....", "#....", "#....", "#....", "#....", "#....", "#####");
-      glyph('M', "#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#");
-      glyph('N', "#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#", "#...#");
-      glyph('O', ".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###.");
-      glyph('P', "####.", "#...#", "#...#", "####.", "#....", "#....", "#....");
-      glyph('Q', ".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#");
-      glyph('R', "####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#");
-      glyph('S', ".####", "#....", "#....", ".###.", "....#", "....#", "####.");
-      glyph('T', "#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#..");
-      glyph('U', "#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###.");
-      glyph('V', "#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#..");
-      glyph('W', "#...#", "#...#", "#...#", "#.#.#", "#.#.#", "##.##", "#...#");
-      glyph('X', "#...#", "#...#", ".#.#.", "..#..", ".#.#.", "#...#", "#...#");
-      glyph('Y', "#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#..");
-      glyph('Z', "#####", "....#", "...#.", "..#..", ".#...", "#....", "#####");
-      glyph('\'', "..#..", "..#..", ".#...", ".....", ".....", ".....", ".....");
-      glyph('!', "..#..", "..#..", "..#..", "..#..", "..#..", ".....", "..#..");
-      glyph('?', ".###.", "#...#", "....#", "...#.", "..#..", ".....", "..#..");
    }
 }

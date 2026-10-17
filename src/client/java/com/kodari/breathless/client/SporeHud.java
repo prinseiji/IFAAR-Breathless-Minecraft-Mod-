@@ -45,15 +45,15 @@ public final class SporeHud {
    private static final int POPUP_H = 83;
    private static final float POPUP_SCALE = 0.5F;
 
-   // The loading pop-up: 30 animation frames in a 6 x 5 sheet, each 110 x 80.
+   // The loading pop-up: 4 frames in a row (loading. / .. / ... / ....), each 206 x 84
+   // in the real picture, drawn at half size (103 x 42) like the cover pop-ups.
    private static final Identifier POPUP_LOADING = Breathless.id("textures/gui/popup_loading.png");
-   private static final int LOAD_W = 110;
-   private static final int LOAD_H = 80;
-   private static final int LOAD_COLS = 6;
-   private static final int LOAD_FRAMES = 30;
-   private static final int LOAD_SHEET_W = 660;
-   private static final int LOAD_SHEET_H = 400;
-   private static final int LOAD_TICKS_PER_FRAME = 3;
+   private static final int LOAD_W = 103;
+   private static final int LOAD_H = 42;
+   private static final int LOAD_FRAMES = 4;
+   private static final int LOAD_SHEET_W = 412;
+   private static final int LOAD_SHEET_H = 42;
+   private static final int LOAD_TICKS_PER_FRAME = 7;
 
    // Gauge picture is 94x404; the dark tube inside it starts here.
    private static final int GAUGE_W = 94;
@@ -145,10 +145,11 @@ public final class SporeHud {
    // ---- filter durability meter (under the gauge, while a mask is worn) ----
 
    private static final Identifier FILTER_ICONS = Breathless.id("textures/gui/filters.png");
-   /** The icons are your 16x16 art drawn at 2x. Cell = one icon. */
-   private static final int FILTER_CELL = 32;
-   private static final int FILTER_GAP = 6;
+   /** Your 16x16 filter art, drawn at its own size. */
+   private static final int FILTER_ICON = 16;
+   private static final int BAR_W = 30;
    private static final int BAR_H = 6;
+   private static final int FILTER_ROW = 20;
 
    static void renderFilters(GuiGraphicsExtractor g, DeltaTracker tracker) {
       Minecraft mc = Minecraft.getInstance();
@@ -164,27 +165,30 @@ public final class SporeHud {
          return;
       }
       MaskFilters filters = Masks.getFilters(head);
+      // Right next to the gauge, level with its middle, so it can never run off the bottom of the screen.
+      int gw = Math.round(GAUGE_W * GAUGE_SCALE);
       int gh = Math.round(GAUGE_H * GAUGE_SCALE);
-      int x0 = 6;
-      int y0 = g.guiHeight() / 2 - gh / 2 + gh + 18;
+      int x0 = 6 + gw + 4;
+      int y0 = g.guiHeight() / 2 - FILTER_ROW;
       for (int slot = 0; slot < 2; slot++) {
          int life = slot == 0 ? filters.first() : filters.second();
-         int cx = x0 + slot * (FILTER_CELL + FILTER_GAP);
+         int iy = y0 + slot * FILTER_ROW;
          if (life > 0) {
-            g.blit(RenderPipelines.GUI_TEXTURED, FILTER_ICONS, cx, y0, slot * 32.0F, 0.0F, FILTER_CELL, FILTER_CELL, 64, 64);
+            g.blit(RenderPipelines.GUI_TEXTURED, FILTER_ICONS, x0, iy, slot * 16.0F, 0.0F, FILTER_ICON, FILTER_ICON, 32, 32);
          } else {
             // an empty slot: just a faint outline
             int o = 0x50A8C8D0;
-            g.fill(cx + 4, y0 + 4, cx + FILTER_CELL - 4, y0 + 5, o);
-            g.fill(cx + 4, y0 + FILTER_CELL - 5, cx + FILTER_CELL - 4, y0 + FILTER_CELL - 4, o);
-            g.fill(cx + 4, y0 + 4, cx + 5, y0 + FILTER_CELL - 4, o);
-            g.fill(cx + FILTER_CELL - 5, y0 + 4, cx + FILTER_CELL - 4, y0 + FILTER_CELL - 4, o);
+            g.fill(x0 + 2, iy + 2, x0 + FILTER_ICON - 2, iy + 3, o);
+            g.fill(x0 + 2, iy + FILTER_ICON - 3, x0 + FILTER_ICON - 2, iy + FILTER_ICON - 2, o);
+            g.fill(x0 + 2, iy + 2, x0 + 3, iy + FILTER_ICON - 2, o);
+            g.fill(x0 + FILTER_ICON - 3, iy + 2, x0 + FILTER_ICON - 2, iy + FILTER_ICON - 2, o);
          }
-         int by = y0 + FILTER_CELL + 3;
-         g.fill(cx - 1, by - 1, cx + FILTER_CELL + 1, by + BAR_H + 1, 0xFF000000);
-         g.fill(cx, by, cx + FILTER_CELL, by + BAR_H, 0xFF272740);
+         int bx = x0 + FILTER_ICON + 3;
+         int by = iy + 5;
+         g.fill(bx - 1, by - 1, bx + BAR_W + 1, by + BAR_H + 1, 0xFF000000);
+         g.fill(bx, by, bx + BAR_W, by + BAR_H, 0xFF272740);
          float fr = life > 0 ? filters.fraction(slot) : 0.0F;
-         int fw = Math.round(FILTER_CELL * fr);
+         int fw = Math.round(BAR_W * fr);
          if (life > 0 && fw < 1) {
             fw = 1;
          }
@@ -193,11 +197,10 @@ public final class SporeHud {
             color = 0xFFFF7070;
          }
          if (fw > 0) {
-            g.fill(cx, by, cx + fw, by + BAR_H, color);
-            g.fill(cx, by, cx + fw, by + 1, 0x55FFFFFF);
+            g.fill(bx, by, bx + fw, by + BAR_H, color);
+            g.fill(bx, by, bx + fw, by + 1, 0x55FFFFFF);
          }
-         String label = Masks.percent(life) + "%";
-         g.text(mc.font, label, cx + FILTER_CELL / 2 - mc.font.width(label) / 2, by + BAR_H + 3, life > 0 ? color : 0xFF6A7A80);
+         g.text(mc.font, Masks.percent(life) + "%", bx + BAR_W + 4, iy + 4, life > 0 ? color : 0xFF6A7A80);
       }
    }
 
@@ -266,9 +269,9 @@ public final class SporeHud {
          // The loading pop-up sits in the middle of the screen for the whole build-up.
          if (t >= Tuning.BUILDUP_START_TICK) {
             int frame = ((t - Tuning.BUILDUP_START_TICK) / LOAD_TICKS_PER_FRAME) % LOAD_FRAMES;
-            float u = (frame % LOAD_COLS) * LOAD_W;
-            float v = (frame / LOAD_COLS) * LOAD_H;
-            g.blit(RenderPipelines.GUI_TEXTURED, POPUP_LOADING, Math.round(screenW / 2.0F - LOAD_W / 2.0F), Math.round(screenH / 2.0F - LOAD_H / 2.0F), u, v, LOAD_W, LOAD_H, LOAD_SHEET_W, LOAD_SHEET_H);
+            float u = frame * LOAD_W;
+            float v = 0;
+            g.blit(RenderPipelines.GUI_TEXTURED, POPUP_LOADING, Math.round(screenW * 0.60F - LOAD_W / 2.0F), Math.round(screenH * 0.40F - LOAD_H / 2.0F), u, v, LOAD_W, LOAD_H, LOAD_SHEET_W, LOAD_SHEET_H);
          }
          Random rnd = new Random(ClientState.fiendSeed);
          List<Integer> kinds = new ArrayList<>();

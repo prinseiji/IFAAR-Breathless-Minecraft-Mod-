@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -38,6 +39,9 @@ public class BreathlessClient implements ClientModInitializer {
 
       // 5-L0's silent, stacked text. Over the black fade so it can still be seen.
       HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("sloth_text"), SlothText::render);
+
+      // The flat, see-through sheet of gas at Y=0.
+      LevelRenderEvents.BEFORE_GIZMOS.register(LevelSheet::render);
 
       // Percentage lines under the item name.
       ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> addTooltip(stack, lines));
