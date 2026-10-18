@@ -4,10 +4,19 @@
     "property": "minecraft:display_context",
     "cases": [
       {
-        "when": ["gui", "fixed"],
-        "model": { "type": "minecraft:model", "model": "breathless:item/gas_mask_empty" }
+        "when": [
+          "gui",
+          "fixed"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "breathless:item/gas_mask_empty"
+        }
       }
     ],
-    "fallback": { "type": "minecraft:model", "model": "breathless:item/gas_mask_worn" }
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "breathless:item/gas_mask_worn_empty"
+    }
   }
 }

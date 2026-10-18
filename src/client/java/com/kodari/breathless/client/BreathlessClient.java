@@ -6,6 +6,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
@@ -19,6 +20,7 @@ import com.kodari.breathless.FiendPayload;
 import com.kodari.breathless.MaskFilters;
 import com.kodari.breathless.Masks;
 import com.kodari.breathless.ModItems;
+import com.kodari.breathless.ModParticles;
 import com.kodari.breathless.Tuning;
 
 public class BreathlessClient implements ClientModInitializer {
@@ -40,6 +42,10 @@ public class BreathlessClient implements ClientModInitializer {
       // 5-L0's silent, stacked text. Over the black fade so it can still be seen.
       HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("sloth_text"), SlothText::render);
 
+      // The teal eyes (hanging in the air, and the ones that rush at your face).
+      ParticleProviderRegistry.getInstance().register(ModParticles.SPORE_EYE, EyeParticle.SuspendProvider::new);
+      ParticleProviderRegistry.getInstance().register(ModParticles.SPORE_EYE_SURGE, EyeParticle.SurgeProvider::new);
+
       // The flat, see-through sheet of gas at Y=0.
       LevelRenderEvents.BEFORE_GIZMOS.register(LevelSheet::render);
 
@@ -56,10 +62,18 @@ public class BreathlessClient implements ClientModInitializer {
 
    private static void addTooltip(ItemStack stack, List<Component> lines) {
       int at = Math.min(1, lines.size());
-      if (stack.is(ModItems.GAS_MASK_FILTER)) {
+      if (ModItems.isFilter(stack)) {
          int percent = Masks.percent(Tuning.FILTER_MAX - stack.getDamageValue());
-         lines.add(at, Component.translatable("breathless.tooltip.filter_life", percent).withStyle(colorFor(percent)));
+         lines.add(at++, Component.translatable("breathless.tooltip.filter_life", percent).withStyle(colorFor(percent)));
+         if (stack.is(ModItems.GAS_MASK_FILTER_REINFORCED)) {
+            lines.add(at, Component.translatable("breathless.tooltip.filter_reinforced").withStyle(ChatFormatting.LIGHT_PURPLE));
+         }
+      } else if (stack.is(ModItems.TONIC_LESSER) || stack.is(ModItems.TONIC_STRONG)) {
+         lines.add(at, Component.translatable("breathless.tooltip.tonic").withStyle(ChatFormatting.DARK_GRAY));
       } else if (Masks.isMask(stack)) {
+         if (ModItems.isNightVision(stack)) {
+            lines.add(at++, Component.translatable("breathless.tooltip.nv").withStyle(ChatFormatting.GREEN));
+         }
          MaskFilters filters = Masks.getFilters(stack);
          Component header = Component.translatable("breathless.tooltip.filters", filters.count(), 2)
             .withStyle(filters.working() ? ChatFormatting.GRAY : ChatFormatting.RED);
@@ -68,7 +82,7 @@ public class BreathlessClient implements ClientModInitializer {
             int life = slot == 0 ? filters.first() : filters.second();
             if (life > 0) {
                int percent = Masks.percent(life);
-               lines.add(at++, Component.translatable("breathless.tooltip.filter_slot", slot + 1, percent).withStyle(colorFor(percent)));
+               lines.add(at++, Component.translatable("breathless.tooltip.filter_slot", slot + 1, percent).withStyle(filters.reinforced(slot) ? ChatFormatting.LIGHT_PURPLE : colorFor(percent)));
             } else {
                lines.add(at++, Component.translatable("breathless.tooltip.filter_empty", slot + 1).withStyle(ChatFormatting.DARK_GRAY));
             }

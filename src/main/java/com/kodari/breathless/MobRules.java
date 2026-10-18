@@ -87,7 +87,7 @@ public final class MobRules {
          }
          MaskFilters filters = Masks.getFilters(head);
          int wear = Math.max(1, Math.round(damageTaken * Tuning.ZOMBIE_MASK_WEAR_PER_DAMAGE));
-         MaskFilters worn = new MaskFilters(Math.max(0, filters.first() - wear), Math.max(0, filters.second() - wear));
+         MaskFilters worn = filters.withLife(Math.max(0, filters.first() - wear), Math.max(0, filters.second() - wear));
          if (!worn.working()) {
             // The mask gives out: from now on this zombie breathes spores like everyone else.
             mob.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
@@ -141,7 +141,7 @@ public final class MobRules {
       if (roll < Tuning.ZOMBIE_DROP_MASK) {
          drop = head.copy();
       } else if (roll < Tuning.ZOMBIE_DROP_MASK + Tuning.ZOMBIE_DROP_FILTER && filters.count() > 0) {
-         drop = ModItems.filterWith(filters.lastLife());
+         drop = ModItems.filterWith(filters.lastLife(), filters.lastReinforced());
       }
       // Clear the slot so vanilla's own equipment drop cannot give a second copy.
       zombie.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);

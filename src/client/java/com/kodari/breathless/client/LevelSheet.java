@@ -20,8 +20,8 @@ final class LevelSheet {
 
    private static final int TILE = 4;
    private static final int RADIUS_TILES = 10;
-   private static final int COLOR = 0x7BE3FF;
-   private static final float MAX_ALPHA = 0.30F;
+   private static final int COLOR = 0x29DFEB;
+   private static final float MAX_ALPHA = 0.45F;
 
    static void render(LevelRenderContext context) {
       Minecraft mc = Minecraft.getInstance();

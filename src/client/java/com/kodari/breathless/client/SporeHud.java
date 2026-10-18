@@ -145,11 +145,13 @@ public final class SporeHud {
    // ---- filter durability meter (under the gauge, while a mask is worn) ----
 
    private static final Identifier FILTER_ICONS = Breathless.id("textures/gui/filters.png");
+   /** Same layout, purple band: used for reinforced filters. */
+   private static final Identifier FILTER_ICONS_REINFORCED = Breathless.id("textures/gui/filters_reinforced.png");
    /** Your 16x16 filter art, drawn at its own size. */
    private static final int FILTER_ICON = 16;
    private static final int BAR_W = 30;
    private static final int BAR_H = 6;
-   private static final int FILTER_ROW = 20;
+   private static final int FILTER_ROW = 18;
 
    static void renderFilters(GuiGraphicsExtractor g, DeltaTracker tracker) {
       Minecraft mc = Minecraft.getInstance();
@@ -165,16 +167,14 @@ public final class SporeHud {
          return;
       }
       MaskFilters filters = Masks.getFilters(head);
-      // Right next to the gauge, level with its middle, so it can never run off the bottom of the screen.
-      int gw = Math.round(GAUGE_W * GAUGE_SCALE);
-      int gh = Math.round(GAUGE_H * GAUGE_SCALE);
-      int x0 = 6 + gw + 4;
-      int y0 = g.guiHeight() / 2 - FILTER_ROW;
+      // In the bottom-left corner of the screen.
+      int x0 = 6;
+      int y0 = g.guiHeight() - 4 - FILTER_ROW * 2;
       for (int slot = 0; slot < 2; slot++) {
          int life = slot == 0 ? filters.first() : filters.second();
          int iy = y0 + slot * FILTER_ROW;
          if (life > 0) {
-            g.blit(RenderPipelines.GUI_TEXTURED, FILTER_ICONS, x0, iy, slot * 16.0F, 0.0F, FILTER_ICON, FILTER_ICON, 32, 32);
+            g.blit(RenderPipelines.GUI_TEXTURED, filters.reinforced(slot) ? FILTER_ICONS_REINFORCED : FILTER_ICONS, x0, iy, slot * 16.0F, 0.0F, FILTER_ICON, FILTER_ICON, 32, 32);
          } else {
             // an empty slot: just a faint outline
             int o = 0x50A8C8D0;

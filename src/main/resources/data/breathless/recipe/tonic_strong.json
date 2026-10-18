@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:honey_bottle",
+    "minecraft:lily_of_the_valley",
+    "minecraft:lily_of_the_valley",
+    "minecraft:oxeye_daisy"
+  ],
+  "result": {
+    "id": "breathless:tonic_strong"
+  }
+}

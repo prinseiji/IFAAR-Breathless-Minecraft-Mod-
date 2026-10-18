@@ -43,7 +43,12 @@ public final class Hazard {
       int drinkLevel = -1;
       int pendingLevel = -1;
       int drinkRemaining;
-      int antidoteLevel;
+      float antidotePurge;
+      // sculk nearby (0..3), re-scanned about once a second
+      int sculkTier;
+      int sculkTimer;
+      // the night vision mask lens is currently giving night vision
+      boolean nvOn;
       // ambience / warnings
       int ambienceTimer;
       boolean ambienceMuffled;
@@ -157,10 +162,21 @@ public final class Hazard {
       }
       if (healLevel >= 0 && rt.healCooldown <= 0) {
          rt.healCooldown = 10;
-         exposure = onHealed(player, rt, exposure, maskOk, healLevel);
+         exposure = onHealed(player, rt, exposure, maskOk, purgeFor(healLevel));
       }
       if (rt.antidoteTicks > 0) {
          rt.antidoteTicks--;
+      }
+
+      // 1b) How much sculk the spores can reach around the player (about once a second)
+      if (!exempt && underground) {
+         if (--rt.sculkTimer <= 0) {
+            rt.sculkTimer = 20;
+            rt.sculkTier = SculkScan.tier(SculkScan.score(player));
+         }
+      } else {
+         rt.sculkTier = 0;
+         rt.sculkTimer = 0;
       }
 
       // 2) Rising (only below Y=0 with no working mask)
@@ -169,12 +185,13 @@ public final class Hazard {
          if (player.isSprinting() || !player.onGround()) {
             rate *= Tuning.ACTIVE_MULTIPLIER;
          }
+         rate *= Tuning.SCULK_FILL[rt.sculkTier];
          exposure = Math.min(100.0F, exposure + rate);
       }
 
       // 3) The filters wear down while the mask is doing its job
       if (!exempt && underground && maskOk && player.tickCount % Tuning.DRAIN_INTERVAL_TICKS == 0) {
-         Masks.drainFilter(player, player.isSprinting() ? Tuning.SPRINT_DRAIN : 1);
+         Masks.drainFilter(player, (player.isSprinting() ? Tuning.SPRINT_DRAIN : 1) * Tuning.SCULK_DRAIN[rt.sculkTier]);
          maskOk = Masks.hasWorkingMask(player);
       }
 
@@ -183,7 +200,7 @@ public final class Hazard {
       if (critical) {
          if (maskOk && rt.antidoteTicks > 0) {
             // Mask is on and the cure is already in the blood: purge now.
-            exposure = Math.max(0.0F, exposure - purgeFor(rt.antidoteLevel));
+            exposure = Math.max(0.0F, exposure - rt.antidotePurge);
             rt.antidoteTicks = 0;
             Masks.playAt(player, ModSounds.SIGH_RELIEF, Tuning.SIGH_VOLUME, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
@@ -222,16 +239,37 @@ public final class Hazard {
          }
       }
 
-      // 5b) The "Spore Exposure" marker effect: shown while the meter is above 0, wherever you are.
+      // 5b) The "Stagnation" marker effect: shown while the meter is above 0, wherever you are.
+      //     Next to heavy sculk (tier 3) it is shown as "Moribund" instead.
+      boolean moribund = rt.sculkTier >= 3;
       int stage = exposure > 0.001F ? Math.min(4, (int)(exposure / 25.0F)) : -1;
-      if (stage != rt.effectStage || (stage >= 0 && player.tickCount % 40 == 0)) {
-         if (stage != rt.effectStage) {
+      int effectKey = stage < 0 ? -1 : stage + (moribund ? 10 : 0);
+      if (effectKey != rt.effectStage || (stage >= 0 && player.tickCount % 40 == 0)) {
+         if (effectKey != rt.effectStage) {
             player.removeEffect(ModEffects.SPORE_EXPOSURE);
+            player.removeEffect(ModEffects.MORIBUND);
          }
          if (stage >= 0 && !player.isSpectator()) {
-            player.addEffect(new MobEffectInstance(ModEffects.SPORE_EXPOSURE, 100, stage, false, false, true));
+            player.addEffect(new MobEffectInstance(moribund ? ModEffects.MORIBUND : ModEffects.SPORE_EXPOSURE, 100, stage, false, false, true));
          }
-         rt.effectStage = stage;
+         rt.effectStage = effectKey;
+      }
+
+      // 5c) The night vision lens: hidden night vision below Y=0 while wearing a night vision mask.
+      ItemStack headItem = player.getItemBySlot(EquipmentSlot.HEAD);
+      boolean wantNv = !player.isSpectator() && underground && ModItems.isNightVision(headItem);
+      if (wantNv) {
+         if (!rt.nvOn || player.tickCount % 40 == 0) {
+            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 400, 0, false, false, false));
+         }
+         rt.nvOn = true;
+      } else if (rt.nvOn) {
+         rt.nvOn = false;
+         MobEffectInstance current = player.getEffect(MobEffects.NIGHT_VISION);
+         // Only take away the hidden one we gave, never a real potion.
+         if (current != null && !current.isVisible() && current.getDuration() <= 400) {
+            player.removeEffect(MobEffects.NIGHT_VISION);
+         }
       }
 
       // 6) Ambience while below Y=0 (muffled behind a working mask, open air without one)
@@ -302,23 +340,36 @@ public final class Hazard {
       return level == 1 ? Tuning.PURGE_LEVEL_2 : Tuning.PURGE_LEVEL_3;
    }
 
+   /** Called by TonicItem when a spore tonic is drunk. Works like an Instant Health potion with this purge amount. */
+   public static void applyTonic(ServerPlayer player, float purge) {
+      Rt rt = RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt());
+      float exposure = getExposure(player);
+      boolean maskOk = Masks.hasWorkingMask(player);
+      if (!maskOk && exposure < 100.0F - 0.001F) {
+         player.sendOverlayMessage(Component.literal("The tonic does nothing without a gas mask on."));
+      }
+      exposure = onHealed(player, rt, exposure, maskOk, purge);
+      setExposure(player, exposure);
+      forceSync(player);
+   }
+
    /**
     * Both halves are needed to cure the critical state: a working mask AND a healing event.
     * Mask first, then heal: purge right now. Heal first, then mask: the cure is remembered for a while.
     * A stronger potion purges more (Tuning.PURGE_LEVEL_*).
     */
-   private static float onHealed(ServerPlayer player, Rt rt, float exposure, boolean maskOk, int level) {
+   private static float onHealed(ServerPlayer player, Rt rt, float exposure, boolean maskOk, float purge) {
       if (maskOk) {
          if (exposure > 0.0F) {
             Masks.playAt(player, ModSounds.SIGH_RELIEF, Tuning.SIGH_VOLUME, 1.0F);
             player.sendOverlayMessage(Component.literal("The spores loosen their grip."));
          }
          rt.antidoteTicks = 0;
-         return Math.max(0.0F, exposure - purgeFor(level));
+         return Math.max(0.0F, exposure - purge);
       }
       if (exposure >= 100.0F - 0.001F) {
          rt.antidoteTicks = Tuning.ANTIDOTE_TICKS;
-         rt.antidoteLevel = level;
+         rt.antidotePurge = purge;
          player.sendOverlayMessage(Component.literal("The cure is in your blood. Get a gas mask on!"));
       }
       return exposure;

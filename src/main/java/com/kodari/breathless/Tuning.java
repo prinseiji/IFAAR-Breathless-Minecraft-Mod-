@@ -154,4 +154,27 @@ public final class Tuning {
    public static final float SLOTH_CHANCE_MASKED_IDLE = 0.015F;
    /** Chance for a second line during a purge. The first one always comes. */
    public static final float SLOTH_CHANCE_PURGE_SECOND = 0.40F;
+
+   // ---- Nearby sculk (counted only where the spores can actually reach: through open air, never through walls) ----
+   /** How far (blocks) from your head the scan reaches. */
+   public static final int SCULK_RADIUS = 6;
+   /** Most open-air cells the scan visits (keeps it cheap). */
+   public static final int SCULK_MAX_CELLS = 4000;
+   /** Sculk score needed for each tier. A sculk block or vein counts 1; a catalyst, shrieker or sensor counts 4. */
+   public static final int SCULK_TIER_1 = 8;
+   public static final int SCULK_TIER_2 = 30;
+   /** Tier 3 is the "Moribund" tier. */
+   public static final int SCULK_TIER_3 = 80;
+   /** Exposure fill multiplier per tier (0 = no sculk nearby). */
+   public static final float[] SCULK_FILL = {1.0F, 1.5F, 2.0F, 3.0F};
+   /** Filter wear multiplier per tier. */
+   public static final int[] SCULK_DRAIN = {1, 1, 2, 3};
+
+   // ---- Reinforced filters ----
+   /** A reinforced filter only wears down on 1 of every this-many wear ticks. */
+   public static final int REINFORCED_WEAR_DIVISOR = 2;
+
+   // ---- Spore tonics (purge amounts, meter points) ----
+   public static final float TONIC_LESSER_PURGE = 20.0F;
+   public static final float TONIC_STRONG_PURGE = 45.0F;
 }

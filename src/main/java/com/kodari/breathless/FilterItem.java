@@ -14,8 +14,15 @@ import net.minecraft.world.level.Level;
  * (In an inventory you can also click the filter onto a mask, see FilterClicks.)
  */
 public class FilterItem extends Item {
-   public FilterItem(Item.Properties properties) {
+   private final boolean reinforced;
+
+   public FilterItem(Item.Properties properties, boolean reinforced) {
       super(properties);
+      this.reinforced = reinforced;
+   }
+
+   public boolean isReinforced() {
+      return reinforced;
    }
 
    @Override
@@ -27,7 +34,7 @@ public class FilterItem extends Item {
       }
       if (!level.isClientSide()) {
          int life = Tuning.FILTER_MAX - filter.getDamageValue();
-         player.setItemSlot(EquipmentSlot.HEAD, ModItems.maskWith(Masks.getFilters(head).with(life)));
+         player.setItemSlot(EquipmentSlot.HEAD, ModItems.maskLike(head, Masks.getFilters(head).with(life, reinforced)));
          if (!player.isCreative()) {
             filter.shrink(1);
          }

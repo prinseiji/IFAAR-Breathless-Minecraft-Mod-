@@ -66,3 +66,25 @@ Everything. See DEVELOPMENT.md.
 - **Real Y=0 sheet.** A flat, see-through, sculk-cyan sheet is now drawn exactly at Y=0 (new file `LevelSheet.java`, registered in `BreathlessClient`). It uses the game's own flat-quad drawing, as a tile grid around you that fades with distance so the edge melts away, and it shows from above and below. It is strongest when you are near the line and fainter further away. The surface dust is cut down to a light shimmer.
 - **SLOTH text now uses Minecraft's own font**, scaled up by whole numbers, with a soft glow. Quiver, chance rules and the blue-to-red purge glitch are unchanged.
 - This batch was checked against the real 26.1 game files (names and call shapes), but not run.
+
+## Batch 9 (untested)
+**Big batch. Drag `src` and `CHANGES.md` into the Breathless repo only.**
+- **Masks (6 items, one name "Gas Mask" / "Night Vision Gas Mask").** Plain, reinforced (purple band), empty, and the same three with the green night vision lens. The game swaps to the right one by itself when the filters change; the band shows what is inside: yellow = ordinary filters, purple = only reinforced filters, none = empty. Your new worn textures and icons are in.
+- **Night vision mask:** hidden Night Vision below Y=0 while worn (no icon, no potion particles). Recipe: empty mask + 2 glow ink sacs (shapeless). Take the filters out first, crafting returns an empty NV mask.
+- **Reinforced filter:** one filter + 2 amethyst dust + 2 charcoal dust (shapeless), comes out at full life. Wears down half as fast. Purple filter icon in the HUD meter (`filters_reinforced.png`) and a purple tooltip line.
+- **Dusts:** 1 amethyst shard -> 2 amethyst dust. 1 charcoal -> 2 charcoal dust.
+- **Basic filter recipe:** now copper ingots instead of iron ingots (iron nuggets and charcoal stay), and makes 2 filters per craft.
+- **Spore tonics (drinkable, give the glass bottle back):**
+  - Lesser Spore Tonic: honey bottle + 2 oxeye daisies. Clears 20 on the meter.
+  - Strong Spore Tonic: honey bottle + 2 lily of the valley + 1 oxeye daisy. Clears 45.
+  - They follow the same rule as Instant Health: with a working mask on they clear the meter now; without one they do nothing unless you are at 100, where the cure is remembered for a short while until you put a mask on. Drinking with no mask and below 100 tells you it does nothing.
+  - Instant Health potions and the Adrenaline Shot are unchanged.
+- **Nearby sculk rule.** Once a second the game counts sculk around your head (6 blocks) but only the sculk the spores can actually reach through open air, so sculk behind a wall or floor does not count and walling a room off protects you. Sculk block or vein = 1, catalyst / shrieker / sensor = 4. Score 8 = exposure fills 1.5x, 30 = 2x and filters wear 2x, 80 = 3x and 3x. All in Tuning (`SCULK_*`).
+- **Effect names:** "Stagnation" (was "Calcification"). Next to heavy sculk (score 80+) the same marker shows as **"Moribund"** with the cracked-heart icon you picked (new registered effect `breathless:moribund`).
+- **Filter removal sound:** your unscrewing sound is now used when you take a filter out.
+- **Teal eyes:** the three 6x6 eyes are now two particles. Small ones hang in the air all around you underground and glow; larger ones rush toward your face when you have no mask (replacing the conduit-style ones). The dust motes are fewer, the mist puffs along Y=0 are unchanged.
+- **Y=0 sheet:** stronger and in your pick of colour (29DFEB, alpha up from 0.30 to 0.45). Surface shimmer matches.
+- **Fog:** keeps getting darker with depth but is already noticeably dark at Y=0 ("submerged").
+- **Filter meter:** now in the bottom-left corner of the screen.
+- **Creative tabs:** masks and filters in Combat, dusts in Ingredients, tonics in Food & Drinks. `/breathless give` hands out all of it.
+- Checked against the real 26.1 game files where the call shapes could be (item/consumable, particles, block names), but not compiled or run.

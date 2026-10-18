@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "breathless:gas_mask_empty",
+    "minecraft:glow_ink_sac",
+    "minecraft:glow_ink_sac"
+  ],
+  "result": {
+    "id": "breathless:gas_mask_nv_empty"
+  }
+}

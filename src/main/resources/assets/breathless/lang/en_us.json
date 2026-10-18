@@ -8,7 +8,7 @@
   "breathless.tooltip.filter_life": "Filter life: %s%%",
   "breathless.tooltip.insert_hint": "Click a filter onto the mask to insert it",
   "breathless.tooltip.remove_hint": "Right-click the mask to take a filter out",
-  "effect.breathless.spore_exposure": "Calcification",
+  "effect.breathless.spore_exposure": "Stagnation",
   "subtitles.breathless.wheeze": "Heavy wheezing",
   "subtitles.breathless.mask_on": "Gas mask equipped",
   "subtitles.breathless.filter_on": "Filter inserted",
@@ -20,5 +20,18 @@
   "subtitles.breathless.sigh_relief": "Sigh of relief",
   "subtitles.breathless.inject": "Adrenaline injected",
   "subtitles.breathless.buildup": "Spores burn away",
-  "subtitles.breathless.exposed": "Spores in the air"
+  "subtitles.breathless.exposed": "Spores in the air",
+  "item.breathless.gas_mask_reinforced": "Gas Mask",
+  "item.breathless.gas_mask_nv": "Night Vision Gas Mask",
+  "item.breathless.gas_mask_nv_empty": "Night Vision Gas Mask",
+  "item.breathless.gas_mask_nv_reinforced": "Night Vision Gas Mask",
+  "item.breathless.gas_mask_filter_reinforced": "Reinforced Gas Mask Filter",
+  "item.breathless.amethyst_dust": "Amethyst Dust",
+  "item.breathless.charcoal_dust": "Charcoal Dust",
+  "item.breathless.tonic_lesser": "Lesser Spore Tonic",
+  "item.breathless.tonic_strong": "Strong Spore Tonic",
+  "effect.breathless.moribund": "Moribund",
+  "breathless.tooltip.filter_reinforced": "Reinforced: wears out half as fast",
+  "breathless.tooltip.tonic": "Wear a gas mask when you drink it",
+  "breathless.tooltip.nv": "Night vision below Y=0"
 }

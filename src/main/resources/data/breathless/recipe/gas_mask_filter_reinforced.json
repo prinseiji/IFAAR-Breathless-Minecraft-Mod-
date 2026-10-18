@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "breathless:gas_mask_filter",
+    "breathless:amethyst_dust",
+    "breathless:amethyst_dust",
+    "breathless:charcoal_dust",
+    "breathless:charcoal_dust"
+  ],
+  "result": {
+    "id": "breathless:gas_mask_filter_reinforced"
+  }
+}

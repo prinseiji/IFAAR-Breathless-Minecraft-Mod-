@@ -24,12 +24,12 @@ public final class FilterClicks {
          MaskFilters filters = Masks.getFilters(hovered);
 
          // Insert
-         if (cursor.is(ModItems.GAS_MASK_FILTER)) {
+         if (cursor.getItem() instanceof FilterItem filterItem) {
             if (filters.isFull()) {
                return EventResult.DENY;
             }
             int life = Tuning.FILTER_MAX - cursor.getDamageValue();
-            slot.set(ModItems.maskWith(filters.with(life)));
+            slot.set(ModItems.maskLike(hovered, filters.with(life, filterItem.isReinforced())));
             ItemStack rest = cursor.copy();
             rest.shrink(1);
             cursorAccess.set(rest);
@@ -41,11 +41,11 @@ public final class FilterClicks {
 
          // Take out
          if (cursor.isEmpty() && action == ClickAction.SECONDARY && filters.count() > 0) {
-            ItemStack out = ModItems.filterWith(filters.lastLife());
-            slot.set(ModItems.maskWith(filters.withoutLast()));
+            ItemStack out = ModItems.filterWith(filters.lastLife(), filters.lastReinforced());
+            slot.set(ModItems.maskLike(hovered, filters.withoutLast()));
             cursorAccess.set(out);
             if (player instanceof ServerPlayer serverPlayer) {
-               Masks.playAt(serverPlayer, ModSounds.FILTER_ON, 1.0F, 1.0F);
+               Masks.playAt(serverPlayer, ModSounds.FILTER_OFF, 1.0F, 1.0F);
             }
             return EventResult.DENY;
          }

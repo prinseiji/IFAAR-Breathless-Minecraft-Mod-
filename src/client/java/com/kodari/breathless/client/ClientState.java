@@ -5,7 +5,7 @@ import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
+import com.kodari.breathless.ModParticles;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -51,7 +51,7 @@ public final class ClientState {
    private static final DustParticleOptions SPORE = new DustParticleOptions(0x3CCBFF, 0.3F);
    private static final DustParticleOptions MIST = new DustParticleOptions(0x1F8FC4, 3.4F);
    // The bright surface of the gas, right at Y=0.
-   private static final DustParticleOptions SURFACE = new DustParticleOptions(0x7BE3FF, 5.0F);
+   private static final DustParticleOptions SURFACE = new DustParticleOptions(0x29DFEB, 5.0F);
 
    static void startFiend(int seed) {
       fiendFrozen = exposure;
@@ -154,11 +154,20 @@ public final class ClientState {
 
       if (Masks.isUnderground(mc.player)) {
          // Tiny motes hanging in the air, like the dust in a cave.
-         for (int i = 0; i < 14; i++) {
+         for (int i = 0; i < 8; i++) {
             double x = mc.player.getX() + (RNG.nextDouble() - 0.5D) * 22.0D;
             double y = py + (RNG.nextDouble() - 0.35D) * 8.0D;
             double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 22.0D;
             mc.level.addParticle(SPORE, x, y, z, (RNG.nextDouble() - 0.5D) * 0.02D, (RNG.nextDouble() - 0.5D) * 0.02D, (RNG.nextDouble() - 0.5D) * 0.02D);
+         }
+         // Small teal eyes hanging in the air all around (they glow, and fade in and out).
+         if (clock % 2 == 0) {
+            for (int i = 0; i < 2; i++) {
+               double x = mc.player.getX() + (RNG.nextDouble() - 0.5D) * 20.0D;
+               double y = py + (RNG.nextDouble() - 0.35D) * 7.0D;
+               double z = mc.player.getZ() + (RNG.nextDouble() - 0.5D) * 20.0D;
+               mc.level.addParticle(ModParticles.SPORE_EYE, x, y, z, (RNG.nextDouble() - 0.5D) * 0.012D, (RNG.nextDouble() - 0.5D) * 0.008D, (RNG.nextDouble() - 0.5D) * 0.012D);
+            }
          }
          // With no working mask the spores come for you. These are "fly toward a point" particles
          // (like the ones around an enchanting table), so they really do stream into your face.
@@ -175,18 +184,16 @@ public final class ClientState {
             double fy = -Math.sin(pitch);
             double fz = Math.cos(yaw) * Math.cos(pitch);
             double tx = eye.x + fx * 0.8D + move.x * life * 0.8D;
-            double ty = eye.y + fy * 0.8D - 0.1D + 1.2D;
+            double ty = eye.y + fy * 0.8D - 0.1D;
             double tz = eye.z + fz * 0.8D + move.z * life * 0.8D;
-            for (int i = 0; i < 9; i++) {
+            for (int i = 0; i < 6; i++) {
                double angle = RNG.nextDouble() * Math.PI * 2.0D;
                double dist = 2.5D + RNG.nextDouble() * 4.5D;
                double dx = Math.cos(angle) * dist;
                double dy = (RNG.nextDouble() - 0.5D) * 2.5D;
                double dz = Math.sin(angle) * dist;
-               Particle particle = mc.particleEngine.createParticle(ParticleTypes.NAUTILUS, tx, ty, tz, dx, dy, dz);
-               if (particle != null) {
-                  particle.setLifetime(life + RNG.nextInt(4));
-               }
+               // The "velocity" of a surge eye is where it starts, relative to the target point.
+               mc.particleEngine.createParticle(ModParticles.SPORE_EYE_SURGE, tx, ty, tz, dx, dy, dz);
             }
          }
       }

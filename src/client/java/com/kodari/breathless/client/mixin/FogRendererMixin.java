@@ -59,8 +59,8 @@ public abstract class FogRendererMixin {
       fog.environmentalEnd = Mth.lerp(blend, fog.environmentalEnd, end);
       fog.renderDistanceStart = Mth.lerp(blend, fog.renderDistanceStart, 0.0F);
       fog.renderDistanceEnd = Mth.lerp(blend, fog.renderDistanceEnd, end);
-      // Blue, and a little darker the deeper you go.
-      float dark = 1.0F - 0.4F * depth;
+      // Blue, already fairly dark right under the line (you are submerged), and darker the deeper you go.
+      float dark = 0.72F - 0.30F * depth;
       fog.color.x = Mth.lerp(blend, fog.color.x, 0.10F * dark);
       fog.color.y = Mth.lerp(blend, fog.color.y, 0.46F * dark);
       fog.color.z = Mth.lerp(blend, fog.color.z, 0.70F * dark);

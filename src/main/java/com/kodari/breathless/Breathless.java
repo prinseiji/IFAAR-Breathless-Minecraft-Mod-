@@ -34,6 +34,7 @@ public class Breathless implements ModInitializer {
    public void onInitialize() {
       ModSounds.register();
       ModEffects.register();
+      ModParticles.register();
       ModItems.register();
       PayloadTypeRegistry.clientboundPlay().register(ExposurePayload.TYPE, ExposurePayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(FiendPayload.TYPE, FiendPayload.CODEC);
@@ -45,7 +46,20 @@ public class Breathless implements ModInitializer {
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> {
          entries.accept(ModItems.GAS_MASK_EMPTY);
          entries.accept(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX)));
+         entries.accept(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX, true, true)));
+         entries.accept(ModItems.GAS_MASK_NV_EMPTY);
+         entries.accept(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX), true));
+         entries.accept(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX, true, true), true));
          entries.accept(ModItems.GAS_MASK_FILTER);
+         entries.accept(ModItems.GAS_MASK_FILTER_REINFORCED);
+      });
+      CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(entries -> {
+         entries.accept(ModItems.AMETHYST_DUST);
+         entries.accept(ModItems.CHARCOAL_DUST);
+      });
+      CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(entries -> {
+         entries.accept(ModItems.TONIC_LESSER);
+         entries.accept(ModItems.TONIC_STRONG);
       });
 
       registerCommands();
@@ -54,7 +68,7 @@ public class Breathless implements ModInitializer {
    /**
     * Test commands:
     *   /breathless exposure <0-100>   set your meter
-    *   /breathless give               an empty mask, a loaded mask, a nearly dead mask, and loose filters
+    *   /breathless give               masks (plain, nearly dead, night vision reinforced), loose filters (plain and reinforced) and tonics
     *   /breathless fiend              play the F13ND pop-up sequence (no damage, no reset)
     */
    private static void registerCommands() {
@@ -76,7 +90,12 @@ public class Breathless implements ModInitializer {
                player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX));
                player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX));
                player.getInventory().add(ModItems.filterWith(150));
-               context.getSource().sendSuccess(() -> Component.literal("Gave gas masks and filters."), false);
+               player.getInventory().add(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX, true, true), true));
+               player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX, true));
+               player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX, true));
+               player.getInventory().add(new ItemStack(ModItems.TONIC_LESSER, 4));
+               player.getInventory().add(new ItemStack(ModItems.TONIC_STRONG, 4));
+               context.getSource().sendSuccess(() -> Component.literal("Gave gas masks, filters and tonics."), false);
                return 1;
             }))
             .then(Commands.literal("fiend").executes(context -> {

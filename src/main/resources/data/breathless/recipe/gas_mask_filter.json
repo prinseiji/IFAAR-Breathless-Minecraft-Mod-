@@ -3,7 +3,7 @@
   "category": "equipment",
   "key": {
     "N": "minecraft:iron_nugget",
-    "I": "minecraft:iron_ingot",
+    "I": "minecraft:copper_ingot",
     "C": "minecraft:charcoal"
   },
   "pattern": [
@@ -12,6 +12,7 @@
     "NIN"
   ],
   "result": {
-    "id": "breathless:gas_mask_filter"
+    "id": "breathless:gas_mask_filter",
+    "count": 2
   }
 }

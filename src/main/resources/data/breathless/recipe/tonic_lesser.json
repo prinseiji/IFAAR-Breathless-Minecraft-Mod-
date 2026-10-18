@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:honey_bottle",
+    "minecraft:oxeye_daisy",
+    "minecraft:oxeye_daisy"
+  ],
+  "result": {
+    "id": "breathless:tonic_lesser"
+  }
+}

@@ -19,7 +19,8 @@ public final class Masks {
    }
 
    public static boolean isMask(ItemStack stack) {
-      return stack.is(ModItems.GAS_MASK) || stack.is(ModItems.GAS_MASK_EMPTY);
+      return stack.is(ModItems.GAS_MASK) || stack.is(ModItems.GAS_MASK_EMPTY) || stack.is(ModItems.GAS_MASK_REINFORCED)
+         || ModItems.isNightVision(stack);
    }
 
    public static MaskFilters getFilters(ItemStack stack) {
@@ -79,12 +80,17 @@ public final class Masks {
       boolean useFirst = turn == 0 ? before.first() > 0 : before.second() <= 0;
       int first = before.first();
       int second = before.second();
+      // A reinforced filter only wears down on some of its turns.
+      boolean reinforcedSlot = useFirst ? before.firstReinforced() : before.secondReinforced();
+      if (reinforcedSlot && (player.tickCount / (Tuning.DRAIN_INTERVAL_TICKS * 2)) % Tuning.REINFORCED_WEAR_DIVISOR != 0) {
+         return;
+      }
       if (useFirst) {
          first = Math.max(0, first - amount);
       } else {
          second = Math.max(0, second - amount);
       }
-      MaskFilters after = new MaskFilters(first, second);
+      MaskFilters after = before.withLife(first, second);
 
       float weakBefore = before.weakest();
       float weakAfter = after.weakest();
@@ -98,7 +104,7 @@ public final class Masks {
       if (spent) {
          playAt(player, ModSounds.FILTER_RUNOUT, 1.0F, 1.0F);
          player.sendOverlayMessage(Component.literal(after.count() == 0 ? "Your filters are spent!" : "A filter is spent!"));
-         player.setItemSlot(EquipmentSlot.HEAD, ModItems.maskWith(after));
+         player.setItemSlot(EquipmentSlot.HEAD, ModItems.maskLike(head, after));
       } else {
          head.set(ModItems.FILTERS, after);
       }
