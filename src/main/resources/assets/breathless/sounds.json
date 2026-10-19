@@ -232,5 +232,14 @@
       }
     ],
     "subtitle": "subtitles.breathless.stagnated_hit"
+  },
+  "stagnated_emerge": {
+    "sounds": [
+      {
+        "name": "breathless:stagnated_emerge",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.stagnated_emerge"
   }
 }

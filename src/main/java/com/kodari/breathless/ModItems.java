@@ -40,6 +40,7 @@ public final class ModItems {
    /** Reinforced filter: wears out half as fast. */
    public static Item GAS_MASK_FILTER_REINFORCED;
 
+   public static Item STAGNATED_HEAD;
    public static Item AMETHYST_DUST;
    public static Item CHARCOAL_DUST;
 
@@ -114,6 +115,8 @@ public final class ModItems {
          new FilterItem(new Item.Properties().setId(reinforcedKey).durability(Tuning.FILTER_MAX), true)
       );
 
+      ResourceKey<Item> headKey = key("stagnated_head");
+      STAGNATED_HEAD = Registry.register(BuiltInRegistries.ITEM, headKey, new StagnatedHeadItem(new Item.Properties().setId(headKey)));
       AMETHYST_DUST = registerPlain("amethyst_dust");
       CHARCOAL_DUST = registerPlain("charcoal_dust");
 

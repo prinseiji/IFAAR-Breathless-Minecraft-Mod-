@@ -104,3 +104,11 @@ Everything. See DEVELOPMENT.md.
 - Spawns only by 5-L0: below Y=0 in heavy sculk (Moribund tier) or at 100% exposure, about once per 45 s of rolling, 90 s cooldown, at most 2 within 64 blocks, out of your line of sight.
 - Not done yet: the SLOTH text flash on spotting, lore drop.
 - All numbers are in Tuning.java (STAGNATED_*).
+
+## Batch 11 - Stagnated polish
+- **Emerge animation:** your "spawn/emerge" animation (7.9 s) plays when 5-L0 spawns one or when a Stagnated Head is used. Your emerge sound plays with it, and Warden-style debris (floor-block particles) plus sculk souls drift up. It cannot move, see or be hurt until it finishes.
+- **Stagnated Head** (Spawn Eggs tab, `/breathless give` gives 4): right-click a block to place one with the emerge animation; sneak-click to skip the animation for testing. Icon cut from the face of your skin.
+- **SLOTH flash:** when a Stagnated spots you, "I SEE YOU" or "I FOUND YOU" appears word by word (any exposure, ignores the normal cooldown).
+- **Faster, weaker:** speed 0.25 x 1.2 chase, 20 HP (10 hearts), 3 damage (1.5 hearts) plus 15 exposure.
+- **Detection:** wide and tall (24 blocks up and down, height ignored inside that), and a sprinting player is noticed from 1.5x as far.
+- **Ribcage:** the rib cubes read the top-left corner of the skin, which was empty. It is now painted bone-white with a few sculk-teal flecks (rows 0-4, columns 0-7). Paint over it with your own art whenever.

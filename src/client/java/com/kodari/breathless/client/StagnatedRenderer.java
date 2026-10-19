@@ -24,6 +24,7 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       state.aggressive = entity.isAggressive();
       state.attack = entity.getAttackAnim(partialTick);
       state.hurt = entity.hurtTime > 0 ? 1.0F - Math.max(0.0F, (entity.hurtTime - partialTick) / 10.0F) : -1.0F;
+      state.emerge = entity.emergeClock >= 0 ? (entity.emergeClock + partialTick) / 20.0F : -1.0F;
       state.spot = entity.spotClock >= 0 ? (entity.spotClock + partialTick) / 20.0F : -1.0F;
    }
 

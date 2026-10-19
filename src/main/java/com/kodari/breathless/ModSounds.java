@@ -30,6 +30,7 @@ public final class ModSounds {
    public static SoundEvent STAGNATED_DEATH;
    public static SoundEvent STAGNATED_GROWL;
    public static SoundEvent STAGNATED_HIT;
+   public static SoundEvent STAGNATED_EMERGE;
    public static SoundEvent BUILDUP;
 
    private static SoundEvent reg(String name) {
@@ -59,5 +60,6 @@ public final class ModSounds {
       STAGNATED_DEATH = reg("stagnated_death");
       STAGNATED_GROWL = reg("stagnated_growl");
       STAGNATED_HIT = reg("stagnated_hit");
+      STAGNATED_EMERGE = reg("stagnated_emerge");
    }
 }

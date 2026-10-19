@@ -42,5 +42,7 @@
   "subtitles.breathless.stagnated_death": "Stagnated dies",
   "subtitles.breathless.stagnated_growl": "Stagnated growls",
   "subtitles.breathless.stagnated_hit": "Stagnated strikes",
-  "entity.breathless.stagnated": "Stagnated"
+  "entity.breathless.stagnated": "Stagnated",
+  "subtitles.breathless.stagnated_emerge": "Stagnated emerges",
+  "item.breathless.stagnated_head": "Stagnated Head"
 }

@@ -111,7 +111,9 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> {
       super.setupAnim(state);
       this.resetPose();
       float time = state.ageInTicks / 20.0F;
-      if (state.hurt >= 0.0F) {
+      if (state.emerge >= 0.0F) {
+         this.apply(StagnatedAnims.SPAWN, state.emerge);
+      } else if (state.hurt >= 0.0F) {
          this.apply(StagnatedAnims.HURT, state.hurt * StagnatedAnims.HURT.length());
       } else if (state.attack > 0.0F) {
          this.apply(StagnatedAnims.CHASE_HIT, state.attack * StagnatedAnims.CHASE_HIT.length());

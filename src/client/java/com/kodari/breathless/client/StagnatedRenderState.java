@@ -10,4 +10,6 @@ public class StagnatedRenderState extends LivingEntityRenderState {
    public float hurt = -1.0F;
    /** Seconds into the "spots you" pose, -1 when not spotting. */
    public float spot = -1.0F;
+   /** Seconds into the emerge animation, -1 when not emerging. */
+   public float emerge = -1.0F;
 }

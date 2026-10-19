@@ -18,6 +18,7 @@ import com.kodari.breathless.Breathless;
 import com.kodari.breathless.ExposurePayload;
 import com.kodari.breathless.FiendPayload;
 import com.kodari.breathless.MaskFilters;
+import com.kodari.breathless.SpotPayload;
 import com.kodari.breathless.Masks;
 import com.kodari.breathless.ModEntities;
 import com.kodari.breathless.ModItems;
@@ -33,6 +34,7 @@ public class BreathlessClient implements ClientModInitializer {
       EntityRendererRegistry.register(ModEntities.STAGNATED, StagnatedRenderer::new);
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
+      ClientPlayNetworking.registerGlobalReceiver(SpotPayload.TYPE, (payload, context) -> SlothText.spotted());
       ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
 
       // Under the vanilla overlays: spore haze, vision pulses, floating spores, then the mask visor.

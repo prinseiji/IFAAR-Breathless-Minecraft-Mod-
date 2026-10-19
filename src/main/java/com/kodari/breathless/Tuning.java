@@ -179,11 +179,11 @@ public final class Tuning {
    public static final float TONIC_STRONG_PURGE = 25.0F;
 
    // ---- Stagnated (5-L0's puppet) ----
-   public static final float STAGNATED_HEALTH = 30.0F;
-   /** Faster than walking (about 4.3 b/s), slower than sprinting (about 5.6 b/s): you can outrun it. */
-   public static final double STAGNATED_SPEED = 0.22;
+   public static final float STAGNATED_HEALTH = 20.0F;
+   /** About sprint speed: agile but fragile (a husk). */
+   public static final double STAGNATED_SPEED = 0.25;
    public static final double STAGNATED_CHASE_MODIFIER = 1.2;
-   public static final double STAGNATED_DAMAGE = 4.0;
+   public static final double STAGNATED_DAMAGE = 3.0;
    public static final float STAGNATED_HIT_EXPOSURE = 15.0F;
    public static final int STAGNATED_SPOT_TICKS = 17;
    public static final double STAGNATED_MAX_SIGHT = 48.0;
@@ -193,6 +193,12 @@ public final class Tuning {
    public static final int STAGNATED_SPAWN_ODDS = 45;
    public static final int STAGNATED_COOLDOWN_SECONDS = 90;
    public static final int STAGNATED_MAX_NEAR = 2;
+   /** Length of the emerge animation (7.92 s). */
+   public static final int STAGNATED_EMERGE_TICKS = 159;
+   /** Sideways reach beyond the sight radius for a sprinting player (it hears the noise). */
+   public static final double STAGNATED_NOISE_FACTOR = 1.5;
+   /** It looks this far up and down, ignoring height otherwise (it is oblivious, not precise). */
+   public static final double STAGNATED_VERTICAL = 24.0;
 
    /** How far it notices a player: about 16 blocks clean, up to 48 at full exposure; a masked player with a clean meter is nearly invisible. */
    public static double stagnatedSight(float exposure, boolean maskOk) {

@@ -61,6 +61,7 @@ public final class StagnatedSpawner {
                continue;
             }
             level.addFreshEntity(mob);
+            mob.startEmerging();
             COOLDOWN.put(id, Tuning.STAGNATED_COOLDOWN_SECONDS);
             return;
          }

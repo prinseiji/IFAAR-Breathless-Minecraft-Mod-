@@ -124,6 +124,15 @@ public final class SlothText {
       lastUnderground = undergroundNow;
    }
 
+   /** A Stagnated just spotted you: 5-L0 speaks through its puppet (any exposure, ignores the cooldown). */
+   public static void spotted() {
+      String[] lines = {"I SEE YOU", "I FOUND YOU"};
+      String line = pick(lines, lastLine);
+      lastLine = line;
+      lastSpoke = clock;
+      spawn(line, false, RNG.nextInt());
+   }
+
    private static boolean crossed(float level, float now) {
       return lastExposure < level && now >= level;
    }

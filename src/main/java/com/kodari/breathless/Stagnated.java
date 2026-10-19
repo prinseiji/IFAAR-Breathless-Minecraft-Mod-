@@ -1,5 +1,8 @@
 package com.kodari.breathless;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -21,6 +24,7 @@ import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /** 5-L0's puppet: a Steve with a chest cavity engulfed in sculk. Stays calm until something disturbs the layer. */
 public class Stagnated extends Monster {
@@ -28,6 +32,10 @@ public class Stagnated extends Monster {
    public int spotClock = -1;
    /** Server-side: ticks left frozen in place after spotting a target. */
    private int spotTicks;
+   /** Client-side: ticks since it began to climb out of the ground, -1 when not emerging. */
+   public int emergeClock = -1;
+   /** Server-side: ticks left of the emerge animation (immobile and untouchable until then). */
+   private int emergeTicks;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
@@ -58,12 +66,19 @@ public class Stagnated extends Monster {
       if (target instanceof Stagnated || target instanceof Warden || !target.isAlive()) {
          return false;
       }
-      double dist = this.distanceTo(target);
+      if (this.emergeTicks > 0 || Math.abs(target.getY() - this.getY()) > Tuning.STAGNATED_VERTICAL) {
+         return false;
+      }
+      // Height is ignored within that reach: it is oblivious, not precise.
+      double dx = target.getX() - this.getX();
+      double dz = target.getZ() - this.getZ();
+      double dist = Math.sqrt(dx * dx + dz * dz);
       if (target instanceof Player player) {
          if (player.isCreative() || player.isSpectator()) {
             return false;
          }
-         return dist <= Tuning.stagnatedSight(Hazard.getExposure(player), Masks.hasWorkingMask(player));
+         double sight = Tuning.stagnatedSight(Hazard.getExposure(player), Masks.hasWorkingMask(player));
+         return dist <= (player.isSprinting() ? sight * Tuning.STAGNATED_NOISE_FACTOR : sight);
       }
       if (target instanceof Zombie || target instanceof AbstractSkeleton) {
          return dist <= Tuning.STAGNATED_UNDEAD_SIGHT;
@@ -80,21 +95,47 @@ public class Stagnated extends Monster {
          this.level().broadcastEntityEvent(this, (byte)61);
          this.playSound(ModSounds.STAGNATED_SPOT, 1.2F, 1.0F);
          this.getNavigation().stop();
+         if (target instanceof ServerPlayer player) {
+            ServerPlayNetworking.send(player, new SpotPayload(0.0F));
+         }
       }
+   }
+
+   /** Starts the climb-out-of-the-ground animation (used by 5-L0's spawns and the Stagnated Head). */
+   public void startEmerging() {
+      this.emergeTicks = Tuning.STAGNATED_EMERGE_TICKS;
+      this.level().broadcastEntityEvent(this, (byte)62);
+      this.playSound(ModSounds.STAGNATED_EMERGE, 1.5F, 1.0F);
+   }
+
+   @Override
+   public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+      if (this.emergeTicks > 0) {
+         return false;
+      }
+      return super.hurtServer(level, source, amount);
    }
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0;
    }
 
    @Override
    public void aiStep() {
       super.aiStep();
       if (this.level().isClientSide()) {
+         if (this.emergeClock >= 0) {
+            this.emergeParticles();
+            if (++this.emergeClock > Tuning.STAGNATED_EMERGE_TICKS) {
+               this.emergeClock = -1;
+            }
+         }
          if (this.spotClock >= 0 && ++this.spotClock > Tuning.STAGNATED_SPOT_TICKS) {
             this.spotClock = -1;
          }
+      } else if (this.emergeTicks > 0) {
+         this.emergeTicks--;
       } else if (this.spotTicks > 0 && --this.spotTicks == 0) {
          this.playSound(ModSounds.STAGNATED_GROWL, 1.2F, 1.0F);
       }
@@ -104,8 +145,23 @@ public class Stagnated extends Monster {
    public void handleEntityEvent(byte event) {
       if (event == 61) {
          this.spotClock = 0;
+      } else if (event == 62) {
+         this.emergeClock = 0;
       } else {
          super.handleEntityEvent(event);
+      }
+   }
+
+   /** Like a Warden climbing out: debris from the floor and sculk souls drifting up. */
+   private void emergeParticles() {
+      BlockState below = this.level().getBlockState(this.blockPosition().below());
+      if (!below.isAir()) {
+         for (int i = 0; i < 4; i++) {
+            this.level().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, below), this.getRandomX(0.9), this.getY() + 0.05, this.getRandomZ(0.9), 0.0, 0.15, 0.0);
+         }
+      }
+      if (this.emergeClock % 3 == 0) {
+         this.level().addParticle(ParticleTypes.SCULK_SOUL, this.getRandomX(0.7), this.getY() + this.random.nextDouble() * 1.2, this.getRandomZ(0.7), 0.0, 0.06, 0.0);
       }
    }
 

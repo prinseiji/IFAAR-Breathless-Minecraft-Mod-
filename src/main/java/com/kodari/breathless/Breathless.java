@@ -39,6 +39,7 @@ public class Breathless implements ModInitializer {
       ModItems.register();
       PayloadTypeRegistry.clientboundPlay().register(ExposurePayload.TYPE, ExposurePayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(FiendPayload.TYPE, FiendPayload.CODEC);
+      PayloadTypeRegistry.clientboundPlay().register(SpotPayload.TYPE, SpotPayload.CODEC);
       FilterClicks.init();
 
       Hazard.init();
@@ -54,6 +55,7 @@ public class Breathless implements ModInitializer {
          entries.accept(ModItems.GAS_MASK_FILTER);
          entries.accept(ModItems.GAS_MASK_FILTER_REINFORCED);
       });
+      CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS).register(entries -> entries.accept(ModItems.STAGNATED_HEAD));
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(entries -> {
          entries.accept(ModItems.AMETHYST_DUST);
          entries.accept(ModItems.CHARCOAL_DUST);
@@ -94,6 +96,7 @@ public class Breathless implements ModInitializer {
                player.getInventory().add(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX, true, true), true));
                player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX, true));
                player.getInventory().add(ModItems.filterWith(Tuning.FILTER_MAX, true));
+               player.getInventory().add(new ItemStack(ModItems.STAGNATED_HEAD, 4));
                player.getInventory().add(new ItemStack(ModItems.TONIC_LESSER, 4));
                player.getInventory().add(new ItemStack(ModItems.TONIC_STRONG, 4));
                context.getSource().sendSuccess(() -> Component.literal("Gave gas masks, filters and tonics."), false);
