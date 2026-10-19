@@ -181,7 +181,7 @@ public final class Tuning {
    // ---- Stagnated (5-L0's puppet) ----
    public static final float STAGNATED_HEALTH = 20.0F;
    /** About sprint speed: agile but fragile (a husk). */
-   public static final double STAGNATED_SPEED = 0.25;
+   public static final double STAGNATED_SPEED = 0.35;
    public static final double STAGNATED_CHASE_MODIFIER = 1.2;
    public static final double STAGNATED_DAMAGE = 3.0;
    public static final float STAGNATED_HIT_EXPOSURE = 15.0F;
