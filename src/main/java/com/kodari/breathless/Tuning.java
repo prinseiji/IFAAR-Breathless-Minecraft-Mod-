@@ -175,6 +175,30 @@ public final class Tuning {
    public static final int REINFORCED_WEAR_DIVISOR = 2;
 
    // ---- Spore tonics (purge amounts, meter points) ----
-   public static final float TONIC_LESSER_PURGE = 20.0F;
-   public static final float TONIC_STRONG_PURGE = 45.0F;
+   public static final float TONIC_LESSER_PURGE = 10.0F;
+   public static final float TONIC_STRONG_PURGE = 25.0F;
+
+   // ---- Stagnated (5-L0's puppet) ----
+   public static final float STAGNATED_HEALTH = 30.0F;
+   /** Faster than walking (about 4.3 b/s), slower than sprinting (about 5.6 b/s): you can outrun it. */
+   public static final double STAGNATED_SPEED = 0.22;
+   public static final double STAGNATED_CHASE_MODIFIER = 1.2;
+   public static final double STAGNATED_DAMAGE = 4.0;
+   public static final float STAGNATED_HIT_EXPOSURE = 15.0F;
+   public static final int STAGNATED_SPOT_TICKS = 17;
+   public static final double STAGNATED_MAX_SIGHT = 48.0;
+   public static final double STAGNATED_UNDEAD_SIGHT = 6.0;
+   public static final double STAGNATED_OTHER_SIGHT = 12.0;
+   public static final int STAGNATED_MIN_TIER = 3;
+   public static final int STAGNATED_SPAWN_ODDS = 45;
+   public static final int STAGNATED_COOLDOWN_SECONDS = 90;
+   public static final int STAGNATED_MAX_NEAR = 2;
+
+   /** How far it notices a player: about 16 blocks clean, up to 48 at full exposure; a masked player with a clean meter is nearly invisible. */
+   public static double stagnatedSight(float exposure, boolean maskOk) {
+      if (exposure <= 0.0F) {
+         return maskOk ? 6.0 : 16.0;
+      }
+      return 16.0 + 32.0 * Math.min(1.0F, exposure / 100.0F);
+   }
 }

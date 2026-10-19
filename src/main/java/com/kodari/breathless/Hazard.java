@@ -4,12 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -68,6 +73,13 @@ public final class Hazard {
          RUNTIME.remove(newPlayer.getUUID());
          newPlayer.removeAttached(Breathless.EXPOSURE);
       });
+      // Dying silences everything Breathless was playing (ambience, build-up, wheeze...) so the death screen is quiet.
+      ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+         if (entity instanceof ServerPlayer player) {
+            stopAllSounds(player);
+            RUNTIME.remove(player.getUUID());
+         }
+      });
       // "Putting the mask on" sound.
       ServerEntityEvents.EQUIPMENT_CHANGE.register((entity, slot, previous, current) -> {
          if (slot == EquipmentSlot.HEAD && entity instanceof ServerPlayer player && Masks.isMask(current) && !Masks.isMask(previous)) {
@@ -83,6 +95,10 @@ public final class Hazard {
    public static float getExposure(Player player) {
       Float value = player.getAttached(Breathless.EXPOSURE);
       return value == null ? 0.0F : value;
+   }
+
+   public static void addExposure(ServerPlayer player, float amount) {
+      setExposure(player, Math.min(100.0F, getExposure(player) + amount));
    }
 
    public static void setExposure(ServerPlayer player, float value) {
@@ -173,6 +189,7 @@ public final class Hazard {
          if (--rt.sculkTimer <= 0) {
             rt.sculkTimer = 20;
             rt.sculkTier = SculkScan.tier(SculkScan.score(player));
+            StagnatedSpawner.tick(player, rt.sculkTier, exposure);
          }
       } else {
          rt.sculkTier = 0;
@@ -215,7 +232,7 @@ public final class Hazard {
                float damage = Tuning.DAMAGE_START + (Tuning.DAMAGE_MAX - Tuning.DAMAGE_START) * ramp;
                Masks.playAt(player, ModSounds.SPORE_DAMAGE, Tuning.DAMAGE_SOUND_VOLUME, 1.0F);
                if (!exempt) {
-                  player.hurtServer(level, level.damageSources().drown(), damage);
+                  player.hurtServer(level, ModDamage.spores(level), damage);
                }
             }
             if (--rt.wheezeTimer <= 0) {
@@ -399,6 +416,16 @@ public final class Hazard {
       return true;
    }
 
+   private static void stopAllSounds(ServerPlayer player) {
+      SoundEvent[] ours = {ModSounds.AMBIENCE_MUFFLED, ModSounds.AMBIENCE_OPEN, ModSounds.WHEEZE, ModSounds.BUILDUP, ModSounds.TENDRILS,
+         ModSounds.POPUP_SPAM, ModSounds.POPUP_FINAL, ModSounds.INJECT, ModSounds.SPORE_DAMAGE, ModSounds.SIGH_RELIEF};
+      for (SoundEvent sound : ours) {
+         for (SoundSource source : SoundSource.values()) {
+            player.connection.send(new ClientboundStopSoundPacket(BuiltInRegistries.SOUND_EVENT.getKey(sound), source));
+         }
+      }
+   }
+
    private static void startFiend(ServerPlayer player, Rt rt, boolean realCure) {
       // The pop-up packet goes first so the client can freeze the bar at its old value before the reset arrives.
       Masks.playFollow(player, ModSounds.INJECT, SoundSource.PLAYERS, Tuning.INJECT_VOLUME, 1.0F);
@@ -417,7 +444,8 @@ public final class Hazard {
          if (!player.isCreative() && !player.isSpectator()) {
             ServerLevel level = (ServerLevel)player.level();
             float before = player.getHealth();
-            player.hurtServer(level, level.damageSources().genericKill(), Tuning.ADRENALINE_DAMAGE);
+            Masks.playAt(player, SoundEvents.FIRE_EXTINGUISH, 1.0F, 1.3F); // "tsss" (placeholder until a custom sound)
+            player.hurtServer(level, ModDamage.sear(level), Tuning.ADRENALINE_DAMAGE);
             // Safety net: if something swallowed the hit, take the health directly (never to the point of killing).
             if (player.isAlive() && player.getHealth() >= before - 0.01F && before - Tuning.ADRENALINE_DAMAGE > 0.0F) {
                player.setHealth(before - Tuning.ADRENALINE_DAMAGE);

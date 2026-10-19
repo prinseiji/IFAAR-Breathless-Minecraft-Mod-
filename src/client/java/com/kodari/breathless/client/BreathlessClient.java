@@ -19,13 +19,18 @@ import com.kodari.breathless.ExposurePayload;
 import com.kodari.breathless.FiendPayload;
 import com.kodari.breathless.MaskFilters;
 import com.kodari.breathless.Masks;
+import com.kodari.breathless.ModEntities;
 import com.kodari.breathless.ModItems;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;
 import com.kodari.breathless.ModParticles;
 import com.kodari.breathless.Tuning;
 
 public class BreathlessClient implements ClientModInitializer {
    @Override
    public void onInitializeClient() {
+      ModelLayerRegistry.registerModelLayer(StagnatedModel.LAYER, StagnatedModel::createBodyLayer);
+      EntityRendererRegistry.register(ModEntities.STAGNATED, StagnatedRenderer::new);
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
       ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);

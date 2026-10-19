@@ -93,7 +93,7 @@ public final class ClientState {
    }
 
    static void tick(Minecraft mc) {
-      if (mc.player == null || mc.level == null) {
+      if (mc.player == null || mc.level == null || !mc.player.isAlive()) {
          exposure = 0.0F;
          critTicks = 0;
          fiendTick = -1;

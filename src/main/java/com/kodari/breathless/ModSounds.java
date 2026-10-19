@@ -24,6 +24,12 @@ public final class ModSounds {
    public static SoundEvent POPUP_SPAM;
    public static SoundEvent POPUP_FINAL;
    public static SoundEvent INJECT;
+   public static SoundEvent STAGNATED_SPOT;
+   public static SoundEvent STAGNATED_HURT;
+   public static SoundEvent STAGNATED_IDLE;
+   public static SoundEvent STAGNATED_DEATH;
+   public static SoundEvent STAGNATED_GROWL;
+   public static SoundEvent STAGNATED_HIT;
    public static SoundEvent BUILDUP;
 
    private static SoundEvent reg(String name) {
@@ -47,5 +53,11 @@ public final class ModSounds {
       POPUP_FINAL = reg("popup_final");
       INJECT = reg("inject");
       BUILDUP = reg("buildup");
+      STAGNATED_SPOT = reg("stagnated_spot");
+      STAGNATED_HURT = reg("stagnated_hurt");
+      STAGNATED_IDLE = reg("stagnated_idle");
+      STAGNATED_DEATH = reg("stagnated_death");
+      STAGNATED_GROWL = reg("stagnated_growl");
+      STAGNATED_HIT = reg("stagnated_hit");
    }
 }

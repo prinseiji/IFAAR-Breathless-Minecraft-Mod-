@@ -33,5 +33,14 @@
   "effect.breathless.moribund": "Moribund",
   "breathless.tooltip.filter_reinforced": "Reinforced: wears out half as fast",
   "breathless.tooltip.tonic": "Wear a gas mask when you drink it",
-  "breathless.tooltip.nv": "Night vision below Y=0"
+  "breathless.tooltip.nv": "Night vision below Y=0",
+  "death.attack.breathless_spores": "%1$s bursted by the seams.",
+  "death.attack.breathless_sear": "%1$s crashed due to an unexpected issue.",
+  "subtitles.breathless.stagnated_spot": "Stagnated notices you",
+  "subtitles.breathless.stagnated_hurt": "Stagnated is hurt",
+  "subtitles.breathless.stagnated_idle": "Stagnated groans",
+  "subtitles.breathless.stagnated_death": "Stagnated dies",
+  "subtitles.breathless.stagnated_growl": "Stagnated growls",
+  "subtitles.breathless.stagnated_hit": "Stagnated strikes",
+  "entity.breathless.stagnated": "Stagnated"
 }

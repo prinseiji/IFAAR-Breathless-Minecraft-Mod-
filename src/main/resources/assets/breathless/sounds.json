@@ -178,5 +178,59 @@
         "stream": true
       }
     ]
+  },
+  "stagnated_spot": {
+    "sounds": [
+      {
+        "name": "breathless:stagnated_spot",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.stagnated_spot"
+  },
+  "stagnated_hurt": {
+    "sounds": [
+      {
+        "name": "breathless:stagnated_hurt",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.stagnated_hurt"
+  },
+  "stagnated_idle": {
+    "sounds": [
+      {
+        "name": "breathless:stagnated_idle",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.stagnated_idle"
+  },
+  "stagnated_death": {
+    "sounds": [
+      {
+        "name": "breathless:stagnated_death",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.stagnated_death"
+  },
+  "stagnated_growl": {
+    "sounds": [
+      {
+        "name": "breathless:stagnated_growl",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.stagnated_growl"
+  },
+  "stagnated_hit": {
+    "sounds": [
+      {
+        "name": "breathless:stagnated_hit",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.stagnated_hit"
   }
 }

@@ -34,6 +34,7 @@ public class Breathless implements ModInitializer {
    public void onInitialize() {
       ModSounds.register();
       ModEffects.register();
+      ModEntities.register();
       ModParticles.register();
       ModItems.register();
       PayloadTypeRegistry.clientboundPlay().register(ExposurePayload.TYPE, ExposurePayload.CODEC);

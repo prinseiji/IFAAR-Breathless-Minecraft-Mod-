@@ -88,3 +88,19 @@ Everything. See DEVELOPMENT.md.
 - **Filter meter:** now in the bottom-left corner of the screen.
 - **Creative tabs:** masks and filters in Combat, dusts in Ingredients, tonics in Food & Drinks. `/breathless give` hands out all of it.
 - Checked against the real 26.1 game files where the call shapes could be (item/consumable, particles, block names), but not compiled or run.
+
+## Batch 10a
+- Filter-meter icons no longer cropped (cut exactly 15x15 from row 5 of the sheet).
+- Tonics weaker: lesser purges 10, strong purges 25 (Tuning.TONIC_*).
+- Own damage types: spores -> "% bursted by the seams."; the adrenaline cure's 4-heart hit -> "% crashed due to an unexpected issue." Both bypass armor.
+- Sear plays a "tsss" (vanilla fire-extinguish placeholder; swap in your own later).
+- Dying stops all Breathless sounds; the HUD effects clear the moment you die.
+
+## Batch 10b - the Stagnated
+- New mob `breathless:stagnated` (try `/summon breathless:stagnated`). Model, bones and all six animations come from your Stagnated.bbmodel (converted into Minecraft's own model code, no GeckoLib); skin = your PNG.
+- Behaviour: wanders and idles; on first lock-on it freezes for about 0.8 s ("spots" pose + spot sound, then the growl) and chases (faster than walking, slower than sprinting). Chase hit = 2 hearts + 15 exposure.
+- Notices players from about 16 blocks (48 at full exposure; 6 if you wear a working mask with a clean meter). Also attacks animals/villagers within 12 blocks, and zombies/skeletons only within 6 (players always come first). Ignores wardens and other Stagnated.
+- 30 HP, drops nothing, hurt/death/idle/hit sounds from your files.
+- Spawns only by 5-L0: below Y=0 in heavy sculk (Moribund tier) or at 100% exposure, about once per 45 s of rolling, 90 s cooldown, at most 2 within 64 blocks, out of your line of sight.
+- Not done yet: the SLOTH text flash on spotting, lore drop.
+- All numbers are in Tuning.java (STAGNATED_*).

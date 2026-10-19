@@ -174,7 +174,7 @@ public final class SporeHud {
          int life = slot == 0 ? filters.first() : filters.second();
          int iy = y0 + slot * FILTER_ROW;
          if (life > 0) {
-            g.blit(RenderPipelines.GUI_TEXTURED, filters.reinforced(slot) ? FILTER_ICONS_REINFORCED : FILTER_ICONS, x0, iy, slot * 16.0F, 0.0F, FILTER_ICON, FILTER_ICON, 32, 32);
+            g.blit(RenderPipelines.GUI_TEXTURED, filters.reinforced(slot) ? FILTER_ICONS_REINFORCED : FILTER_ICONS, x0, iy, slot * 16.0F, 5.0F, 15, 15, 32, 32);
          } else {
             // an empty slot: just a faint outline
             int o = 0x50A8C8D0;
