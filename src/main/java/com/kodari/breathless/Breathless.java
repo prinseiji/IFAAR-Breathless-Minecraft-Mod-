@@ -1,6 +1,7 @@
 package com.kodari.breathless;
 
 import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.serialization.Codec;
 
 import net.fabricmc.api.ModInitializer;
@@ -71,6 +72,7 @@ public class Breathless implements ModInitializer {
    /**
     * Test commands:
     *   /breathless exposure <0-100>   set your meter
+    *   /breathless role <0-3>         set the role of Stagnated within 16 blocks: 0 none, 1 armor, 2 pickaxe, 3 builder
     *   /breathless give               masks (plain, nearly dead, night vision reinforced), loose filters (plain and reinforced) and tonics
     *   /breathless fiend              play the F13ND pop-up sequence (no damage, no reset)
     */
@@ -84,6 +86,14 @@ public class Breathless implements ModInitializer {
                Hazard.forceSync(player);
                context.getSource().sendSuccess(() -> Component.literal("Spore exposure set to " + value), false);
                return 1;
+            })))
+            .then(Commands.literal("role").then(Commands.argument("value", IntegerArgumentType.integer(0, 3)).executes(context -> {
+               ServerPlayer player = context.getSource().getPlayerOrException();
+               int value = IntegerArgumentType.getInteger(context, "value");
+               var list = ((net.minecraft.server.level.ServerLevel)player.level()).getEntitiesOfClass(Stagnated.class, player.getBoundingBox().inflate(16.0));
+               list.forEach(s -> s.setRole(value));
+               context.getSource().sendSuccess(() -> Component.literal("Set the role of " + list.size() + " Stagnated nearby to " + value + " (0 none, 1 armor, 2 pickaxe, 3 builder)"), false);
+               return list.size();
             })))
             .then(Commands.literal("give").executes(context -> {
                ServerPlayer player = context.getSource().getPlayerOrException();

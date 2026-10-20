@@ -4,6 +4,8 @@ import com.kodari.breathless.Breathless;
 import com.kodari.breathless.Stagnated;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
+import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 
@@ -16,6 +18,7 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       for (int i = 0; i < 4; i++) {
          armorModels[i] = new StagnatedModel(context.bakeLayer(StagnatedModel.ARMOR_LAYERS[i]));
       }
+      this.addLayer(new ItemInHandLayer<>(this));
       this.addLayer(new StagnatedArmorLayer(this, armorModels, context.getEquipmentRenderer()));
    }
 
@@ -27,6 +30,7 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
    @Override
    public void extractRenderState(Stagnated entity, StagnatedRenderState state, float partialTick) {
       super.extractRenderState(entity, state, partialTick);
+      ArmedEntityRenderState.extractArmedEntityRenderState(entity, state, this.itemModelResolver, partialTick);
       state.aggressive = entity.isAggressive();
       state.attack = entity.getAttackAnim(partialTick);
       state.hurt = entity.hurtTime > 0 ? 1.0F - Math.max(0.0F, (entity.hurtTime - partialTick) / 10.0F) : -1.0F;
@@ -36,6 +40,8 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       state.armor[1] = entity.getItemBySlot(EquipmentSlot.CHEST).copy();
       state.armor[2] = entity.getItemBySlot(EquipmentSlot.LEGS).copy();
       state.armor[3] = entity.getItemBySlot(EquipmentSlot.FEET).copy();
+      state.mining = entity.mineClock >= 0 ? (entity.mineClock + partialTick) / 20.0F : -1.0F;
+      state.placing = entity.placeClock >= 0 ? (entity.placeClock + partialTick) / 20.0F : -1.0F;
       state.spot = entity.spotClock >= 0 ? (entity.spotClock + partialTick) / 20.0F : -1.0F;
    }
 

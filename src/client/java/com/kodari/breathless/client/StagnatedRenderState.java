@@ -1,9 +1,9 @@
 package com.kodari.breathless.client;
 
-import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.world.item.ItemStack;
 
-public class StagnatedRenderState extends LivingEntityRenderState {
+public class StagnatedRenderState extends ArmedEntityRenderState {
    public boolean aggressive;
    /** 0..1 progress of the swing, 0 when not swinging. */
    public float attack;
@@ -15,6 +15,9 @@ public class StagnatedRenderState extends LivingEntityRenderState {
    public float emerge = -1.0F;
    /** Seconds into the armoring animation, -1 when not armoring. */
    public float armoring = -1.0F;
+   /** Seconds into the (looping) block-breaking / block-placing animations, -1 when not doing it. */
+   public float mining = -1.0F;
+   public float placing = -1.0F;
    /** Worn armor: helmet, chestplate, leggings, boots. */
    public final ItemStack[] armor = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
 }

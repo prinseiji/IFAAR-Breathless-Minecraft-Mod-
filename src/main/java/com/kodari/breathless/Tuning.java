@@ -204,6 +204,18 @@ public final class Tuning {
    /** Armoring animation: 1.04 s long, the armor goes on at 0.67 s. */
    public static final int STAGNATED_ARMOR_TICKS = 21;
    public static final int STAGNATED_ARMOR_EQUIP_AT = 13;
+   // Pickaxe and builder roles
+   /** One round of three swings (1.29 s). Harder blocks take more rounds. */
+   public static final int STAGNATED_MINE_TICKS = 26;
+   /** The "place" animation is 0.63 s. */
+   public static final int STAGNATED_PLACE_TICKS = 13;
+   /** A builder gives up after this many blocks. */
+   public static final int STAGNATED_MAX_BLOCKS = 32;
+   public static final boolean STAGNATED_MINE_DROPS = false;
+   /** It won't mine anything tougher than this (stone is 1.5, deepslate 3, obsidian 50). */
+   public static final float STAGNATED_MINE_MAX_HARDNESS = 8.0F;
+   /** It only digs or builds when the target is this close but cannot be reached. */
+   public static final double STAGNATED_ACT_RANGE = 14.0;
    public static final double STAGNATED_VERTICAL = 40.0;
 
    /** How far it notices a player: about 16 blocks clean, up to 48 at full exposure; a masked player with a clean meter is nearly invisible. */

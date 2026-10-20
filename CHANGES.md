@@ -128,3 +128,10 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 13b - armoring crash fix
 - Fixed the "Network Protocol Error" when hitting an armored Stagnated: vanilla's client treats entity event 63 as a Sniffer event, so my armoring signal (63) crashed it. It now uses event 70. (Spot = 61 and emerge = 62 were fine; 21, 35 and 63 are the ones vanilla reserves.)
+
+## Batch 14 - pickaxe and builder roles
+- **Held item:** the pickaxe / the sculk block is held in the left hand (off-hand, so it adds no attack damage). It is equipped the moment the Stagnated spots a player, with the vanilla armor-equip sound.
+- **Pickaxe role:** when a player is close (within 14 blocks) but it cannot walk to them, it stops, plays your breaking_block animation (three swings, 1.29 s per round) and breaks the block in the way. Harder blocks take 2 or 3 rounds. It never mines anything tougher than hardness 8 (so no obsidian, no bedrock), nothing with an inventory or other block entity, and nothing underwater. Broken blocks drop nothing (Tuning.STAGNATED_MINE_DROPS).
+- **Builder role:** same trigger, but it plays "place" and puts down sculk: a block to bridge a gap, or a step up when the player is higher. It gives up after 32 blocks.
+- Both only work while the mob griefing game rule is on.
+- **Testing:** `/breathless role <0-3>` sets the role of every Stagnated within 16 blocks: 0 none, 1 armor, 2 pickaxe, 3 builder.

@@ -1,7 +1,10 @@
 package com.kodari.breathless.client;
 
 import com.kodari.breathless.Breathless;
+import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.EntityModel;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -12,7 +15,7 @@ import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 
 /** The Stagnated: bind pose and bones come straight from the Stagnated.bbmodel (generated), poses from its animations. */
-public class StagnatedModel extends EntityModel<StagnatedRenderState> {
+public class StagnatedModel extends EntityModel<StagnatedRenderState> implements ArmedModel<StagnatedRenderState> {
    public static final ModelLayerLocation LAYER = new ModelLayerLocation(Breathless.id("stagnated"), "main");
    public static final ModelLayerLocation[] ARMOR_LAYERS = {
       new ModelLayerLocation(Breathless.id("stagnated"), "armor_head"),
@@ -108,6 +111,12 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> {
       return LayerDefinition.create(mesh, 64, 32);
    }
 
+   @Override
+   public void translateToHand(StagnatedRenderState state, HumanoidArm arm, PoseStack poseStack) {
+      this.waist.translateAndRotate(poseStack);
+      (arm == HumanoidArm.LEFT ? this.leftArm : this.rightArm).translateAndRotate(poseStack);
+   }
+
    private ModelPart bone(String name) {
       return switch (name) {
          case "waist" -> this.waist;
@@ -158,6 +167,10 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> {
          this.apply(StagnatedAnims.SPAWN, state.emerge);
       } else if (state.armoring >= 0.0F) {
          this.apply(StagnatedAnims.ARMORING, state.armoring);
+      } else if (state.mining >= 0.0F) {
+         this.apply(StagnatedAnims.BREAKING_BLOCK, state.mining);
+      } else if (state.placing >= 0.0F) {
+         this.apply(StagnatedAnims.PLACE, state.placing);
       } else if (state.hurt >= 0.0F) {
          this.apply(StagnatedAnims.HURT, state.hurt * StagnatedAnims.HURT.length());
       } else if (state.attack > 0.0F) {
