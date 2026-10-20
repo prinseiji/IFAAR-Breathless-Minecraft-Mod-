@@ -112,3 +112,11 @@ Everything. See DEVELOPMENT.md.
 - **Faster, weaker:** speed 0.25 x 1.2 chase, 20 HP (10 hearts), 3 damage (1.5 hearts) plus 15 exposure.
 - **Detection:** wide and tall (24 blocks up and down, height ignored inside that), and a sprinting player is noticed from 1.5x as far.
 - **Ribcage:** the rib cubes read the top-left corner of the skin, which was empty. It is now painted bone-white with a few sculk-teal flecks (rows 0-4, columns 0-7). Paint over it with your own art whenever.
+
+## Batch 12 - tweaks
+- **Speed** base 0.35 (x1.2 when chasing).
+- **Detection** much wider: 24 blocks clean, up to 72 at full exposure, 10 behind a working mask with a clean meter; sprinting doubles it; it sees 40 blocks up and down.
+- **Spot** now turns to face what it spotted (the pose raises its head and arm).
+- **Echolocation:** when a sculk sensor near it goes active (tendrils moving), a vibration wave travels from the sensor to the Stagnated and it walks over to investigate. Scans 20 blocks sideways, 10 up and down; it never does this while chasing something.
+- New animations converted and ready in StagnatedAnims (ARMORING 1.04 s, BREAKING_BLOCK 1.29 s, PLACE 0.63 s). Not used yet: the pickaxe / building / armor behaviours come next.
+- All numbers: Tuning.java (STAGNATED_*).

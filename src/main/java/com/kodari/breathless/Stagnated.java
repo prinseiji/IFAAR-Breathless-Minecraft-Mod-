@@ -3,7 +3,15 @@ package com.kodari.breathless;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import java.util.EnumSet;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.level.block.SculkSensorBlock;
+import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
+import net.minecraft.world.level.gameevent.EntityPositionSource;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -36,6 +44,10 @@ public class Stagnated extends Monster {
    public int emergeClock = -1;
    /** Server-side: ticks left of the emerge animation (immobile and untouchable until then). */
    private int emergeTicks;
+   /** Where an active sculk sensor made it curious, and when it should start walking there. */
+   private BlockPos investigate;
+   private int investigateAt;
+   private int heardCooldown;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
@@ -54,6 +66,7 @@ public class Stagnated extends Monster {
    protected void registerGoals() {
       this.goalSelector.addGoal(0, new FloatGoal(this));
       this.goalSelector.addGoal(2, new MeleeAttackGoal(this, Tuning.STAGNATED_CHASE_MODIFIER, true));
+      this.goalSelector.addGoal(3, new InvestigateGoal());
       this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.5));
       this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
       // Players first (how far depends on their exposure), then anything else living that disturbs the layer.
@@ -136,8 +149,94 @@ public class Stagnated extends Monster {
          }
       } else if (this.emergeTicks > 0) {
          this.emergeTicks--;
-      } else if (this.spotTicks > 0 && --this.spotTicks == 0) {
-         this.playSound(ModSounds.STAGNATED_GROWL, 1.2F, 1.0F);
+      } else {
+         if (this.spotTicks > 0) {
+            this.faceTarget();
+         }
+         if (this.heardCooldown > 0) {
+            this.heardCooldown--;
+         } else if (this.getTarget() == null && this.tickCount % 10 == 0) {
+            this.listen((ServerLevel)this.level());
+         }
+         if (this.spotTicks > 0 && --this.spotTicks == 0) {
+            this.playSound(ModSounds.STAGNATED_GROWL, 1.2F, 1.0F);
+         }
+      }
+   }
+
+   /** The "spots" pose raises its head and arm, so it has to be looking at whatever it spotted. */
+   private void faceTarget() {
+      LivingEntity target = this.getTarget();
+      if (target == null) {
+         return;
+      }
+      float yaw = (float)(Mth.atan2(target.getZ() - this.getZ(), target.getX() - this.getX()) * 180.0F / (float)Math.PI) - 90.0F;
+      this.setYRot(yaw);
+      this.setYBodyRot(yaw);
+      this.setYHeadRot(yaw);
+   }
+
+   /**
+    * Echolocation: an active sculk sensor (its tendrils are moving) sends a vibration wave to the Stagnated,
+    * and it walks over to see what made the noise.
+    */
+   private void listen(ServerLevel level) {
+      BlockPos origin = this.blockPosition();
+      BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+      BlockPos best = null;
+      double bestDist = Double.MAX_VALUE;
+      int r = Tuning.STAGNATED_LISTEN_RADIUS;
+      int h = Tuning.STAGNATED_LISTEN_HEIGHT;
+      for (int x = -r; x <= r; x++) {
+         for (int z = -r; z <= r; z++) {
+            for (int y = -h; y <= h; y++) {
+               pos.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
+               var state = level.getBlockState(pos);
+               if (state.getBlock() instanceof SculkSensorBlock && state.getValue(SculkSensorBlock.PHASE) == SculkSensorPhase.ACTIVE) {
+                  double d = pos.distSqr(origin);
+                  if (d < bestDist) {
+                     bestDist = d;
+                     best = pos.immutable();
+                  }
+               }
+            }
+         }
+      }
+      if (best == null) {
+         return;
+      }
+      int arrival = Math.max(4, (int)Math.sqrt(bestDist));
+      level.sendParticles(new VibrationParticleOption(new EntityPositionSource(this, this.getEyeHeight()), arrival),
+         best.getX() + 0.5, best.getY() + 0.5, best.getZ() + 0.5, 1, 0.0, 0.0, 0.0, 0.0);
+      this.investigate = best;
+      this.investigateAt = this.tickCount + arrival;
+      this.heardCooldown = 40;
+   }
+
+   private class InvestigateGoal extends Goal {
+      InvestigateGoal() {
+         this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+      }
+
+      @Override
+      public boolean canUse() {
+         return Stagnated.this.investigate != null && Stagnated.this.tickCount >= Stagnated.this.investigateAt && Stagnated.this.getTarget() == null;
+      }
+
+      @Override
+      public void start() {
+         BlockPos at = Stagnated.this.investigate;
+         Stagnated.this.getNavigation().moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 1.0);
+      }
+
+      @Override
+      public boolean canContinueToUse() {
+         return Stagnated.this.getTarget() == null && !Stagnated.this.getNavigation().isDone();
+      }
+
+      @Override
+      public void stop() {
+         Stagnated.this.investigate = null;
       }
    }
 

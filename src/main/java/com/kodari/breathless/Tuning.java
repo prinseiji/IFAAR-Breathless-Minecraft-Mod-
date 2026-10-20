@@ -186,7 +186,7 @@ public final class Tuning {
    public static final double STAGNATED_DAMAGE = 3.0;
    public static final float STAGNATED_HIT_EXPOSURE = 15.0F;
    public static final int STAGNATED_SPOT_TICKS = 17;
-   public static final double STAGNATED_MAX_SIGHT = 48.0;
+   public static final double STAGNATED_MAX_SIGHT = 128.0;
    public static final double STAGNATED_UNDEAD_SIGHT = 6.0;
    public static final double STAGNATED_OTHER_SIGHT = 12.0;
    public static final int STAGNATED_MIN_TIER = 3;
@@ -196,15 +196,18 @@ public final class Tuning {
    /** Length of the emerge animation (7.92 s). */
    public static final int STAGNATED_EMERGE_TICKS = 159;
    /** Sideways reach beyond the sight radius for a sprinting player (it hears the noise). */
-   public static final double STAGNATED_NOISE_FACTOR = 1.5;
+   public static final double STAGNATED_NOISE_FACTOR = 2.0;
    /** It looks this far up and down, ignoring height otherwise (it is oblivious, not precise). */
-   public static final double STAGNATED_VERTICAL = 24.0;
+   /** Echolocation: how far it hears an active sculk sensor (blocks sideways / up and down). */
+   public static final int STAGNATED_LISTEN_RADIUS = 20;
+   public static final int STAGNATED_LISTEN_HEIGHT = 10;
+   public static final double STAGNATED_VERTICAL = 40.0;
 
    /** How far it notices a player: about 16 blocks clean, up to 48 at full exposure; a masked player with a clean meter is nearly invisible. */
    public static double stagnatedSight(float exposure, boolean maskOk) {
       if (exposure <= 0.0F) {
-         return maskOk ? 6.0 : 16.0;
+         return maskOk ? 10.0 : 24.0;
       }
-      return 16.0 + 32.0 * Math.min(1.0F, exposure / 100.0F);
+      return Math.min(STAGNATED_MAX_SIGHT, 24.0 + 48.0 * Math.min(1.0F, exposure / 100.0F));
    }
 }
