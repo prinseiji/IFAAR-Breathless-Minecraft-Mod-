@@ -16,7 +16,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -44,6 +50,12 @@ public class Stagnated extends Monster {
    public int emergeClock = -1;
    /** Server-side: ticks left of the emerge animation (immobile and untouchable until then). */
    private int emergeTicks;
+   /** What this one does when it meets a player. Each Stagnated has only one: 0 none, 1 armor, 2 pickaxe (mining), 3 builder. */
+   private int role;
+   /** Client-side: ticks into the armoring animation, -1 when not armoring. */
+   public int armoringClock = -1;
+   /** Server-side: ticks left of the armoring animation. */
+   private int armoringTicks;
    /** Where an active sculk sensor made it curious, and when it should start walking there. */
    private BlockPos investigate;
    private int investigateAt;
@@ -51,6 +63,7 @@ public class Stagnated extends Monster {
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
+      this.role = level.getRandom().nextInt(3) + 1;
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -126,12 +139,41 @@ public class Stagnated extends Monster {
       if (this.emergeTicks > 0) {
          return false;
       }
-      return super.hurtServer(level, source, amount);
+      boolean hurt = super.hurtServer(level, source, amount);
+      // An armored one puts its iron on the moment a player hits it.
+      if (hurt && this.role == 1 && this.armoringTicks <= 0 && this.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && source.getEntity() instanceof Player && this.isAlive()) {
+         this.armoringTicks = Tuning.STAGNATED_ARMOR_TICKS;
+         this.level().broadcastEntityEvent(this, (byte)63);
+      }
+      return hurt;
+   }
+
+   private void putOnArmor() {
+      this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+      this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+      this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+      this.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+      for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+         this.setDropChance(slot, 0.0F);
+      }
+      this.playSound(SoundEvents.ARMOR_EQUIP_IRON.value(), 1.0F, 1.0F);
+   }
+
+   @Override
+   protected void addAdditionalSaveData(ValueOutput output) {
+      super.addAdditionalSaveData(output);
+      output.putInt("StagnatedRole", this.role);
+   }
+
+   @Override
+   protected void readAdditionalSaveData(ValueInput input) {
+      super.readAdditionalSaveData(input);
+      this.role = input.getIntOr("StagnatedRole", 0);
    }
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0;
    }
 
    @Override
@@ -144,12 +186,21 @@ public class Stagnated extends Monster {
                this.emergeClock = -1;
             }
          }
+         if (this.armoringClock >= 0 && ++this.armoringClock > Tuning.STAGNATED_ARMOR_TICKS) {
+            this.armoringClock = -1;
+         }
          if (this.spotClock >= 0 && ++this.spotClock > Tuning.STAGNATED_SPOT_TICKS) {
             this.spotClock = -1;
          }
       } else if (this.emergeTicks > 0) {
          this.emergeTicks--;
       } else {
+         if (this.armoringTicks > 0) {
+            this.armoringTicks--;
+            if (Tuning.STAGNATED_ARMOR_TICKS - this.armoringTicks == Tuning.STAGNATED_ARMOR_EQUIP_AT) {
+               this.putOnArmor();
+            }
+         }
          if (this.spotTicks > 0) {
             this.faceTarget();
          }
@@ -246,6 +297,8 @@ public class Stagnated extends Monster {
          this.spotClock = 0;
       } else if (event == 62) {
          this.emergeClock = 0;
+      } else if (event == 63) {
+         this.armoringClock = 0;
       } else {
          super.handleEntityEvent(event);
       }

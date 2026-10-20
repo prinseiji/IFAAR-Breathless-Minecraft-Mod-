@@ -120,3 +120,8 @@ Everything. See DEVELOPMENT.md.
 - **Echolocation:** when a sculk sensor near it goes active (tendrils moving), a vibration wave travels from the sensor to the Stagnated and it walks over to investigate. Scans 20 blocks sideways, 10 up and down; it never does this while chasing something.
 - New animations converted and ready in StagnatedAnims (ARMORING 1.04 s, BREAKING_BLOCK 1.29 s, PLACE 0.63 s). Not used yet: the pickaxe / building / armor behaviours come next.
 - All numbers: Tuning.java (STAGNATED_*).
+
+## Batch 13 - armor role
+- Every Stagnated now gets one role at random when it spawns (saved with it): armor, pickaxe, or builder. Only the armor role does anything yet; pickaxe and builder come in the next batches.
+- **Armored:** the first time a player hits it, it stops for 1.04 s and plays your "armoring" animation; the iron armor (helmet, chestplate, leggings, boots) goes on at 0.67 s with the vanilla iron equip sound. It never drops the armor.
+- The armor is drawn on shells that share the Stagnated's own skeleton (same bind pose and animations), built from its body cubes with vanilla armor UVs, so it should follow the hunched pose.

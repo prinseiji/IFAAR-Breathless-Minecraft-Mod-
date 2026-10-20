@@ -201,6 +201,9 @@ public final class Tuning {
    /** Echolocation: how far it hears an active sculk sensor (blocks sideways / up and down). */
    public static final int STAGNATED_LISTEN_RADIUS = 20;
    public static final int STAGNATED_LISTEN_HEIGHT = 10;
+   /** Armoring animation: 1.04 s long, the armor goes on at 0.67 s. */
+   public static final int STAGNATED_ARMOR_TICKS = 21;
+   public static final int STAGNATED_ARMOR_EQUIP_AT = 13;
    public static final double STAGNATED_VERTICAL = 40.0;
 
    /** How far it notices a player: about 16 blocks clean, up to 48 at full exposure; a masked player with a clean meter is nearly invisible. */

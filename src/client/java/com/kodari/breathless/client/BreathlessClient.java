@@ -31,6 +31,10 @@ public class BreathlessClient implements ClientModInitializer {
    @Override
    public void onInitializeClient() {
       ModelLayerRegistry.registerModelLayer(StagnatedModel.LAYER, StagnatedModel::createBodyLayer);
+      ModelLayerRegistry.registerModelLayer(StagnatedModel.ARMOR_LAYERS[0], () -> StagnatedModel.createArmorLayer(0));
+      ModelLayerRegistry.registerModelLayer(StagnatedModel.ARMOR_LAYERS[1], () -> StagnatedModel.createArmorLayer(1));
+      ModelLayerRegistry.registerModelLayer(StagnatedModel.ARMOR_LAYERS[2], () -> StagnatedModel.createArmorLayer(2));
+      ModelLayerRegistry.registerModelLayer(StagnatedModel.ARMOR_LAYERS[3], () -> StagnatedModel.createArmorLayer(3));
       EntityRendererRegistry.register(ModEntities.STAGNATED, StagnatedRenderer::new);
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
