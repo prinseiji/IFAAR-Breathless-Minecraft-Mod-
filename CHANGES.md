@@ -135,3 +135,8 @@ Everything. See DEVELOPMENT.md.
 - **Builder role:** same trigger, but it plays "place" and puts down sculk: a block to bridge a gap, or a step up when the player is higher. It gives up after 32 blocks.
 - Both only work while the mob griefing game rule is on.
 - **Testing:** `/breathless role <0-3>` sets the role of every Stagnated within 16 blocks: 0 none, 1 armor, 2 pickaxe, 3 builder.
+
+## Batch 14b - smarter Stagnated
+- **No more digging down:** a miner only breaks the block under itself when the player is below it; with the player overhead it no longer undermines itself.
+- **Pillar building:** a builder with the player above and within about 4 blocks now jumps and places a sculk block where it was standing, over and over, one block at a time (a real tower). Steps and bridges are still used from further away.
+- **No more standing around:** when the target cannot be walked to, it now walks straight at it up to the wall, ledge or pillar instead of idling. It also notices when it has been standing still while chasing (about a second) and treats that like "unreachable", so the pickaxe / builder behaviours kick in. It checks every 5 ticks instead of 10.

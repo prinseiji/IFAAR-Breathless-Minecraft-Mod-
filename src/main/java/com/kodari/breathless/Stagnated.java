@@ -44,6 +44,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** 5-L0's puppet: a Steve with a chest cavity engulfed in sculk. Stays calm until something disturbs the layer. */
@@ -67,6 +68,10 @@ public class Stagnated extends Monster {
    private BlockPos actionPos;
    private int actionTicks;
    private int placed;
+   /** Can it walk to its target? Refreshed every 5 ticks. Also how long it has been standing still while chasing. */
+   private boolean unreachable;
+   private int stuckTicks;
+   private Vec3 lastPos = Vec3.ZERO;
    /** Client-side clocks for the looping mining / placing animations, -1 when not doing it. */
    public int mineClock = -1;
    public int placeClock = -1;
@@ -94,6 +99,7 @@ public class Stagnated extends Monster {
       this.goalSelector.addGoal(0, new FloatGoal(this));
       this.goalSelector.addGoal(2, new MeleeAttackGoal(this, Tuning.STAGNATED_CHASE_MODIFIER, true));
       this.goalSelector.addGoal(3, new InvestigateGoal());
+      this.goalSelector.addGoal(4, new ApproachGoal());
       this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.5));
       this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
       // Players first (how far depends on their exposure), then anything else living that disturbs the layer.
@@ -229,8 +235,11 @@ public class Stagnated extends Monster {
          }
          if (this.action != 0) {
             this.tickAction((ServerLevel)this.level());
-         } else if ((this.role == 2 || this.role == 3) && this.tickCount % 10 == 0) {
-            this.considerAction((ServerLevel)this.level());
+         } else if (this.tickCount % 5 == 0) {
+            this.refreshReach();
+            if (this.role == 2 || this.role == 3) {
+               this.considerAction((ServerLevel)this.level());
+            }
          }
          if (this.spotTicks > 0) {
             this.faceTarget();
@@ -281,8 +290,7 @@ public class Stagnated extends Monster {
       if (dist < 2.0 || dist > Tuning.STAGNATED_ACT_RANGE) {
          return;
       }
-      Path path = this.getNavigation().createPath(target, 0);
-      if (path != null && path.canReach()) {
+      if (!this.unreachable && this.stuckTicks < 20) {
          return;
       }
       double dx = target.getX() - this.getX();
@@ -293,8 +301,11 @@ public class Stagnated extends Monster {
       BlockPos ahead = feet.relative(dir);
       if (this.role == 2) {
          BlockPos[] order;
-         if (Math.abs(dx) < 1.5 && Math.abs(dz) < 1.5) {
+         boolean overhead = Math.abs(dx) < 1.5 && Math.abs(dz) < 1.5;
+         if (overhead && dy <= -1.5) {
             order = new BlockPos[] {feet.below()};
+         } else if (overhead) {
+            order = new BlockPos[0];
          } else if (dy >= 1.5) {
             order = new BlockPos[] {ahead.above(), ahead.above(2), ahead};
          } else {
@@ -309,6 +320,12 @@ public class Stagnated extends Monster {
             }
          }
       } else if (this.role == 3 && this.placed < Tuning.STAGNATED_MAX_BLOCKS && !free(level, feet.below())) {
+         if (dy >= 1.5 && Math.sqrt(dx * dx + dz * dz) <= 4.5 && free(level, feet.above(2))) {
+            // Pillar up one block at a time: jump, then put a block where it was standing.
+            this.beginAction(3, feet, 0, (byte)72);
+            this.setDeltaMovement(this.getDeltaMovement().x, 0.42, this.getDeltaMovement().z);
+            return;
+         }
          BlockPos pos = null;
          if (Math.abs(dy) < 1.5 && free(level, ahead.below()) && free(level, ahead) && free(level, ahead.above())) {
             pos = ahead.below(); // bridge over a gap
@@ -346,6 +363,18 @@ public class Stagnated extends Monster {
       this.setYRot(yaw);
       this.setYBodyRot(yaw);
       this.setYHeadRot(yaw);
+      if (this.action == 3) {
+         this.faceTarget();
+         this.actionTicks++;
+         boolean high = this.getY() >= this.actionPos.getY() + 1.05;
+         if (high) {
+            this.placeSculk(level);
+         }
+         if (high || this.actionTicks > 20) {
+            this.stopAction();
+         }
+         return;
+      }
       if (--this.actionTicks > 0) {
          if (this.action == 1 && this.actionTicks % 9 == 0) {
             var sound = level.getBlockState(this.actionPos).getSoundType().getHitSound();
@@ -357,13 +386,65 @@ public class Stagnated extends Monster {
          if (breakable(level, this.actionPos)) {
             level.destroyBlock(this.actionPos, Tuning.STAGNATED_MINE_DROPS, this, 512);
          }
-      } else if (free(level, this.actionPos) && level.getEntitiesOfClass(LivingEntity.class, new AABB(this.actionPos)).isEmpty()) {
+      } else {
+         this.placeSculk(level);
+      }
+      this.stopAction();
+   }
+
+   private void placeSculk(ServerLevel level) {
+      if (free(level, this.actionPos) && level.getEntitiesOfClass(LivingEntity.class, new AABB(this.actionPos)).isEmpty()) {
          var sculk = Blocks.SCULK.defaultBlockState();
          level.setBlock(this.actionPos, sculk, 3);
          level.playSound(null, this.actionPos, sculk.getSoundType().getPlaceSound(), SoundSource.BLOCKS, 1.0F, 0.8F);
          this.placed++;
       }
-      this.stopAction();
+   }
+
+   /** Can it walk to its target, and is it standing still while chasing? Run every 5 ticks. */
+   private void refreshReach() {
+      LivingEntity target = this.getTarget();
+      if (target == null || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0) {
+         this.unreachable = false;
+         this.stuckTicks = 0;
+         this.lastPos = this.position();
+         return;
+      }
+      Path path = this.getNavigation().createPath(target, 0);
+      this.unreachable = path == null || !path.canReach();
+      if (this.distanceTo(target) > 2.5 && this.position().distanceToSqr(this.lastPos) < 0.01) {
+         this.stuckTicks += 5;
+      } else {
+         this.stuckTicks = 0;
+      }
+      this.lastPos = this.position();
+   }
+
+   /** When the target cannot be walked to, walk straight at it anyway (up to the wall, the ledge, the pillar) instead of standing around. */
+   private class ApproachGoal extends Goal {
+      ApproachGoal() {
+         this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+      }
+
+      @Override
+      public boolean canUse() {
+         LivingEntity target = Stagnated.this.getTarget();
+         return target != null && Stagnated.this.unreachable && Stagnated.this.distanceTo(target) > 1.8;
+      }
+
+      @Override
+      public boolean canContinueToUse() {
+         return this.canUse();
+      }
+
+      @Override
+      public void tick() {
+         LivingEntity target = Stagnated.this.getTarget();
+         if (target != null) {
+            Stagnated.this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+            Stagnated.this.getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), Tuning.STAGNATED_CHASE_MODIFIER);
+         }
+      }
    }
 
    /** The "spots" pose raises its head and arm, so it has to be looking at whatever it spotted. */
