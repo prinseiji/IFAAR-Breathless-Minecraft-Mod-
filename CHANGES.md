@@ -125,3 +125,6 @@ Everything. See DEVELOPMENT.md.
 - Every Stagnated now gets one role at random when it spawns (saved with it): armor, pickaxe, or builder. Only the armor role does anything yet; pickaxe and builder come in the next batches.
 - **Armored:** the first time a player hits it, it stops for 1.04 s and plays your "armoring" animation; the iron armor (helmet, chestplate, leggings, boots) goes on at 0.67 s with the vanilla iron equip sound. It never drops the armor.
 - The armor is drawn on shells that share the Stagnated's own skeleton (same bind pose and animations), built from its body cubes with vanilla armor UVs, so it should follow the hunched pose.
+
+## Batch 13b - armoring crash fix
+- Fixed the "Network Protocol Error" when hitting an armored Stagnated: vanilla's client treats entity event 63 as a Sniffer event, so my armoring signal (63) crashed it. It now uses event 70. (Spot = 61 and emerge = 62 were fine; 21, 35 and 63 are the ones vanilla reserves.)

@@ -143,7 +143,7 @@ public class Stagnated extends Monster {
       // An armored one puts its iron on the moment a player hits it.
       if (hurt && this.role == 1 && this.armoringTicks <= 0 && this.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && source.getEntity() instanceof Player && this.isAlive()) {
          this.armoringTicks = Tuning.STAGNATED_ARMOR_TICKS;
-         this.level().broadcastEntityEvent(this, (byte)63);
+         this.level().broadcastEntityEvent(this, (byte)70);
       }
       return hurt;
    }
@@ -297,7 +297,7 @@ public class Stagnated extends Monster {
          this.spotClock = 0;
       } else if (event == 62) {
          this.emergeClock = 0;
-      } else if (event == 63) {
+      } else if (event == 70) {
          this.armoringClock = 0;
       } else {
          super.handleEntityEvent(event);
