@@ -1,0 +1,12 @@
+{
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "recipes": [
+      "breathless:gas_mask_nv_empty"
+    ]
+  }
+}

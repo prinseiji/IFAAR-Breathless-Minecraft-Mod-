@@ -47,6 +47,9 @@ public final class ModItems {
    public static Item TONIC_LESSER;
    public static Item TONIC_STRONG;
 
+   /** The lore documents, in the order of Lore.DOCS. */
+   public static final Item[] LORE = new Item[Lore.DOCS.length];
+
    private static ResourceKey<Item> key(String path) {
       return ResourceKey.create(Registries.ITEM, Breathless.id(path));
    }
@@ -122,6 +125,10 @@ public final class ModItems {
 
       TONIC_LESSER = registerTonic("tonic_lesser", Tuning.TONIC_LESSER_PURGE);
       TONIC_STRONG = registerTonic("tonic_strong", Tuning.TONIC_STRONG_PURGE);
+      for (int i = 0; i < Lore.DOCS.length; i++) {
+         ResourceKey<Item> loreKey = key("lore_" + Lore.DOCS[i].id());
+         LORE[i] = Registry.register(BuiltInRegistries.ITEM, loreKey, new LoreItem(new Item.Properties().setId(loreKey).stacksTo(1), i));
+      }
    }
 
    /** True for the three night vision masks. */

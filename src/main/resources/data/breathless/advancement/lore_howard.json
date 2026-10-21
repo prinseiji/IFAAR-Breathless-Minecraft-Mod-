@@ -1,0 +1,12 @@
+{
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "recipes": [
+      "breathless:tonic_strong"
+    ]
+  }
+}

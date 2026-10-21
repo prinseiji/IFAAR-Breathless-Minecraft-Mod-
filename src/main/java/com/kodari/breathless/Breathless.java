@@ -41,10 +41,12 @@ public class Breathless implements ModInitializer {
       PayloadTypeRegistry.clientboundPlay().register(ExposurePayload.TYPE, ExposurePayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(FiendPayload.TYPE, FiendPayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(SpotPayload.TYPE, SpotPayload.CODEC);
+      PayloadTypeRegistry.clientboundPlay().register(OpenLorePayload.TYPE, OpenLorePayload.CODEC);
       FilterClicks.init();
 
       Hazard.init();
       Achievements.init();
+      Lore.init();
       MobRules.init();
 
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> {
@@ -61,6 +63,9 @@ public class Breathless implements ModInitializer {
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(entries -> {
          entries.accept(ModItems.AMETHYST_DUST);
          entries.accept(ModItems.CHARCOAL_DUST);
+         for (net.minecraft.world.item.Item doc : ModItems.LORE) {
+            entries.accept(doc);
+         }
       });
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(entries -> {
          entries.accept(ModItems.TONIC_LESSER);
@@ -76,6 +81,7 @@ public class Breathless implements ModInitializer {
     *   /breathless role <0-2>         set the role of Stagnated within 16 blocks: 0 none, 1 soldier, 2 excavator
     *   /breathless weapon <0-2>       make the Stagnated within 16 blocks soldiers with a weapon: 0 none, 1 iron sword, 2 stone axe
    *   /breathless give               masks (plain, nearly dead, night vision reinforced), loose filters (plain and reinforced) and tonics
+    *   /breathless lorereset          forget every lore document you read (locks their recipes again)
     *   /breathless fiend              play the F13ND pop-up sequence (no damage, no reset)
     */
    private static void registerCommands() {
@@ -119,7 +125,15 @@ public class Breathless implements ModInitializer {
                player.getInventory().add(new ItemStack(ModItems.STAGNATED_HEAD, 4));
                player.getInventory().add(new ItemStack(ModItems.TONIC_LESSER, 4));
                player.getInventory().add(new ItemStack(ModItems.TONIC_STRONG, 4));
+               for (net.minecraft.world.item.Item doc : ModItems.LORE) {
+                  player.getInventory().add(new ItemStack(doc));
+               }
                context.getSource().sendSuccess(() -> Component.literal("Gave gas masks, filters and tonics."), false);
+               return 1;
+            }))
+            .then(Commands.literal("lorereset").executes(context -> {
+               Lore.reset(context.getSource().getPlayerOrException());
+               context.getSource().sendSuccess(() -> Component.literal("Forgot all lore documents (the recipes are locked again, and the documents can be read as new)."), false);
                return 1;
             }))
             .then(Commands.literal("fiend").executes(context -> {
