@@ -216,6 +216,13 @@ public final class Tuning {
    public static final int STAGNATED_SHIELD_TICKS = 15;
    public static final int STAGNATED_SHIELD_STRIKE_AT = 10;
    public static final int STAGNATED_SHIELD_DISABLE_TICKS = 100;
+   /** Soldier with a weapon: the longer "spots" pose (1.83 s) where it draws the weapon at 1.04 s (tick 21), and the unarm (0.875 s) where it stashes it at 0.33 s (tick 7). */
+   public static final int STAGNATED_SPOT_ARMED_TICKS = 37;
+   public static final int STAGNATED_DRAW_AT = 21;
+   public static final int STAGNATED_UNARM_TICKS = 18;
+   public static final int STAGNATED_UNARM_AT = 7;
+   /** How far sideways a target may be before an excavator starts to pillar up toward it. */
+   public static final double STAGNATED_PILLAR_RANGE = 3.0;
    // Pickaxe and builder roles
    /** One round of three swings (1.29 s). Harder blocks take more rounds. */
    public static final int STAGNATED_MINE_TICKS = 26;

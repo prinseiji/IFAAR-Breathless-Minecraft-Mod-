@@ -177,6 +177,10 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
          this.apply(StagnatedAnims.HURT, state.hurt * StagnatedAnims.HURT.length());
       } else if (state.attack > 0.0F) {
          this.apply(StagnatedAnims.CHASE_HIT, state.attack * StagnatedAnims.CHASE_HIT.length());
+      } else if (state.unarm >= 0.0F) {
+         this.apply(StagnatedAnims.UNARM, state.unarm);
+      } else if (state.spotArmed >= 0.0F) {
+         this.apply(StagnatedAnims.SPOT_ARMED, state.spotArmed);
       } else if (state.spot >= 0.0F) {
          this.apply(StagnatedAnims.SPOT, state.spot);
       } else if (state.aggressive) {

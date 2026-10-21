@@ -20,6 +20,9 @@ public class StagnatedRenderState extends ArmedEntityRenderState {
    public float placing = -1.0F;
    /** Seconds into the axe's shield-break clap, -1 when not doing it. */
    public float shield = -1.0F;
+   /** Seconds into the soldier's armed spot pose and the unarm, -1 when not doing them. */
+   public float spotArmed = -1.0F;
+   public float unarm = -1.0F;
    /** Worn armor: helmet, chestplate, leggings, boots. */
    public final ItemStack[] armor = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
 }

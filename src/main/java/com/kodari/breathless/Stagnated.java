@@ -93,9 +93,16 @@ public class Stagnated extends Monster {
    private Direction heading;
    /** Soldier weapon: 0 none, 1 iron sword, 2 stone axe. Equipped in the main hand when it spots a target. */
    private int weapon;
+   /** Soldier weapon handling (server): drawing it during the armed spot pose, stashing it after losing the target. */
+   private boolean drawPending;
+   private int unarmTicks;
+   private boolean hadTarget;
    /** Server-side: ticks left of the axe's shield-break move. Client-side clock for the animation, -1 when not doing it. */
    private int shieldTicks;
    public int shieldClock = -1;
+   /** Client-side clocks for the armed spot pose and the unarm, -1 when not doing it. */
+   public int spotArmedClock = -1;
+   public int unarmClock = -1;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
@@ -156,18 +163,21 @@ public class Stagnated extends Monster {
       boolean first = target != null && this.getTarget() == null;
       super.setTarget(target);
       if (first && !this.level().isClientSide()) {
-         this.spotTicks = Tuning.STAGNATED_SPOT_TICKS;
-         this.level().broadcastEntityEvent(this, (byte)61);
+         if (this.unarmTicks > 0) {
+            this.unarmTicks = 0;
+            this.level().broadcastEntityEvent(this, (byte)73);
+         }
+         // A soldier with a weapon uses the longer spot pose and draws the weapon in the middle of it.
+         boolean drawing = this.role == 1 && this.weapon != 0 && this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
+         this.drawPending = drawing;
+         this.spotTicks = drawing ? Tuning.STAGNATED_SPOT_ARMED_TICKS : Tuning.STAGNATED_SPOT_TICKS;
+         this.level().broadcastEntityEvent(this, drawing ? (byte)75 : (byte)61);
          this.playSound(ModSounds.STAGNATED_SPOT, 1.2F, 1.0F);
          this.placed = 0;
          this.heading = null;
          if (this.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty() && this.role == 2) {
             // Held in the left hand (off-hand, so a tool adds no attack damage). It swaps between pickaxe and sculk as it works.
             this.hold(Items.IRON_PICKAXE);
-            this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
-         }
-         if (this.role == 1 && this.weapon != 0 && this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
-            this.equipWeapon();
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
          }
          this.getNavigation().stop();
@@ -312,7 +322,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.action != 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0;
    }
 
    @Override
@@ -339,6 +349,12 @@ public class Stagnated extends Monster {
          }
          if (this.shieldClock >= 0 && ++this.shieldClock > Tuning.STAGNATED_SHIELD_TICKS) {
             this.shieldClock = -1;
+         }
+         if (this.spotArmedClock >= 0 && ++this.spotArmedClock > Tuning.STAGNATED_SPOT_ARMED_TICKS) {
+            this.spotArmedClock = -1;
+         }
+         if (this.unarmClock >= 0 && ++this.unarmClock > Tuning.STAGNATED_UNARM_TICKS) {
+            this.unarmClock = -1;
          }
       } else if (this.emergeTicks > 0) {
          this.emergeTicks--;
@@ -376,6 +392,27 @@ public class Stagnated extends Monster {
          }
          if (this.spotTicks > 0 && --this.spotTicks == 0) {
             this.playSound(ModSounds.STAGNATED_GROWL, 1.2F, 1.0F);
+         }
+         if (this.drawPending && Tuning.STAGNATED_SPOT_ARMED_TICKS - this.spotTicks >= Tuning.STAGNATED_DRAW_AT) {
+            this.drawPending = false;
+            this.equipWeapon();
+            this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
+         }
+         // Lost or finished with its target: it puts the weapon away.
+         boolean hasTarget = this.getTarget() != null;
+         if (this.hadTarget && !hasTarget && this.role == 1 && this.unarmTicks <= 0 && !this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
+            this.unarmTicks = Tuning.STAGNATED_UNARM_TICKS;
+            this.getNavigation().stop();
+            this.level().broadcastEntityEvent(this, (byte)76);
+         }
+         this.hadTarget = hasTarget;
+         if (this.unarmTicks > 0) {
+            this.unarmTicks--;
+            if (Tuning.STAGNATED_UNARM_TICKS - this.unarmTicks == Tuning.STAGNATED_UNARM_AT) {
+               this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+               this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 0.8F);
+               this.refreshStats();
+            }
          }
       }
    }
@@ -456,7 +493,7 @@ public class Stagnated extends Monster {
       // 1) Take the floor out from under a target that stands above it.
       if (dy >= 1.5) {
          BlockPos under = target.blockPosition().below();
-         if (breakable(level, under) && this.getEyePosition().distanceToSqr(Vec3.atCenterOf(under)) <= Tuning.STAGNATED_REACH * Tuning.STAGNATED_REACH) {
+         if (breakable(level, under) && this.inReach(under)) {
             this.startMining(level, under);
             return;
          }
@@ -467,7 +504,7 @@ public class Stagnated extends Monster {
          return;
       }
       // 3) Pillar up toward a target above it.
-      if (dy >= 1.5 && h <= 4.5 && this.placed < Tuning.STAGNATED_MAX_BLOCKS && free(level, feet.above(2)) && !free(level, feet.below())) {
+      if (dy >= 1.5 && h <= Tuning.STAGNATED_PILLAR_RANGE && this.placed < Tuning.STAGNATED_MAX_BLOCKS && free(level, feet.above(2)) && !free(level, feet.below())) {
          this.hold(Items.SCULK);
          this.beginAction(3, feet, 0, (byte)72);
          this.setDeltaMovement(this.getDeltaMovement().x, 0.42, this.getDeltaMovement().z);
@@ -476,8 +513,10 @@ public class Stagnated extends Monster {
       // 4) Break what is in the way.
       BlockPos blocker = this.firstBlocker(level, target, dy);
       if (blocker != null) {
-         this.startMining(level, blocker);
-         return;
+         if (this.inReach(blocker)) {
+            this.startMining(level, blocker);
+         }
+         return; // out of reach: it walks closer first
       }
       // 5) Bridge / step with sculk.
       if (this.placed >= Tuning.STAGNATED_MAX_BLOCKS) {
@@ -495,6 +534,15 @@ public class Stagnated extends Monster {
          this.hold(Items.SCULK);
          this.beginAction(2, pos, Tuning.STAGNATED_PLACE_TICKS, (byte)72);
       }
+   }
+
+   /** Reach measured the way the game measures a player's: from the eyes to the nearest point of the block. */
+   private boolean inReach(BlockPos pos) {
+      Vec3 eye = this.getEyePosition();
+      double dx = Math.max(Math.max(pos.getX() - eye.x, 0.0), eye.x - (pos.getX() + 1));
+      double dy = Math.max(Math.max(pos.getY() - eye.y, 0.0), eye.y - (pos.getY() + 1));
+      double dz = Math.max(Math.max(pos.getZ() - eye.z, 0.0), eye.z - (pos.getZ() + 1));
+      return dx * dx + dy * dy + dz * dz <= Tuning.STAGNATED_REACH * Tuning.STAGNATED_REACH;
    }
 
    private void startMining(ServerLevel level, BlockPos pos) {
@@ -528,7 +576,7 @@ public class Stagnated extends Monster {
       Vec3 from = new Vec3(this.getX(), feet.getY() + 0.5, this.getZ());
       Vec3 to = new Vec3(target.getX(), target.getY() + 0.5, target.getZ());
       Vec3 line = to.subtract(from);
-      double length = Math.min(line.length(), Tuning.STAGNATED_REACH);
+      double length = Math.min(line.length(), Tuning.STAGNATED_REACH + 1.5);
       if (length < 0.5) {
          return null;
       }
@@ -783,8 +831,13 @@ public class Stagnated extends Monster {
       } else if (event == 73) {
          this.mineClock = -1;
          this.placeClock = -1;
+         this.unarmClock = -1;
       } else if (event == 74) {
          this.shieldClock = 0;
+      } else if (event == 75) {
+         this.spotArmedClock = 0;
+      } else if (event == 76) {
+         this.unarmClock = 0;
       } else {
          super.handleEntityEvent(event);
       }
