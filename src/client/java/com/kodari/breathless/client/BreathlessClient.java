@@ -40,7 +40,7 @@ public class BreathlessClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
       ClientPlayNetworking.registerGlobalReceiver(SpotPayload.TYPE, (payload, context) -> SlothText.spotted());
-      ClientPlayNetworking.registerGlobalReceiver(OpenLorePayload.TYPE, (payload, context) -> net.minecraft.client.Minecraft.getInstance().setScreen(new LoreScreen(payload.doc())));
+      ClientPlayNetworking.registerGlobalReceiver(OpenLorePayload.TYPE, (payload, context) -> net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new LoreScreen(payload.doc())));
       ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
 
       // Under the vanilla overlays: spore haze, vision pulses, floating spores, then the mask visor.

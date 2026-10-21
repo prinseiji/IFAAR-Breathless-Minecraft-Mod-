@@ -187,3 +187,6 @@ Everything. See DEVELOPMENT.md.
 - **Where they come from:** a Stagnated killed by a player drops an unread document 15% of the time (Mandel, McNally or Howard, never one you already read). Vincent's note only drops from a Stagnated that dies while on fire (20%). Ancient city chests hold one of the first three now and then (15%). Tuning is at the top of `Lore`.
 - **Testing:** `/breathless give` now includes all four; `/breathless lorereset` forgets what you read and locks the recipes again.
 - The recipe lock is a small mixin (`RecipeLockMixin`). If it ever fails to apply the game still runs; the recipes are just not locked.
+
+## Batch 16b - build fix
+- 26.2 no longer has `Minecraft.setScreen`; the lore reader now opens with `setScreenAndShow`. That was the only compile error in batch 16.
