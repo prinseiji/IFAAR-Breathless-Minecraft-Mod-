@@ -165,3 +165,10 @@ Everything. See DEVELOPMENT.md.
 - **Stuck-breaker:** if it has a path but stands still for a second while chasing, it re-paths; after two seconds it pushes straight at the target and jumps if it hits a wall.
 - **Soldier armor now reacts to any attacker**, not just players (a zombie, a Warden, a skeleton arrow, anything living).
 - New tuning: `STAGNATED_REACH` (4.5).
+
+## Batch 15c - Soldier weapons, slowdown and the shield-break clap
+- **Weapons (soldiers only):** each Stagnated rolls a weapon when it spawns, saved with it: 50% iron sword, 25% stone axe, 25% nothing. It takes it out in its main hand the moment it spots a target (vanilla equip sound), like the excavator's tools. Odds are `STAGNATED_SWORD_CHANCE` / `STAGNATED_AXE_CHANCE` in Tuning.
+- **Damage:** a held weapon adds its own damage, so the base drops to 1: iron sword hit = 6 (3 hearts), stone axe hit = 9 (4.5 hearts). Bare-handed stays 3.
+- **Slower once armored:** putting the iron on makes it 20% slower (`STAGNATED_ARMOR_SLOW`); holding the axe makes it another 15% slower (`STAGNATED_AXE_SLOW`). They multiply, so an armored axe soldier moves at about 68% of its normal speed. Saved games keep the effect.
+- **Shield break (axe only):** if a player is blocking with a shield, the axe soldier stops, plays your "shield disable" clap (hoist at 0.42 s, clap at 0.5 s, 0.71 s total), faces you, and at 0.5 s lands the hit and knocks the shield down for 5 seconds with the vanilla shield-break sound. If you stop blocking during the wind-up it still hits you normally. Timings: `STAGNATED_SHIELD_TICKS`, `STAGNATED_SHIELD_STRIKE_AT`, `STAGNATED_SHIELD_DISABLE_TICKS`.
+- **Testing:** `/breathless weapon <0-2>` turns every Stagnated within 16 blocks into a soldier and gives it 0 nothing, 1 iron sword or 2 stone axe right away.

@@ -25,6 +25,9 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -88,10 +91,17 @@ public class Stagnated extends Monster {
    private boolean chaseSprinted;
    /** The way it was bridging, kept so a diagonal bridge does not flip direction every block. */
    private Direction heading;
+   /** Soldier weapon: 0 none, 1 iron sword, 2 stone axe. Equipped in the main hand when it spots a target. */
+   private int weapon;
+   /** Server-side: ticks left of the axe's shield-break move. Client-side clock for the animation, -1 when not doing it. */
+   private int shieldTicks;
+   public int shieldClock = -1;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
       this.role = level.getRandom().nextInt(2) + 1;
+      float roll = level.getRandom().nextFloat();
+      this.weapon = roll < Tuning.STAGNATED_SWORD_CHANCE ? 1 : (roll < Tuning.STAGNATED_SWORD_CHANCE + Tuning.STAGNATED_AXE_CHANCE ? 2 : 0);
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -154,6 +164,10 @@ public class Stagnated extends Monster {
          if (this.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty() && this.role == 2) {
             // Held in the left hand (off-hand, so a tool adds no attack damage). It swaps between pickaxe and sculk as it works.
             this.hold(Items.IRON_PICKAXE);
+            this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
+         }
+         if (this.role == 1 && this.weapon != 0 && this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
+            this.equipWeapon();
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
          }
          this.getNavigation().stop();
@@ -237,12 +251,53 @@ public class Stagnated extends Monster {
          this.setDropChance(slot, 0.0F);
       }
       this.playSound(SoundEvents.ARMOR_EQUIP_IRON.value(), 1.0F, 1.0F);
+      this.refreshStats();
+   }
+
+   private void equipWeapon() {
+      if (this.weapon == 0) {
+         return;
+      }
+      this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(this.weapon == 2 ? Items.STONE_AXE : Items.IRON_SWORD));
+      this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+      this.refreshStats();
+   }
+
+   /**
+    * Damage and speed follow what it is carrying: a held weapon lowers the base damage (the weapon adds its own),
+    * the armor slows it down, and the axe slows it down a little more.
+    */
+   private void refreshStats() {
+      if (this.level().isClientSide()) {
+         return;
+      }
+      ItemStack main = this.getItemBySlot(EquipmentSlot.MAINHAND);
+      boolean armed = main.is(Items.IRON_SWORD) || main.is(Items.STONE_AXE);
+      AttributeInstance damage = this.getAttribute(Attributes.ATTACK_DAMAGE);
+      if (damage != null) {
+         damage.setBaseValue(armed ? Tuning.STAGNATED_ARMED_BASE_DAMAGE : Tuning.STAGNATED_DAMAGE);
+      }
+      AttributeInstance speed = this.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (speed != null) {
+         slow(speed, "stagnated_armor_slow", this.isArmored() ? Tuning.STAGNATED_ARMOR_SLOW : 0.0);
+         slow(speed, "stagnated_axe_slow", main.is(Items.STONE_AXE) ? Tuning.STAGNATED_AXE_SLOW : 0.0);
+      }
+   }
+
+   private static void slow(AttributeInstance attribute, String name, double amount) {
+      Identifier id = Breathless.id(name);
+      if (amount <= 0.0) {
+         attribute.removeModifier(id);
+      } else {
+         attribute.addOrUpdateTransientModifier(new AttributeModifier(id, -amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+      }
    }
 
    @Override
    protected void addAdditionalSaveData(ValueOutput output) {
       super.addAdditionalSaveData(output);
       output.putInt("StagnatedRole", this.role);
+      output.putInt("StagnatedWeapon", this.weapon);
    }
 
    @Override
@@ -251,11 +306,13 @@ public class Stagnated extends Monster {
       int saved = input.getIntOr("StagnatedRole", 0);
       // The old builder role (3) became part of the excavator.
       this.role = saved == 3 ? 2 : saved;
+      this.weapon = input.getIntOr("StagnatedWeapon", 0);
+      this.refreshStats();
    }
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.action != 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.action != 0;
    }
 
    @Override
@@ -280,6 +337,9 @@ public class Stagnated extends Monster {
          if (this.spotClock >= 0 && ++this.spotClock > Tuning.STAGNATED_SPOT_TICKS) {
             this.spotClock = -1;
          }
+         if (this.shieldClock >= 0 && ++this.shieldClock > Tuning.STAGNATED_SHIELD_TICKS) {
+            this.shieldClock = -1;
+         }
       } else if (this.emergeTicks > 0) {
          this.emergeTicks--;
       } else {
@@ -299,6 +359,13 @@ public class Stagnated extends Monster {
             }
          }
          this.trackChase();
+         if (this.shieldTicks > 0) {
+            this.shieldTicks--;
+            this.faceTarget();
+            if (Tuning.STAGNATED_SHIELD_TICKS - this.shieldTicks == Tuning.STAGNATED_SHIELD_STRIKE_AT) {
+               this.shieldStrike();
+            }
+         }
          if (this.spotTicks > 0) {
             this.faceTarget();
          }
@@ -316,6 +383,18 @@ public class Stagnated extends Monster {
    /** For testing (/breathless role): 0 none, 1 soldier, 2 excavator. */
    public void setRole(int role) {
       this.role = role;
+   }
+
+   /** For testing (/breathless weapon): makes it a soldier and gives it 0 nothing, 1 iron sword or 2 stone axe right away. */
+   public void setWeapon(int weapon) {
+      this.role = 1;
+      this.weapon = weapon;
+      this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+      if (weapon == 0) {
+         this.refreshStats();
+      } else {
+         this.equipWeapon();
+      }
    }
 
    private static boolean solid(ServerLevel level, BlockPos pos) {
@@ -704,6 +783,8 @@ public class Stagnated extends Monster {
       } else if (event == 73) {
          this.mineClock = -1;
          this.placeClock = -1;
+      } else if (event == 74) {
+         this.shieldClock = 0;
       } else {
          super.handleEntityEvent(event);
       }
@@ -724,6 +805,35 @@ public class Stagnated extends Monster {
 
    @Override
    public boolean doHurtTarget(ServerLevel level, Entity target) {
+      if (this.shieldTicks > 0) {
+         return false;
+      }
+      // With the axe in hand, a raised shield gets the clap: wind up, then break it (see shieldStrike).
+      if (this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.STONE_AXE) && target instanceof Player player && player.isBlocking()
+         && !player.getCooldowns().isOnCooldown(player.getUseItem())) {
+         this.shieldTicks = Tuning.STAGNATED_SHIELD_TICKS;
+         this.getNavigation().stop();
+         this.level().broadcastEntityEvent(this, (byte)74);
+         return false;
+      }
+      return this.strike(level, target);
+   }
+
+   /** The clap lands: the hit goes in, and a shield that is still up is knocked down for a few seconds. */
+   private void shieldStrike() {
+      if (!(this.getTarget() instanceof Player player) || !this.isAlive() || this.distanceTo(player) > 3.5F || !(this.level() instanceof ServerLevel level)) {
+         return;
+      }
+      ItemStack shield = player.isBlocking() ? player.getUseItem().copy() : ItemStack.EMPTY;
+      this.strike(level, player);
+      if (!shield.isEmpty() && !player.getCooldowns().isOnCooldown(shield)) {
+         player.getCooldowns().addCooldown(shield, Tuning.STAGNATED_SHIELD_DISABLE_TICKS);
+         player.stopUsingItem();
+         level.broadcastEntityEvent(player, (byte)30);
+      }
+   }
+
+   private boolean strike(ServerLevel level, Entity target) {
       boolean hit = super.doHurtTarget(level, target);
       if (hit) {
          this.playSound(ModSounds.STAGNATED_HIT, 1.0F, 1.0F);

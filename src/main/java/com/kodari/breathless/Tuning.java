@@ -204,6 +204,18 @@ public final class Tuning {
    /** Armoring animation: 1.04 s long, the armor goes on at 0.67 s. */
    public static final int STAGNATED_ARMOR_TICKS = 21;
    public static final int STAGNATED_ARMOR_EQUIP_AT = 13;
+   /** Soldier weapons: 50% iron sword, 25% stone axe, 25% bare-handed. */
+   public static final float STAGNATED_SWORD_CHANCE = 0.50F;
+   public static final float STAGNATED_AXE_CHANCE = 0.25F;
+   /** A held weapon adds its own damage (iron sword +5, stone axe +8), so the base drops: sword hit = 6, axe hit = 9, bare hands = STAGNATED_DAMAGE. */
+   public static final double STAGNATED_ARMED_BASE_DAMAGE = 1.0;
+   /** How much slower it gets once the iron is on, and again while it holds the axe (they multiply). */
+   public static final double STAGNATED_ARMOR_SLOW = 0.20;
+   public static final double STAGNATED_AXE_SLOW = 0.15;
+   /** The axe's shield-break move: whole animation in ticks (0.71 s), the clap lands at tick 10 (0.5 s), and how long the shield stays disabled. */
+   public static final int STAGNATED_SHIELD_TICKS = 15;
+   public static final int STAGNATED_SHIELD_STRIKE_AT = 10;
+   public static final int STAGNATED_SHIELD_DISABLE_TICKS = 100;
    // Pickaxe and builder roles
    /** One round of three swings (1.29 s). Harder blocks take more rounds. */
    public static final int STAGNATED_MINE_TICKS = 26;

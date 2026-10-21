@@ -74,7 +74,8 @@ public class Breathless implements ModInitializer {
     * Test commands:
     *   /breathless exposure <0-100>   set your meter
     *   /breathless role <0-2>         set the role of Stagnated within 16 blocks: 0 none, 1 soldier, 2 excavator
-    *   /breathless give               masks (plain, nearly dead, night vision reinforced), loose filters (plain and reinforced) and tonics
+    *   /breathless weapon <0-2>       make the Stagnated within 16 blocks soldiers with a weapon: 0 none, 1 iron sword, 2 stone axe
+   *   /breathless give               masks (plain, nearly dead, night vision reinforced), loose filters (plain and reinforced) and tonics
     *   /breathless fiend              play the F13ND pop-up sequence (no damage, no reset)
     */
    private static void registerCommands() {
@@ -94,6 +95,14 @@ public class Breathless implements ModInitializer {
                var list = ((net.minecraft.server.level.ServerLevel)player.level()).getEntitiesOfClass(Stagnated.class, player.getBoundingBox().inflate(16.0));
                list.forEach(s -> s.setRole(value));
                context.getSource().sendSuccess(() -> Component.literal("Set the role of " + list.size() + " Stagnated nearby to " + value + " (0 none, 1 soldier, 2 excavator)"), false);
+               return list.size();
+            })))
+            .then(Commands.literal("weapon").then(Commands.argument("value", IntegerArgumentType.integer(0, 2)).executes(context -> {
+               ServerPlayer player = context.getSource().getPlayerOrException();
+               int value = IntegerArgumentType.getInteger(context, "value");
+               var list = ((net.minecraft.server.level.ServerLevel)player.level()).getEntitiesOfClass(Stagnated.class, player.getBoundingBox().inflate(16.0));
+               list.forEach(s -> s.setWeapon(value));
+               context.getSource().sendSuccess(() -> Component.literal("Made " + list.size() + " Stagnated nearby soldiers with weapon " + value + " (0 none, 1 iron sword, 2 stone axe)"), false);
                return list.size();
             })))
             .then(Commands.literal("give").executes(context -> {

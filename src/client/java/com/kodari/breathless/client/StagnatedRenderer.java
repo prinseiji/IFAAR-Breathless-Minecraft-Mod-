@@ -42,6 +42,7 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       state.armor[3] = entity.getItemBySlot(EquipmentSlot.FEET).copy();
       state.mining = entity.mineClock >= 0 ? (entity.mineClock + partialTick) / 20.0F : -1.0F;
       state.placing = entity.placeClock >= 0 ? (entity.placeClock + partialTick) / 20.0F : -1.0F;
+      state.shield = entity.shieldClock >= 0 ? (entity.shieldClock + partialTick) / 20.0F : -1.0F;
       state.spot = entity.spotClock >= 0 ? (entity.spotClock + partialTick) / 20.0F : -1.0F;
    }
 

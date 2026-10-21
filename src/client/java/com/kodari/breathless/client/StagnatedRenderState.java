@@ -18,6 +18,8 @@ public class StagnatedRenderState extends ArmedEntityRenderState {
    /** Seconds into the (looping) block-breaking / block-placing animations, -1 when not doing it. */
    public float mining = -1.0F;
    public float placing = -1.0F;
+   /** Seconds into the axe's shield-break clap, -1 when not doing it. */
+   public float shield = -1.0F;
    /** Worn armor: helmet, chestplate, leggings, boots. */
    public final ItemStack[] armor = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
 }

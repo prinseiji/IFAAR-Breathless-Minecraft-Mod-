@@ -165,6 +165,8 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
       float time = state.ageInTicks / 20.0F;
       if (state.emerge >= 0.0F) {
          this.apply(StagnatedAnims.SPAWN, state.emerge);
+      } else if (state.shield >= 0.0F) {
+         this.apply(StagnatedAnims.SHIELD_BREAK, state.shield);
       } else if (state.armoring >= 0.0F) {
          this.apply(StagnatedAnims.ARMORING, state.armoring);
       } else if (state.mining >= 0.0F) {
