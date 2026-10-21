@@ -57,13 +57,13 @@ public class Stagnated extends Monster {
    public int emergeClock = -1;
    /** Server-side: ticks left of the emerge animation (immobile and untouchable until then). */
    private int emergeTicks;
-   /** What this one does when it meets a player. Each Stagnated has only one: 0 none, 1 armor, 2 pickaxe (mining), 3 builder. */
+   /** What this one does when it meets something: 0 none, 1 soldier (armor), 2 excavator (breaks and builds). */
    private int role;
    /** Client-side: ticks into the armoring animation, -1 when not armoring. */
    public int armoringClock = -1;
    /** Server-side: ticks left of the armoring animation. */
    private int armoringTicks;
-   /** Pickaxe / builder work in progress: 0 none, 1 mining, 2 placing. */
+   /** Excavator work in progress: 0 none, 1 breaking a block, 2 placing a bridge / step, 3 pillaring up. */
    private int action;
    private BlockPos actionPos;
    private int actionTicks;
@@ -86,10 +86,12 @@ public class Stagnated extends Monster {
    private int chaseTicks;
    private int lostTicks;
    private boolean chaseSprinted;
+   /** The way it was bridging, kept so a diagonal bridge does not flip direction every block. */
+   private Direction heading;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
-      this.role = level.getRandom().nextInt(3) + 1;
+      this.role = level.getRandom().nextInt(2) + 1;
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -147,10 +149,11 @@ public class Stagnated extends Monster {
          this.spotTicks = Tuning.STAGNATED_SPOT_TICKS;
          this.level().broadcastEntityEvent(this, (byte)61);
          this.playSound(ModSounds.STAGNATED_SPOT, 1.2F, 1.0F);
-         if (this.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty() && (this.role == 2 || this.role == 3)) {
-            // Held in the left hand (off-hand, so a pickaxe adds no attack damage).
-            this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(this.role == 2 ? Items.IRON_PICKAXE : Items.SCULK));
-            this.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
+         this.placed = 0;
+         this.heading = null;
+         if (this.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty() && this.role == 2) {
+            // Held in the left hand (off-hand, so a tool adds no attack damage). It swaps between pickaxe and sculk as it works.
+            this.hold(Items.IRON_PICKAXE);
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
          }
          this.getNavigation().stop();
@@ -174,8 +177,8 @@ public class Stagnated extends Monster {
          return false;
       }
       boolean hurt = super.hurtServer(level, source, amount);
-      // An armored one puts its iron on the moment a player hits it.
-      if (hurt && this.role == 1 && this.armoringTicks <= 0 && this.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && source.getEntity() instanceof Player && this.isAlive()) {
+      // A soldier puts its iron on the moment anything hits it (a player or a mob).
+      if (hurt && this.role == 1 && this.armoringTicks <= 0 && this.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && source.getEntity() instanceof LivingEntity && this.isAlive()) {
          this.armoringTicks = Tuning.STAGNATED_ARMOR_TICKS;
          this.level().broadcastEntityEvent(this, (byte)70);
       }
@@ -245,7 +248,9 @@ public class Stagnated extends Monster {
    @Override
    protected void readAdditionalSaveData(ValueInput input) {
       super.readAdditionalSaveData(input);
-      this.role = input.getIntOr("StagnatedRole", 0);
+      int saved = input.getIntOr("StagnatedRole", 0);
+      // The old builder role (3) became part of the excavator.
+      this.role = saved == 3 ? 2 : saved;
    }
 
    @Override
@@ -288,7 +293,8 @@ public class Stagnated extends Monster {
             this.tickAction((ServerLevel)this.level());
          } else if (this.tickCount % 5 == 0) {
             this.refreshReach();
-            if (this.role == 2 || this.role == 3) {
+            this.unstick();
+            if (this.role == 2) {
                this.considerAction((ServerLevel)this.level());
             }
          }
@@ -307,14 +313,19 @@ public class Stagnated extends Monster {
       }
    }
 
-   /** For testing (/breathless role): 0 none, 1 armor, 2 pickaxe, 3 builder. */
+   /** For testing (/breathless role): 0 none, 1 soldier, 2 excavator. */
    public void setRole(int role) {
       this.role = role;
    }
 
+   private static boolean solid(ServerLevel level, BlockPos pos) {
+      return !level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+   }
+
+   /** Something it may break: a real solid block (not grass, flowers, veins or water), nothing with an inventory, nothing too hard. */
    private static boolean breakable(ServerLevel level, BlockPos pos) {
       var state = level.getBlockState(pos);
-      if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity()) {
+      if (state.isAir() || !state.getFluidState().isEmpty() || state.hasBlockEntity() || !solid(level, pos)) {
          return false;
       }
       float hardness = state.getDestroySpeed(level, pos);
@@ -325,10 +336,22 @@ public class Stagnated extends Monster {
       return level.getBlockState(pos).isAir();
    }
 
+   /** Holds this item in the left hand (it swaps between the pickaxe and the sculk block). */
+   private void hold(net.minecraft.world.item.Item item) {
+      if (!this.getItemBySlot(EquipmentSlot.OFFHAND).is(item)) {
+         this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(item));
+         this.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
+      }
+   }
+
    /**
-    * Pickaxe: if the target is close but cannot be walked to, break the block in the way.
-    * Builder: if it cannot be walked to, bridge a gap or lay a step up toward it, with sculk.
-    * Either one only works when mob griefing is on.
+    * The excavator. When its target cannot be walked to it, in this order:
+    * 1) target above and the block it stands on is in reach: break that block (the target drops);
+    * 2) target far below, straight under it: dig down;
+    * 3) target above and close: pillar up with sculk, one block at a time;
+    * 4) break the first solid block that is in the way on the straight line to the target (any direction);
+    * 5) otherwise bridge a gap or lay a step toward it.
+    * It only works when mob griefing is on.
     */
    private void considerAction(ServerLevel level) {
       LivingEntity target = this.getTarget();
@@ -339,7 +362,7 @@ public class Stagnated extends Monster {
          return;
       }
       double dist = this.distanceTo(target);
-      if (dist < 2.0 || dist > Tuning.STAGNATED_ACT_RANGE) {
+      if (dist < 1.5 || dist > Tuning.STAGNATED_ACT_RANGE) {
          return;
       }
       if (!this.unreachable && this.stuckTicks < 20) {
@@ -348,44 +371,125 @@ public class Stagnated extends Monster {
       double dx = target.getX() - this.getX();
       double dz = target.getZ() - this.getZ();
       double dy = target.getY() - this.getY();
-      Direction dir = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? Direction.EAST : Direction.WEST) : (dz > 0 ? Direction.SOUTH : Direction.NORTH);
+      double h = Math.sqrt(dx * dx + dz * dz);
       BlockPos feet = this.blockPosition();
-      BlockPos ahead = feet.relative(dir);
-      if (this.role == 2) {
-         BlockPos[] order;
-         boolean overhead = Math.abs(dx) < 1.5 && Math.abs(dz) < 1.5;
-         if (overhead && dy <= -1.5) {
-            order = new BlockPos[] {feet.below()};
-         } else if (overhead) {
-            order = new BlockPos[0];
-         } else if (dy >= 1.5) {
-            order = new BlockPos[] {ahead.above(), ahead.above(2), ahead};
-         } else {
-            order = new BlockPos[] {ahead.above(), ahead};
-         }
-         for (BlockPos pos : order) {
-            if (breakable(level, pos)) {
-               float hardness = level.getBlockState(pos).getDestroySpeed(level, pos);
-               int rounds = hardness <= 1.0F ? 1 : (hardness <= 3.0F ? 2 : 3);
-               this.beginAction(1, pos, Tuning.STAGNATED_MINE_TICKS * rounds, (byte)71);
-               return;
-            }
-         }
-      } else if (this.role == 3 && this.placed < Tuning.STAGNATED_MAX_BLOCKS && !free(level, feet.below())) {
-         if (dy >= 1.5 && Math.sqrt(dx * dx + dz * dz) <= 4.5 && free(level, feet.above(2))) {
-            // Pillar up one block at a time: jump, then put a block where it was standing.
-            this.beginAction(3, feet, 0, (byte)72);
-            this.setDeltaMovement(this.getDeltaMovement().x, 0.42, this.getDeltaMovement().z);
+
+      // 1) Take the floor out from under a target that stands above it.
+      if (dy >= 1.5) {
+         BlockPos under = target.blockPosition().below();
+         if (breakable(level, under) && this.getEyePosition().distanceToSqr(Vec3.atCenterOf(under)) <= Tuning.STAGNATED_REACH * Tuning.STAGNATED_REACH) {
+            this.startMining(level, under);
             return;
          }
-         BlockPos pos = null;
-         if (Math.abs(dy) < 1.5 && free(level, ahead.below()) && free(level, ahead) && free(level, ahead.above())) {
-            pos = ahead.below(); // bridge over a gap
-         } else if (dy >= 1.5 && free(level, ahead) && free(level, ahead.above()) && free(level, ahead.above(2))) {
-            pos = ahead; // a step up
+      }
+      // 2) Straight above a target that is below.
+      if (dy <= -1.5 && h < 1.5 && breakable(level, feet.below())) {
+         this.startMining(level, feet.below());
+         return;
+      }
+      // 3) Pillar up toward a target above it.
+      if (dy >= 1.5 && h <= 4.5 && this.placed < Tuning.STAGNATED_MAX_BLOCKS && free(level, feet.above(2)) && !free(level, feet.below())) {
+         this.hold(Items.SCULK);
+         this.beginAction(3, feet, 0, (byte)72);
+         this.setDeltaMovement(this.getDeltaMovement().x, 0.42, this.getDeltaMovement().z);
+         return;
+      }
+      // 4) Break what is in the way.
+      BlockPos blocker = this.firstBlocker(level, target, dy);
+      if (blocker != null) {
+         this.startMining(level, blocker);
+         return;
+      }
+      // 5) Bridge / step with sculk.
+      if (this.placed >= Tuning.STAGNATED_MAX_BLOCKS) {
+         return;
+      }
+      Direction dir = this.pickDirection(dx, dz);
+      BlockPos ahead = feet.relative(dir);
+      BlockPos pos = null;
+      if (Math.abs(dy) < 1.5 && free(level, ahead.below()) && free(level, ahead) && free(level, ahead.above())) {
+         pos = ahead.below(); // bridge over a gap
+      } else if (dy >= 1.5 && free(level, ahead) && free(level, ahead.above()) && free(level, ahead.above(2))) {
+         pos = ahead; // a step up
+      }
+      if (pos != null) {
+         this.hold(Items.SCULK);
+         this.beginAction(2, pos, Tuning.STAGNATED_PLACE_TICKS, (byte)72);
+      }
+   }
+
+   private void startMining(ServerLevel level, BlockPos pos) {
+      float hardness = level.getBlockState(pos).getDestroySpeed(level, pos);
+      int rounds = hardness <= 1.0F ? 1 : (hardness <= 3.0F ? 2 : 3);
+      this.hold(Items.IRON_PICKAXE);
+      this.beginAction(1, pos, Tuning.STAGNATED_MINE_TICKS * rounds, (byte)71);
+   }
+
+   /** Which way to build. It keeps its heading while the two axes are close, so a diagonal bridge does not zigzag and stall. */
+   private Direction pickDirection(double dx, double dz) {
+      Direction best = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? Direction.EAST : Direction.WEST) : (dz > 0 ? Direction.SOUTH : Direction.NORTH);
+      if (this.heading != null && this.heading != best && Math.abs(Math.abs(dx) - Math.abs(dz)) < 1.5) {
+         boolean stillToward = this.heading.getStepX() != 0 ? dx * this.heading.getStepX() > 0 : dz * this.heading.getStepZ() > 0;
+         if (stillToward) {
+            best = this.heading;
          }
-         if (pos != null) {
-            this.beginAction(2, pos, Tuning.STAGNATED_PLACE_TICKS, (byte)72);
+      }
+      this.heading = best;
+      return best;
+   }
+
+   /**
+    * Walks the straight line from this mob to its target and returns the first solid block that is in the way
+    * (head height before foot height), in any direction. A foot-level block with room above it is a step it can climb,
+    * so it is left alone. Returns null when nothing breakable is in the way (or something unbreakable is).
+    */
+   private BlockPos firstBlocker(ServerLevel level, LivingEntity target, double dy) {
+      BlockPos feet = this.blockPosition();
+      BlockPos targetFeet = target.blockPosition();
+      Vec3 from = new Vec3(this.getX(), feet.getY() + 0.5, this.getZ());
+      Vec3 to = new Vec3(target.getX(), target.getY() + 0.5, target.getZ());
+      Vec3 line = to.subtract(from);
+      double length = Math.min(line.length(), Tuning.STAGNATED_REACH);
+      if (length < 0.5) {
+         return null;
+      }
+      Vec3 step = line.normalize().scale(0.4);
+      BlockPos last = feet;
+      for (int i = 1; i * 0.4 <= length; i++) {
+         BlockPos v = BlockPos.containing(from.add(step.scale(i)));
+         if (v.equals(last) || v.equals(feet) || v.equals(targetFeet) || v.equals(targetFeet.above())) {
+            continue;
+         }
+         last = v;
+         BlockPos[] candidates = {v.above(), v};
+         for (BlockPos cand : candidates) {
+            if (cand.getY() < feet.getY() && !(dy <= -1.5 && cand.getY() >= targetFeet.getY() - 1)) {
+               continue; // never undermine itself unless it is going down after something
+            }
+            if (!solid(level, cand)) {
+               continue;
+            }
+            boolean footLevel = cand.getY() == feet.getY() && cand.equals(v);
+            if (footLevel && dy >= -0.5 && !solid(level, v.above()) && !solid(level, v.above(2))) {
+               continue; // a one-block step it can simply climb
+            }
+            return breakable(level, cand) ? cand : null;
+         }
+      }
+      return null;
+   }
+
+   /** It has a path and is not on a goal that moves it, yet it is standing still: re-path, then push straight at the target. */
+   private void unstick() {
+      LivingEntity target = this.getTarget();
+      if (target == null || this.stuckTicks < 20 || this.unreachable || this.action != 0 || this.spotTicks > 0 || this.armoringTicks > 0 || this.emergeTicks > 0) {
+         return;
+      }
+      this.getNavigation().moveTo(target, Tuning.STAGNATED_CHASE_MODIFIER);
+      if (this.stuckTicks >= 40) {
+         this.getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), Tuning.STAGNATED_CHASE_MODIFIER);
+         if (this.horizontalCollision && this.onGround()) {
+            this.getJumpControl().jump();
          }
       }
    }

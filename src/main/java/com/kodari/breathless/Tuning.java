@@ -216,6 +216,8 @@ public final class Tuning {
    public static final float STAGNATED_MINE_MAX_HARDNESS = 8.0F;
    /** It only digs or builds when the target is this close but cannot be reached. */
    public static final double STAGNATED_ACT_RANGE = 14.0;
+   /** How far its arm reaches when it breaks a block (the floor under a target above it, or a blocker on the line). */
+   public static final double STAGNATED_REACH = 4.5;
    public static final double STAGNATED_VERTICAL = 40.0;
    /** It gives up on a player it can no longer sense after this many ticks (so you can outrun it). */
    public static final int STAGNATED_GIVE_UP_TICKS = 100;

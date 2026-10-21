@@ -150,3 +150,18 @@ Everything. See DEVELOPMENT.md.
 - **Behavior change:** a Stagnated now gives up on a player it can no longer sense for 5 seconds (Tuning.STAGNATED_GIVE_UP_TICKS) and goes back to wandering. Before, it kept the target until 128 blocks away, so "outrun it" was impossible. Run Rabbit, Run Rabbit needs a chase of at least 5 seconds where you sprinted.
 - Hidden and special: The Breaking Point = a filter below 25%; Unwelcome Guests = a filter runs out below Y=0; IYEARNFORABODY / THEWEAKNESSOFFLESH = the F13ND purge (1 heart or less left); The Silence / error_log.txt = dying to spores / the sear; My Mind Of Many Ears = a Stagnated starts walking toward an active sculk sensor within 24 blocks of you; Hate Filled Amalgamate = a Warden kills a Stagnated within 32 blocks of you; Malignant Flesh = a Stagnated kills a zombie or skeleton within 32 blocks of you.
 - Bravery = you kill an armored Stagnated; Determination = a miner breaks a block with you within 4 blocks; Perseverance = a builder has placed at least 2 pillar blocks and is within 4.5 blocks of you.
+
+## Batch 15b - the Excavator (miner + builder merged), smarter Stagnated
+- **Two roles now:** 1 = Soldier (armor, weapons come in 15c), 2 = Excavator (breaks AND builds). Odds are 50/50. Old saved builders (role 3) become excavators. `/breathless role <0-2>` (0 none, 1 soldier, 2 excavator).
+- **Excavator order of thinking** (only when it cannot walk to its target, griefing on):
+  1. Target above and the block it stands on is within 4.5 blocks of the Stagnated: break that block (a player on a 3-high tower is dropped without it destroying the tower).
+  2. Target straight below: dig down.
+  3. Target above and within 4.5 blocks sideways: pillar up with sculk, one block at a time.
+  4. Otherwise break the first solid block in the way on the straight line to the target, in any direction (behind it too), head height first.
+  5. Nothing to break: bridge a gap or lay a step with sculk.
+- It swaps the held item between the iron pickaxe (breaking) and sculk (placing).
+- **No more grass / veins:** it only breaks real solid blocks (anything with collision, hardness up to 8, no block entities). Plants, sculk veins, water and the like are ignored. A one-block step it can climb is never broken, and it never undermines the block it stands on unless it is digging down after a target below.
+- **Builder fix:** it no longer insists on standing on a full block, which is why it stopped on the corner of its own bridge and fell. It also keeps one heading on diagonals instead of flipping axis every block, and its 32-block cap now resets for each new target instead of lasting its whole life.
+- **Stuck-breaker:** if it has a path but stands still for a second while chasing, it re-paths; after two seconds it pushes straight at the target and jumps if it hits a wall.
+- **Soldier armor now reacts to any attacker**, not just players (a zombie, a Warden, a skeleton arrow, anything living).
+- New tuning: `STAGNATED_REACH` (4.5).
