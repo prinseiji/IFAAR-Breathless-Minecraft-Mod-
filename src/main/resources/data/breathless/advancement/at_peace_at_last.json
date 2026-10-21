@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:not_alone",
+  "display": {
+    "icon": {
+      "id": "breathless:stagnated_head"
+    },
+    "title": {
+      "translate": "advancements.breathless.at_peace_at_last.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.at_peace_at_last.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

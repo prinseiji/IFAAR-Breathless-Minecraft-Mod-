@@ -1,0 +1,31 @@
+{
+  "parent": "breathless:yeah_mr_white",
+  "display": {
+    "icon": {
+      "id": "breathless:gas_mask_filter_reinforced"
+    },
+    "title": {
+      "translate": "advancements.breathless.purple_rain.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.purple_rain.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "r0": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "breathless:gas_mask_filter_reinforced"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "r0"
+    ]
+  ]
+}

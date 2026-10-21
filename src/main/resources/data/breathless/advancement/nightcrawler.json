@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:mt_ebott",
+  "display": {
+    "icon": {
+      "id": "breathless:gas_mask_nv"
+    },
+    "title": {
+      "translate": "advancements.breathless.nightcrawler.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.nightcrawler.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

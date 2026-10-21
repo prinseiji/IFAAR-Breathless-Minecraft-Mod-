@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "id": "breathless:gas_mask"
+    },
+    "title": {
+      "translate": "advancements.breathless.root.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "minecraft:gui/advancements/backgrounds/stone"
+  },
+  "criteria": {
+    "enter": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

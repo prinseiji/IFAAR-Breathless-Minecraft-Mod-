@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:spotless_mind",
+  "display": {
+    "icon": {
+      "id": "breathless:gas_mask"
+    },
+    "title": {
+      "translate": "advancements.breathless.yeah_mr_white.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.yeah_mr_white.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

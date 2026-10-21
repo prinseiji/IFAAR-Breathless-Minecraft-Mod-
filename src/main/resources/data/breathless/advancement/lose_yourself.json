@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:annihilation",
+  "display": {
+    "icon": {
+      "id": "minecraft:soul_lantern"
+    },
+    "title": {
+      "translate": "advancements.breathless.lose_yourself.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.lose_yourself.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

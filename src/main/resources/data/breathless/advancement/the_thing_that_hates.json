@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:annihilation",
+  "display": {
+    "icon": {
+      "id": "minecraft:sculk_shrieker"
+    },
+    "title": {
+      "translate": "advancements.breathless.the_thing_that_hates.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.the_thing_that_hates.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

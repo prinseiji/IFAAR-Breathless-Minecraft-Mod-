@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:deepslate"
+    },
+    "title": {
+      "translate": "advancements.breathless.mt_ebott.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.mt_ebott.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

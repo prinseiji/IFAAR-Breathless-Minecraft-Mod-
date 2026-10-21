@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:annihilation",
+  "display": {
+    "icon": {
+      "id": "minecraft:blaze_powder"
+    },
+    "title": {
+      "translate": "advancements.breathless.iyearnforabody.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.iyearnforabody.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

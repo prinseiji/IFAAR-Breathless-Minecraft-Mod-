@@ -79,6 +79,13 @@ public class Stagnated extends Monster {
    private BlockPos investigate;
    private int investigateAt;
    private int heardCooldown;
+   /** Server-side bookkeeping for the advancements and for giving up a chase. */
+   private boolean armoredFlag;
+   private int pillared;
+   private ServerPlayer chased;
+   private int chaseTicks;
+   private int lostTicks;
+   private boolean chaseSprinted;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
@@ -149,6 +156,7 @@ public class Stagnated extends Monster {
          this.getNavigation().stop();
          if (target instanceof ServerPlayer player) {
             ServerPlayNetworking.send(player, new SpotPayload(0.0F));
+            Achievements.award(player, "not_alone");
          }
       }
    }
@@ -174,7 +182,50 @@ public class Stagnated extends Monster {
       return hurt;
    }
 
+   /** True once it has put its iron on (used by the Bravery advancement). */
+   public boolean isArmored() {
+      return this.armoredFlag || !this.getItemBySlot(EquipmentSlot.CHEST).isEmpty();
+   }
+
+   /**
+    * Follows the player it is chasing. If it cannot sense that player any more for a few seconds it gives up,
+    * and a player who sprinted away gets "Run Rabbit, Run Rabbit".
+    */
+   private void trackChase() {
+      LivingEntity target = this.getTarget();
+      if (target instanceof ServerPlayer player && player.isAlive() && !player.isCreative() && !player.isSpectator()) {
+         if (this.chased != player) {
+            this.chased = player;
+            this.chaseTicks = 0;
+            this.chaseSprinted = false;
+         }
+         this.chaseTicks++;
+         if (player.isSprinting()) {
+            this.chaseSprinted = true;
+         }
+         if (this.spotTicks <= 0 && this.action == 0 && !this.canSense(player)) {
+            if (++this.lostTicks >= Tuning.STAGNATED_GIVE_UP_TICKS) {
+               if (this.chaseSprinted && this.chaseTicks >= 100) {
+                  Achievements.award(player, "run_rabbit");
+               }
+               this.setTarget(null);
+               this.getNavigation().stop();
+               this.lostTicks = 0;
+               this.chased = null;
+            }
+         } else {
+            this.lostTicks = 0;
+         }
+      } else {
+         this.chased = null;
+         this.chaseTicks = 0;
+         this.lostTicks = 0;
+         this.chaseSprinted = false;
+      }
+   }
+
    private void putOnArmor() {
+      this.armoredFlag = true;
       this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
       this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
       this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
@@ -241,6 +292,7 @@ public class Stagnated extends Monster {
                this.considerAction((ServerLevel)this.level());
             }
          }
+         this.trackChase();
          if (this.spotTicks > 0) {
             this.faceTarget();
          }
@@ -369,6 +421,10 @@ public class Stagnated extends Monster {
          boolean high = this.getY() >= this.actionPos.getY() + 1.05;
          if (high) {
             this.placeSculk(level);
+            this.pillared++;
+            if (this.pillared >= 2 && this.getTarget() instanceof ServerPlayer player && this.distanceTo(player) <= 4.5F) {
+               Achievements.award(player, "perseverance");
+            }
          }
          if (high || this.actionTicks > 20) {
             this.stopAction();
@@ -385,6 +441,9 @@ public class Stagnated extends Monster {
       if (this.action == 1) {
          if (breakable(level, this.actionPos)) {
             level.destroyBlock(this.actionPos, Tuning.STAGNATED_MINE_DROPS, this, 512);
+            if (this.getTarget() instanceof ServerPlayer player && this.distanceTo(player) <= 4.0F) {
+               Achievements.award(player, "determination");
+            }
          }
       } else {
          this.placeSculk(level);
@@ -492,6 +551,7 @@ public class Stagnated extends Monster {
       level.sendParticles(new VibrationParticleOption(new EntityPositionSource(this, this.getEyeHeight()), arrival),
          best.getX() + 0.5, best.getY() + 0.5, best.getZ() + 0.5, 1, 0.0, 0.0, 0.0, 0.0);
       this.investigate = best;
+      Achievements.awardNear(this, 24.0, "my_mind_of_many_ears");
       this.investigateAt = this.tickCount + arrival;
       this.heardCooldown = 40;
    }

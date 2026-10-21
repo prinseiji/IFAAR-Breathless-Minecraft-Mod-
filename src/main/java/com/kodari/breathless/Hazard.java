@@ -61,6 +61,9 @@ public final class Hazard {
       int effectStage = -2;
       // F13ND pop-up sequence (-1 = not running); the server only schedules the sounds, the client draws it
       int fiendTick = -1;
+      // advancement timers
+      int quietTicks;
+      int cleanTicks;
    }
 
    private static final Map<UUID, Rt> RUNTIME = new HashMap<>();
@@ -78,12 +81,20 @@ public final class Hazard {
          if (entity instanceof ServerPlayer player) {
             stopAllSounds(player);
             RUNTIME.remove(player.getUUID());
+            if (source.is(ModDamage.SPORES)) {
+               Achievements.award(player, "the_silence");
+            } else if (source.is(ModDamage.SEAR)) {
+               Achievements.award(player, "error_log");
+            }
          }
       });
       // "Putting the mask on" sound.
       ServerEntityEvents.EQUIPMENT_CHANGE.register((entity, slot, previous, current) -> {
          if (slot == EquipmentSlot.HEAD && entity instanceof ServerPlayer player && Masks.isMask(current) && !Masks.isMask(previous)) {
             Masks.playAt(player, ModSounds.MASK_ON, 1.0F, 1.0F);
+            if (getExposure(player) > 0.001F) {
+               Achievements.award(player, "i_am_no_evil");
+            }
          }
       });
       // IFAAR hook: an Adrenaline Shot while critical is a one-time cure (no rush, no minigame).
@@ -289,6 +300,11 @@ public final class Hazard {
          }
       }
 
+      // 5d) Advancements that depend on where you are and what the meter says
+      if (!exempt) {
+         tickAchievements(player, rt, underground, exposure, headItem);
+      }
+
       // 6) Ambience while below Y=0 (muffled behind a working mask, open air without one)
       if (!player.isSpectator() && underground) {
          if (--rt.ambienceTimer <= 0 || rt.ambienceMuffled != maskOk) {
@@ -307,6 +323,43 @@ public final class Hazard {
       float shown = getExposure(player);
       if (rt.lastSent < 0.0F || Math.abs(shown - rt.lastSent) >= 0.25F || (player.tickCount % 20 == 0 && shown != rt.lastSent)) {
          sync(player, rt, shown);
+      }
+   }
+
+   private static void tickAchievements(ServerPlayer player, Rt rt, boolean underground, float exposure, ItemStack head) {
+      boolean second = player.tickCount % 20 == 0;
+      if (underground) {
+         if (second) {
+            Achievements.award(player, "mt_ebott");
+            if (Masks.isMask(head) && Masks.getFilters(head).count() >= 2) {
+               Achievements.award(player, "yeah_mr_white");
+            }
+            if (ModItems.isNightVision(head)) {
+               Achievements.award(player, "nightcrawler");
+            }
+         }
+         if (player.isSprinting()) {
+            rt.quietTicks = 0;
+         } else if (++rt.quietTicks == Tuning.ACH_QUIET_TICKS) {
+            Achievements.award(player, "a_quiet_place");
+         }
+         if (exposure <= 0.001F && ++rt.cleanTicks == Tuning.ACH_CLEAN_TICKS) {
+            Achievements.award(player, "breathless");
+         }
+      } else {
+         rt.quietTicks = 0;
+      }
+      if (exposure > 0.001F) {
+         rt.cleanTicks = 0;
+         if (second) {
+            Achievements.award(player, "annihilation");
+            if (rt.sculkTier >= 3) {
+               Achievements.award(player, "lose_yourself");
+            }
+            if (exposure >= 100.0F - 0.001F) {
+               Achievements.award(player, "the_thing_that_hates");
+            }
+         }
       }
    }
 
@@ -451,6 +504,12 @@ public final class Hazard {
                player.setHealth(before - Tuning.ADRENALINE_DAMAGE);
             }
             player.sendOverlayMessage(Component.literal("The spores are gone, and it cost you."));
+         }
+         if (player.isAlive()) {
+            Achievements.award(player, "iyearnforabody");
+            if (!player.isCreative() && !player.isSpectator() && player.getHealth() <= 2.0F) {
+               Achievements.award(player, "theweaknessofflesh");
+            }
          }
       }
    }

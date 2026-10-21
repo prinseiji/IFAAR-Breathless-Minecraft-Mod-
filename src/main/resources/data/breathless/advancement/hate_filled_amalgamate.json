@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:not_alone",
+  "display": {
+    "icon": {
+      "id": "minecraft:sculk_catalyst"
+    },
+    "title": {
+      "translate": "advancements.breathless.hate_filled_amalgamate.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.hate_filled_amalgamate.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

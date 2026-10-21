@@ -44,6 +44,7 @@ public class Breathless implements ModInitializer {
       FilterClicks.init();
 
       Hazard.init();
+      Achievements.init();
       MobRules.init();
 
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> {

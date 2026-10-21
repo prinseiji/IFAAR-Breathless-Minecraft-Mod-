@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:the_mask",
+  "display": {
+    "icon": {
+      "id": "minecraft:leather_helmet"
+    },
+    "title": {
+      "translate": "advancements.breathless.i_am_no_evil.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.i_am_no_evil.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

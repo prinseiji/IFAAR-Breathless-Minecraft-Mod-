@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:mt_ebott",
+  "display": {
+    "icon": {
+      "id": "minecraft:glass_pane"
+    },
+    "title": {
+      "translate": "advancements.breathless.the_breaking_point.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.the_breaking_point.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

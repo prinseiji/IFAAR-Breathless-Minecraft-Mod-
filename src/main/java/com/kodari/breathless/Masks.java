@@ -94,6 +94,9 @@ public final class Masks {
 
       float weakBefore = before.weakest();
       float weakAfter = after.weakest();
+      if (weakAfter < Tuning.CRACK_STAGE_2) {
+         Achievements.award(player, "the_breaking_point");
+      }
       if (weakBefore >= Tuning.CRACK_STAGE_2 && weakAfter < Tuning.CRACK_STAGE_2) {
          playAt(player, ModSounds.CRACK_25, 1.0F, 1.0F);
       } else if (weakBefore >= Tuning.CRACK_STAGE_1 && weakAfter < Tuning.CRACK_STAGE_1) {
@@ -103,6 +106,7 @@ public final class Masks {
       boolean spent = after.count() < before.count();
       if (spent) {
          playAt(player, ModSounds.FILTER_RUNOUT, 1.0F, 1.0F);
+         Achievements.award(player, "unwelcome_guests");
          player.sendOverlayMessage(Component.literal(after.count() == 0 ? "Your filters are spent!" : "A filter is spent!"));
          player.setItemSlot(EquipmentSlot.HEAD, ModItems.maskLike(head, after));
       } else {

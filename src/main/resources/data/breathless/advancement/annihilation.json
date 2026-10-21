@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:mt_ebott",
+  "display": {
+    "icon": {
+      "id": "minecraft:sculk"
+    },
+    "title": {
+      "translate": "advancements.breathless.annihilation.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.annihilation.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

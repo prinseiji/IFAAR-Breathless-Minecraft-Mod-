@@ -24,6 +24,7 @@ public class TonicItem extends Item {
       ItemStack result = super.finishUsingItem(stack, level, entity);
       if (!level.isClientSide() && entity instanceof ServerPlayer player) {
          Hazard.applyTonic(player, purge);
+         Achievements.award(player, "ya_like_jazz");
       }
       return result;
    }

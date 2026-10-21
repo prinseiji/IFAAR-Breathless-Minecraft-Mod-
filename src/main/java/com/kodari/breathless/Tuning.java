@@ -217,6 +217,12 @@ public final class Tuning {
    /** It only digs or builds when the target is this close but cannot be reached. */
    public static final double STAGNATED_ACT_RANGE = 14.0;
    public static final double STAGNATED_VERTICAL = 40.0;
+   /** It gives up on a player it can no longer sense after this many ticks (so you can outrun it). */
+   public static final int STAGNATED_GIVE_UP_TICKS = 100;
+
+   // Advancements: "A Quiet Place" (5 minutes below Y=0 without sprinting) and "Breathless" (10 minutes below Y=0 with a clean meter).
+   public static final int ACH_QUIET_TICKS = 5 * 60 * 20;
+   public static final int ACH_CLEAN_TICKS = 10 * 60 * 20;
 
    /** How far it notices a player: about 16 blocks clean, up to 48 at full exposure; a masked player with a clean meter is nearly invisible. */
    public static double stagnatedSight(float exposure, boolean maskOk) {

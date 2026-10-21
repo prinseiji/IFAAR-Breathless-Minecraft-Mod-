@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:not_alone",
+  "display": {
+    "icon": {
+      "id": "minecraft:rotten_flesh"
+    },
+    "title": {
+      "translate": "advancements.breathless.malignant_flesh.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.malignant_flesh.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

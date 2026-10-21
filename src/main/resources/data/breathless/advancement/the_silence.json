@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:the_thing_that_hates",
+  "display": {
+    "icon": {
+      "id": "minecraft:echo_shard"
+    },
+    "title": {
+      "translate": "advancements.breathless.the_silence.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.the_silence.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:root",
+  "display": {
+    "icon": {
+      "id": "breathless:tonic_lesser"
+    },
+    "title": {
+      "translate": "advancements.breathless.ya_like_jazz.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.ya_like_jazz.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

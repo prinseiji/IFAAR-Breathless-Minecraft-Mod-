@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:mt_ebott",
+  "display": {
+    "icon": {
+      "id": "breathless:amethyst_dust"
+    },
+    "title": {
+      "translate": "advancements.breathless.breathless.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.breathless.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

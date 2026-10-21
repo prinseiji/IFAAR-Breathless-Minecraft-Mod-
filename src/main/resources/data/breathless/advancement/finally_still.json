@@ -1,0 +1,82 @@
+{
+  "parent": "breathless:at_peace_at_last",
+  "display": {
+    "icon": {
+      "id": "minecraft:wither_rose"
+    },
+    "title": {
+      "translate": "advancements.breathless.finally_still.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.finally_still.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "k1": {
+      "trigger": "minecraft:impossible"
+    },
+    "k2": {
+      "trigger": "minecraft:impossible"
+    },
+    "k3": {
+      "trigger": "minecraft:impossible"
+    },
+    "k4": {
+      "trigger": "minecraft:impossible"
+    },
+    "k5": {
+      "trigger": "minecraft:impossible"
+    },
+    "k6": {
+      "trigger": "minecraft:impossible"
+    },
+    "k7": {
+      "trigger": "minecraft:impossible"
+    },
+    "k8": {
+      "trigger": "minecraft:impossible"
+    },
+    "k9": {
+      "trigger": "minecraft:impossible"
+    },
+    "k10": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "k1"
+    ],
+    [
+      "k2"
+    ],
+    [
+      "k3"
+    ],
+    [
+      "k4"
+    ],
+    [
+      "k5"
+    ],
+    [
+      "k6"
+    ],
+    [
+      "k7"
+    ],
+    [
+      "k8"
+    ],
+    [
+      "k9"
+    ],
+    [
+      "k10"
+    ]
+  ]
+}

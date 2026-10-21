@@ -35,6 +35,7 @@ public final class FilterClicks {
             cursorAccess.set(rest);
             if (player instanceof ServerPlayer serverPlayer) {
                Masks.playAt(serverPlayer, ModSounds.FILTER_ON, 1.0F, 1.0F);
+               Achievements.award(serverPlayer, "spotless_mind");
             }
             return EventResult.DENY;
          }

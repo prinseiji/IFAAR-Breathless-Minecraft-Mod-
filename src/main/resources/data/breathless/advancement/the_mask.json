@@ -1,0 +1,38 @@
+{
+  "parent": "breathless:root",
+  "display": {
+    "icon": {
+      "id": "breathless:gas_mask_empty"
+    },
+    "title": {
+      "translate": "advancements.breathless.the_mask.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.the_mask.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "r0": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "breathless:gas_mask_empty"
+      }
+    },
+    "r1": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "breathless:gas_mask_nv_empty"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "r0",
+      "r1"
+    ]
+  ]
+}
