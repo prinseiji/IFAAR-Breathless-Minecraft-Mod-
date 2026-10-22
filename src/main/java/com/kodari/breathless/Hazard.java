@@ -204,7 +204,13 @@ public final class Hazard {
          }
       } else {
          rt.sculkTier = 0;
-         rt.sculkTimer = 0;
+         if (!exempt && Masks.isHazardLevel(player.level()) && --rt.sculkTimer <= 0) {
+            // Above ground the spawner only ever sends the rare sweaty one.
+            rt.sculkTimer = 20;
+            StagnatedSpawner.tick(player, 0, exposure);
+         } else if (exempt) {
+            rt.sculkTimer = 0;
+         }
       }
 
       // 2) Rising (only below Y=0 with no working mask)

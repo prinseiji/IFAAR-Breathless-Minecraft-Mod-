@@ -109,6 +109,7 @@ public class Stagnated extends Monster {
    private boolean geared;
    private int windTicks;
    /** Sweaty attack cycle: sword fight, swap to the mace, launch + smash/clutch, swap back. */
+   private int surfaceTicks;
    private int swordTicks;
    private int swordHits;
    private int swapTicks;
@@ -424,6 +425,14 @@ public class Stagnated extends Monster {
       } else {
          if (this.sweaty) {
             this.tickSweaty((ServerLevel)this.level());
+         } else if (Masks.isHazardLevel(this.level()) && this.getY() >= Tuning.HAZARD_Y) {
+            // Every Stagnated except Ethan withers away once it is out of the spore layer.
+            if (++this.surfaceTicks > Tuning.STAGNATED_SURFACE_GRACE_TICKS && this.tickCount % 20 == 0) {
+               ((ServerLevel)this.level()).sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 6, 0.3, 0.6, 0.3, 0.02);
+               this.hurtServer((ServerLevel)this.level(), this.damageSources().magic(), Tuning.STAGNATED_SURFACE_DAMAGE);
+            }
+         } else {
+            this.surfaceTicks = 0;
          }
          if (this.armoringTicks > 0) {
             this.armoringTicks--;
@@ -485,6 +494,10 @@ public class Stagnated extends Monster {
 
 
    // ---------------------------------------------------------------- the sweaty variant
+
+   public boolean isSweaty() {
+      return this.sweaty;
+   }
 
    /** For testing (/breathless sweaty): turns it into the sweaty one, it puts its gear on next tick. */
    public void makeSweaty() {
@@ -766,9 +779,12 @@ public class Stagnated extends Monster {
          }
          double d = this.distanceTo(e);
          float amount = (e == this.getTarget() || d < 2.2) ? damage : damage * 0.5F;
+         // A shield is the only thing that counts as a block: resistance, absorption and armor still mean the smash landed.
+         boolean shielded = e instanceof Player guard && guard.isBlocking();
          float before = e.getHealth() + e.getAbsorptionAmount();
-         e.hurtServer(level, this.damageSources().mobAttack(this), amount);
-         if (e.getHealth() + e.getAbsorptionAmount() < before - 0.01F || !e.isAlive()) {
+         boolean hurt = e.hurtServer(level, this.damageSources().mobAttack(this), amount);
+         boolean lostHealth = e.getHealth() + e.getAbsorptionAmount() < before - 0.01F || !e.isAlive();
+         if (lostHealth || (hurt && !shielded)) {
             connected = true;
             double kx = e.getX() - this.getX();
             double kz = e.getZ() - this.getZ();
@@ -805,6 +821,13 @@ public class Stagnated extends Monster {
          return;
       }
       ItemStack copy = stack.copy();
+      if (copy.is(Items.MACE)) {
+         // Breach II and Unbreaking III: the half-worn mace shows how much he really used it.
+         var enchants = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+         copy.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BREACH), 2);
+         copy.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 3);
+         copy.set(net.minecraft.core.component.DataComponents.ITEM_NAME, Component.literal("Ethan's Mace"));
+      }
       int max = copy.getMaxDamage();
       if (max > 4) {
          copy.setDamageValue(Mth.clamp(max / 2 + this.random.nextInt(Math.max(1, max / 5)) - max / 10, 1, max - 1));

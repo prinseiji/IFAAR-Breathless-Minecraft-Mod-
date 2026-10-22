@@ -19,6 +19,44 @@ public final class StagnatedSpawner {
    private StagnatedSpawner() {
    }
 
+   /** The sweaty one is the only Stagnated that lives on the surface: rarely, he comes for a player walking above ground. */
+   private static void surfaceEthan(ServerPlayer player) {
+      if (!Masks.isHazardLevel(player.level()) || player.getRandom().nextInt(Tuning.SWEATY_SURFACE_ODDS) != 0) {
+         return;
+      }
+      ServerLevel level = (ServerLevel)player.level();
+      for (Stagnated other : level.getEntitiesOfClass(Stagnated.class, player.getBoundingBox().inflate(96.0))) {
+         if (other.isSweaty()) {
+            return;
+         }
+      }
+      for (int attempt = 0; attempt < 16; attempt++) {
+         double angle = player.getRandom().nextDouble() * Math.PI * 2.0;
+         double dist = 20.0 + player.getRandom().nextDouble() * 10.0;
+         int x = (int)Math.floor(player.getX() + Math.cos(angle) * dist);
+         int z = (int)Math.floor(player.getZ() + Math.sin(angle) * dist);
+         for (int dy = 8; dy >= -8; dy--) {
+            BlockPos pos = new BlockPos(x, (int)Math.floor(player.getY()) + dy, z);
+            if (pos.getY() < Tuning.HAZARD_Y || !level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), net.minecraft.core.Direction.UP)) {
+               continue;
+            }
+            Stagnated mob = ModEntities.STAGNATED.create(level, EntitySpawnReason.EVENT);
+            if (mob == null) {
+               return;
+            }
+            mob.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getRandom().nextFloat() * 360.0F, 0.0F);
+            if (!level.noCollision(mob)) {
+               mob.discard();
+               continue;
+            }
+            mob.makeSweaty();
+            level.addFreshEntity(mob);
+            COOLDOWN.put(player.getUUID(), Tuning.SWEATY_SURFACE_COOLDOWN_SECONDS);
+            return;
+         }
+      }
+   }
+
    /** Called once a second per player from Hazard. */
    public static void tick(ServerPlayer player, int sculkTier, float exposure) {
       UUID id = player.getUUID();
@@ -27,7 +65,11 @@ public final class StagnatedSpawner {
          COOLDOWN.put(id, cooldown - 1);
          return;
       }
-      if (player.isCreative() || player.isSpectator() || !Masks.isUnderground(player)) {
+      if (player.isCreative() || player.isSpectator()) {
+         return;
+      }
+      if (!Masks.isUnderground(player)) {
+         surfaceEthan(player);
          return;
       }
       if (sculkTier < Tuning.STAGNATED_MIN_TIER && exposure < 100.0F) {

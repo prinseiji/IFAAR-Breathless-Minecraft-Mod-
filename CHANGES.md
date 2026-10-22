@@ -220,3 +220,12 @@ Everything. See DEVELOPMENT.md.
 - Smash sound and particles now only play if the smash actually hurt someone. If a shield soaks it, he takes the fall damage himself (ceil(fall - 3), reduced by his armor) and nothing plays.
 - Stun slam: each time he goes for the mace there is a 35% chance (70% if the target has a shield up) that it is a stun slam. He holds a diamond axe and flashes red from the wind-up through the fall, the axe turns into the mace on landing, and a raised shield is disabled (100 ticks) before the damage lands, so it connects. Tuning: SWEATY_STUN_CHANCE, SWEATY_STUN_CHANCE_SHIELD.
 - The glow is a red outline like a spectral arrow (isCurrentlyGlowing + getTeamColor overrides while stunning).
+
+## Batch 17d: smash fix and enchanted mace
+- A smash only counts as blocked when a raised shield soaks it. Before, any hit that took no health (maxed resistance, absorption) counted as failed, so he skipped the smash sound and hurt himself.
+- The dropped mace comes with Breach II and Unbreaking III.
+
+## Batch 17e: Ethan on the surface, Stagnated wither above Y=0
+- The sweaty one now also turns up above ground: each second a player is on the surface, 1 in 1800 (about once per half hour of surface time), then a 10 minute cooldown, only one near a player (96 blocks), 20-30 blocks away, no emerge animation. Tuning: SWEATY_SURFACE_ODDS, SWEATY_SURFACE_COOLDOWN_SECONDS.
+- Every other Stagnated now withers when it is at Y=0 or above (overworld): 3 seconds grace, then 1 heart per second with sculk souls. Ethan is exempt. A Stagnated Head used on the surface will wither too. Tuning: STAGNATED_SURFACE_GRACE_TICKS, STAGNATED_SURFACE_DAMAGE.
+- The dropped mace is named "Ethan's Mace".

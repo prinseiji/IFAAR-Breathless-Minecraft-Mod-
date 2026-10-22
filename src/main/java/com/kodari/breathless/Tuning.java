@@ -280,4 +280,10 @@ public final class Tuning {
    /** Chance that a launch is a stun slam (axe down, mace on landing, breaks a shield): normally, and when the target is holding its shield up. */
    public static final float SWEATY_STUN_CHANCE = 0.35F;
    public static final float SWEATY_STUN_CHANCE_SHIELD = 0.7F;
+   /** Every Stagnated except the sweaty one withers away above the spore layer: grace period before it starts, then damage once a second. */
+   public static final int STAGNATED_SURFACE_GRACE_TICKS = 60;
+   public static final float STAGNATED_SURFACE_DAMAGE = 2.0F;
+   /** The sweaty one also turns up on the surface: each second a player is above ground the odds are 1 in this, then a long cooldown (seconds). */
+   public static final int SWEATY_SURFACE_ODDS = 1800;
+   public static final int SWEATY_SURFACE_COOLDOWN_SECONDS = 600;
 }
