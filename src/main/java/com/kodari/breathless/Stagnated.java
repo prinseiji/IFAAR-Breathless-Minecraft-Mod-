@@ -685,8 +685,10 @@ public class Stagnated extends Monster {
          double d = this.distanceTo(e);
          float amount = (e == this.getTarget() || d < 2.2) ? damage : damage * 0.5F;
          if (e.hurtServer(level, this.damageSources().mobAttack(this), amount)) {
-            e.knockback(1.3, this.getX() - e.getX(), this.getZ() - e.getZ());
-            e.setDeltaMovement(e.getDeltaMovement().add(0.0, 0.35, 0.0));
+            double kx = e.getX() - this.getX();
+            double kz = e.getZ() - this.getZ();
+            double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
+            e.setDeltaMovement(e.getDeltaMovement().add(kx / kl * 1.1, 0.4, kz / kl * 1.1));
             e.hurtMarked = true;
             if (e instanceof ServerPlayer player) {
                Hazard.addExposure(player, Tuning.STAGNATED_HIT_EXPOSURE);
