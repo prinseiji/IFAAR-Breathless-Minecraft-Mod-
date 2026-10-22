@@ -190,3 +190,9 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 16b - build fix
 - 26.2 no longer has `Minecraft.setScreen`; the lore reader now opens with `setScreenAndShow`. That was the only compile error in batch 16.
+
+## Batch 16c - lore polish
+- **Text nudged down** on the folder (starts 6 px lower, 13 lines per page instead of 14 so it still ends above the sculk).
+- **New icons:** Mandel's folder is the one you sent; Howard's letter is row 6, column 4 of the envelope sheet. McNally's folder is unchanged.
+- **Letter backgrounds:** Howard's recovered letter now opens on your glitched paper (one page, text over it), Vincent's note on the burnt paper (one page, text starts below and right of the burn). Mandel and McNally still use the folder. Each has its own layout block at the top of `LoreScreen` (picture, text columns, start height, lines per page, button height) if anything needs nudging.
+- **Names:** Mandel, McNally and Vincent's items have the purple (epic) name like the mace; Howard's is red.

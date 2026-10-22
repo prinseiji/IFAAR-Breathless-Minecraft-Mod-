@@ -127,7 +127,14 @@ public final class ModItems {
       TONIC_STRONG = registerTonic("tonic_strong", Tuning.TONIC_STRONG_PURGE);
       for (int i = 0; i < Lore.DOCS.length; i++) {
          ResourceKey<Item> loreKey = key("lore_" + Lore.DOCS[i].id());
-         LORE[i] = Registry.register(BuiltInRegistries.ITEM, loreKey, new LoreItem(new Item.Properties().setId(loreKey).stacksTo(1), i));
+         Item.Properties props = new Item.Properties().setId(loreKey).stacksTo(1);
+         if (Lore.DOCS[i].id().equals("howard")) {
+            // The recovered letter has a red name; the others use the epic (purple) rarity, like the mace.
+            props.component(DataComponents.ITEM_NAME, net.minecraft.network.chat.Component.translatable("item.breathless.lore_howard").withStyle(net.minecraft.ChatFormatting.RED));
+         } else {
+            props.rarity(net.minecraft.world.item.Rarity.EPIC);
+         }
+         LORE[i] = Registry.register(BuiltInRegistries.ITEM, loreKey, new LoreItem(props, i));
       }
    }
 

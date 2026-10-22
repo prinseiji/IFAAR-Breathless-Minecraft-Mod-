@@ -24,18 +24,26 @@ import net.minecraft.util.FormattedCharSequence;
  * In the text, <r>...</r> is red (glitches) and <k>...</k> is bold (redactions).
  */
 public class LoreScreen extends Screen {
-   private static final Identifier TEXTURE = Breathless.id("textures/gui/lore_folder.png");
    private static final int TEX = 256;
-   /** Where the two pages of text sit inside the picture, and how big the text is drawn. */
-   private static final int LEFT_X = 27;
-   private static final int RIGHT_X = 141;
-   private static final int TEXT_Y = 44;
-   private static final int PAGE_W = 90;
-   private static final int LINE_STEP = 7;
-   private static final int LINES_PER_PAGE = 14;
    private static final float TEXT_SCALE = 0.75F;
+   private static final int LINE_STEP = 7;
    private static final int INK = 0xFF3B2A18;
 
+   /**
+    * How a document is shown: the picture (256x256), the left (and right, or -1 for a single page) text column
+    * in picture pixels, where the text starts, the width of a column, lines per page and the y of the buttons.
+    */
+   private record Layout(Identifier texture, int leftX, int rightX, int textY, int pageW, int lines, int buttonY) {
+   }
+
+   /** The open folder: Mandel and McNally. */
+   private static final Layout FOLDER = new Layout(Breathless.id("textures/gui/lore_folder.png"), 27, 141, 50, 90, 13, 218);
+   /** The recovered (glitched) letter: Howard. */
+   private static final Layout GLITCH = new Layout(Breathless.id("textures/gui/lore_paper_glitch.png"), 58, -1, 54, 140, 23, 238);
+   /** The burnt note: Vincent. The burn is in the top-left corner, so the text starts lower and further right. */
+   private static final Layout BURNT = new Layout(Breathless.id("textures/gui/lore_paper_burnt.png"), 100, -1, 84, 84, 15, 214);
+
+   private final Layout layout;
    private final int doc;
    private final List<List<FormattedCharSequence>> pages = new ArrayList<>();
    private int spread;
@@ -45,6 +53,11 @@ public class LoreScreen extends Screen {
    public LoreScreen(int doc) {
       super(Component.translatable("breathless.lore." + Lore.DOCS[doc].id() + ".title"));
       this.doc = doc;
+      this.layout = switch (Lore.DOCS[doc].id()) {
+         case "howard" -> GLITCH;
+         case "vincent" -> BURNT;
+         default -> FOLDER;
+      };
    }
 
    private int left() {
@@ -83,7 +96,7 @@ public class LoreScreen extends Screen {
 
    private void layout() {
       Font font = this.font;
-      int wrap = Math.round(PAGE_W / TEXT_SCALE);
+      int wrap = Math.round(this.layout.pageW() / TEXT_SCALE);
       List<FormattedCharSequence> lines = new ArrayList<>();
       String id = Lore.DOCS[this.doc].id();
       lines.addAll(font.split(Component.translatable("breathless.lore." + id + ".title").withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_RED), wrap));
@@ -102,7 +115,7 @@ public class LoreScreen extends Screen {
             continue; // no blank line at the top of a page
          }
          page.add(line);
-         if (page.size() >= LINES_PER_PAGE) {
+         if (page.size() >= this.layout.lines()) {
             this.pages.add(page);
             page = new ArrayList<>();
          }
@@ -113,7 +126,8 @@ public class LoreScreen extends Screen {
    }
 
    private int spreads() {
-      return Math.max(1, (this.pages.size() + 1) / 2);
+      int per = this.layout.rightX() >= 0 ? 2 : 1;
+      return Math.max(1, (this.pages.size() + per - 1) / per);
    }
 
    @Override
@@ -121,7 +135,7 @@ public class LoreScreen extends Screen {
       this.pages.clear();
       this.layout();
       int cx = this.width / 2;
-      int by = this.top() + 218;
+      int by = this.top() + this.layout.buttonY();
       this.prev = this.addRenderableWidget(Button.builder(Component.literal("<"), b -> this.turn(-1)).bounds(cx - 78, by, 24, 20).build());
       this.addRenderableWidget(Button.builder(Component.literal("[ Done ]"), b -> this.onClose()).bounds(cx - 42, by, 84, 20).build());
       this.next = this.addRenderableWidget(Button.builder(Component.literal(">"), b -> this.turn(1)).bounds(cx + 54, by, 24, 20).build());
@@ -159,9 +173,13 @@ public class LoreScreen extends Screen {
    @Override
    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
       super.extractBackground(g, mouseX, mouseY, partialTick);
-      g.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.left(), this.top(), 0.0F, 0.0F, TEX, TEX, TEX, TEX);
-      this.drawPage(g, this.spread * 2, this.left() + LEFT_X);
-      this.drawPage(g, this.spread * 2 + 1, this.left() + RIGHT_X);
+      g.blit(RenderPipelines.GUI_TEXTURED, this.layout.texture(), this.left(), this.top(), 0.0F, 0.0F, TEX, TEX, TEX, TEX);
+      if (this.layout.rightX() >= 0) {
+         this.drawPage(g, this.spread * 2, this.left() + this.layout.leftX());
+         this.drawPage(g, this.spread * 2 + 1, this.left() + this.layout.rightX());
+      } else {
+         this.drawPage(g, this.spread, this.left() + this.layout.leftX());
+      }
    }
 
    private void drawPage(GuiGraphicsExtractor g, int index, int x) {
@@ -171,7 +189,7 @@ public class LoreScreen extends Screen {
       List<FormattedCharSequence> page = this.pages.get(index);
       for (int i = 0; i < page.size(); i++) {
          g.pose().pushMatrix();
-         g.pose().translate((float)x, (float)(this.top() + TEXT_Y + i * LINE_STEP));
+         g.pose().translate((float)x, (float)(this.top() + this.layout.textY() + i * LINE_STEP));
          g.pose().scale(TEXT_SCALE, TEXT_SCALE);
          g.text(this.font, page.get(i), 0, 0, INK, false);
          g.pose().popMatrix();
