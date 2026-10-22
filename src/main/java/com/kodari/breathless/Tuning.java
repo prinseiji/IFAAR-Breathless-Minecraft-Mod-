@@ -277,4 +277,7 @@ public final class Tuning {
    public static final double SWEATY_SMASH_REACH = 3.5;
    /** Chance each armor piece drops (the mace always does). Everything drops at about half durability. */
    public static final float SWEATY_ARMOR_DROP = 0.85F;
+   /** Chance that a launch is a stun slam (axe down, mace on landing, breaks a shield): normally, and when the target is holding its shield up. */
+   public static final float SWEATY_STUN_CHANCE = 0.35F;
+   public static final float SWEATY_STUN_CHANCE_SHIELD = 0.7F;
 }

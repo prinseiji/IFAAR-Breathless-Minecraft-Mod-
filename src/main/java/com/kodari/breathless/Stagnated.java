@@ -115,6 +115,21 @@ public class Stagnated extends Monster {
    private boolean swapToMace;
    private int maceStuck;
    private boolean decided;
+   /** This round's launch is a stun slam: axe in hand and red glow on the way down, mace on the landing, and it breaks a raised shield. */
+   private boolean stunPlan;
+   /** Client-side: red glow while it is about to stun slam. */
+   public boolean stunning;
+
+   /** The stun slam telegraph: a red outline like a spectral arrow's (client-side only, since only the client sets stunning). */
+   @Override
+   public boolean isCurrentlyGlowing() {
+      return this.stunning || super.isCurrentlyGlowing();
+   }
+
+   @Override
+   public int getTeamColor() {
+      return this.stunning ? 0xFF2020 : super.getTeamColor();
+   }
    private boolean diving;
    private boolean smashing;
    private boolean smashAnim;
@@ -538,14 +553,16 @@ public class Stagnated extends Monster {
          this.gear();
       }
       LivingEntity target = this.getTarget();
-      boolean mace = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.MACE);
+      boolean mace = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.MACE) || this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE);
 
       // The swap between the sword and the mace (reuses the unarm animation: the item changes at tick 7).
       if (this.swapTicks > 0) {
          this.swapTicks--;
          this.faceTarget();
          if (Tuning.STAGNATED_UNARM_TICKS - this.swapTicks == Tuning.STAGNATED_UNARM_AT) {
-            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(this.swapToMace ? Items.MACE : Items.DIAMOND_SWORD));
+            // Going for the heavy hit: sometimes it is a stun slam (axe on the way down), more often against a raised shield.
+            this.stunPlan = this.swapToMace && this.random.nextFloat() < (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(this.swapToMace ? (this.stunPlan ? Items.DIAMOND_AXE : Items.MACE) : Items.DIAMOND_SWORD));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.0F);
             this.refreshStats();
@@ -569,6 +586,9 @@ public class Stagnated extends Monster {
                this.getNavigation().stop();
                this.holdTemp(Items.WIND_CHARGE);
                this.level().broadcastEntityEvent(this, (byte)77);
+               if (this.stunPlan) {
+                  this.level().broadcastEntityEvent(this, (byte)81);
+               }
             } else if (++this.maceStuck >= 40) {
                this.startSwap(false);
             }
@@ -709,17 +729,26 @@ public class Stagnated extends Monster {
       this.holdTemp(null);
       this.level().broadcastEntityEvent(this, (byte)80);
       this.decided = false;
+      boolean stun = this.stunPlan;
+      this.stunPlan = false;
+      if (stun) {
+         // The axe turns into the mace on the landing.
+         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.MACE));
+      }
       this.startSwap(false);
-      if (smash) {
-         this.smash(level, fall);
+      if (smash && !this.smash(level, fall, stun)) {
+         // The smash did nothing (a shield soaked it): the fall is its own to take.
+         this.hurtServer(level, this.damageSources().fall(), Math.max(0.0F, (float)Math.ceil(fall - 3.0F)));
       }
    }
 
-   /** The landing: damage grows with the fall (capped), everything close is thrown back. */
-   private void smash(ServerLevel level, float fall) {
+   /**
+    * The landing: damage grows with the fall (capped), everything close is thrown back. The sound and the particles only
+    * happen if it really hurt someone. A stun slam breaks a raised shield first so the hit lands. Returns whether it connected.
+    */
+   private boolean smash(ServerLevel level, float fall, boolean stun) {
       float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, Tuning.SWEATY_SMASH_MAX);
-      this.playSound(fall > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND, 1.5F, 1.0F);
-      level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE, this.getX(), this.getY() + 0.1, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+      boolean connected = false;
       for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.0, 1.5, 3.0))) {
          if (e == this || e instanceof Stagnated || e instanceof Warden || !e.isAlive()) {
             continue;
@@ -727,9 +756,20 @@ public class Stagnated extends Monster {
          if (e instanceof Player player && (player.isCreative() || player.isSpectator())) {
             continue;
          }
+         if (stun && e instanceof Player player && player.isBlocking()) {
+            ItemStack shield = player.getUseItem().copy();
+            if (!player.getCooldowns().isOnCooldown(shield)) {
+               player.getCooldowns().addCooldown(shield, Tuning.STAGNATED_SHIELD_DISABLE_TICKS);
+            }
+            player.stopUsingItem();
+            level.broadcastEntityEvent(player, (byte)30);
+         }
          double d = this.distanceTo(e);
          float amount = (e == this.getTarget() || d < 2.2) ? damage : damage * 0.5F;
-         if (e.hurtServer(level, this.damageSources().mobAttack(this), amount)) {
+         float before = e.getHealth() + e.getAbsorptionAmount();
+         e.hurtServer(level, this.damageSources().mobAttack(this), amount);
+         if (e.getHealth() + e.getAbsorptionAmount() < before - 0.01F || !e.isAlive()) {
+            connected = true;
             double kx = e.getX() - this.getX();
             double kz = e.getZ() - this.getZ();
             double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
@@ -740,6 +780,11 @@ public class Stagnated extends Monster {
             }
          }
       }
+      if (connected) {
+         this.playSound(fall > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND, 1.5F, 1.0F);
+         level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE, this.getX(), this.getY() + 0.1, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+      }
+      return connected;
    }
 
    @Override
@@ -1197,8 +1242,11 @@ public class Stagnated extends Monster {
       } else if (event == 79) {
          this.clutchClock = 0;
          this.flying = false;
+      } else if (event == 81) {
+         this.stunning = true;
       } else if (event == 80) {
          this.flying = false;
+         this.stunning = false;
       } else {
          super.handleEntityEvent(event);
       }

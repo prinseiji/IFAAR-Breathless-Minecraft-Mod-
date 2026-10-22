@@ -215,3 +215,8 @@ Everything. See DEVELOPMENT.md.
 - The sweaty Stagnated now cycles: diamond sword melee (120 ticks or 4 hits) -> swaps to the mace (reuses the unarm animation) -> wind charge launch from any distance -> smash, or water clutch if the target is more than 3.5 blocks from where he is landing -> swaps back to the sword. The mace never melees.
 - Stronger steering in the air. Smash knockback no longer uses LivingEntity.knockback (changed in 26.2).
 - Tuning: SWEATY_SWORD_TICKS, SWEATY_SWORD_HITS, SWEATY_SMASH_REACH. SWEATY_RANGE_MIN and the cooldown are gone. The sword does not drop; the mace and armor still do.
+
+## Batch 17c: stun slam and blocked smashes
+- Smash sound and particles now only play if the smash actually hurt someone. If a shield soaks it, he takes the fall damage himself (ceil(fall - 3), reduced by his armor) and nothing plays.
+- Stun slam: each time he goes for the mace there is a 35% chance (70% if the target has a shield up) that it is a stun slam. He holds a diamond axe and flashes red from the wind-up through the fall, the axe turns into the mace on landing, and a raised shield is disabled (100 ticks) before the damage lands, so it connects. Tuning: SWEATY_STUN_CHANCE, SWEATY_STUN_CHANCE_SHIELD.
+- The glow is a red outline like a spectral arrow (isCurrentlyGlowing + getTeamColor overrides while stunning).
