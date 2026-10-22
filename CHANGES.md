@@ -200,3 +200,6 @@ Everything. See DEVELOPMENT.md.
 ## Batch 16d - Stagnated advancements for two roles
 - **Perseverance is removed.** With the miner and builder merged into the excavator, **Determination** now covers it: an excavator breaks a block with you within 4 blocks, or has placed 2 pillar blocks and is within 4.5 blocks of you. Description: "Let a Stagnated excavator dig or build its way to you. My hands may grow weak, but never my resolve." **Bravery** (kill a Stagnated in iron armor) stays the soldier's.
 - **Delete this file from your project** (a zip cannot remove it): `src/main/resources/data/breathless/advancement/perseverance.json`. Otherwise Perseverance stays in the tab as an advancement that can no longer be earned.
+
+## Batch 16e - advancement tab background
+- The Breathless tab now tiles your teal / dark / white block pattern as its background (`textures/gui/advancements/backgrounds/breathless.png`, set on `root.json`). I rebuilt the 16x16 tile from the block picture you sent (left face), so it is a close copy rather than your exact file. Send the flat 16x16 texture and I will swap it in, or just overwrite that png yourself.
