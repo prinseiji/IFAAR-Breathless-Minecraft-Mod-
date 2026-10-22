@@ -210,3 +210,8 @@ Everything. See DEVELOPMENT.md.
 - New animations: mace_smash, windburst, waterbucketclutch, airborne.
 - Kill it with a player: mace always drops, each armor piece 85%, all at about half durability.
 - Test with /breathless sweaty. Numbers are in Tuning (SWEATY_*).
+
+## Batch 17b: sweaty attack pattern (and the knockback build fix)
+- The sweaty Stagnated now cycles: diamond sword melee (120 ticks or 4 hits) -> swaps to the mace (reuses the unarm animation) -> wind charge launch from any distance -> smash, or water clutch if the target is more than 3.5 blocks from where he is landing -> swaps back to the sword. The mace never melees.
+- Stronger steering in the air. Smash knockback no longer uses LivingEntity.knockback (changed in 26.2).
+- Tuning: SWEATY_SWORD_TICKS, SWEATY_SWORD_HITS, SWEATY_SMASH_REACH. SWEATY_RANGE_MIN and the cooldown are gone. The sword does not drop; the mace and armor still do.

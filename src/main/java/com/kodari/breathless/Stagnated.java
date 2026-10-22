@@ -108,7 +108,13 @@ public class Stagnated extends Monster {
    private boolean sweaty;
    private boolean geared;
    private int windTicks;
-   private int smashCooldown = 60;
+   /** Sweaty attack cycle: sword fight, swap to the mace, launch + smash/clutch, swap back. */
+   private int swordTicks;
+   private int swordHits;
+   private int swapTicks;
+   private boolean swapToMace;
+   private int maceStuck;
+   private boolean decided;
    private boolean diving;
    private boolean smashing;
    private boolean smashAnim;
@@ -308,7 +314,7 @@ public class Stagnated extends Monster {
          return;
       }
       ItemStack main = this.getItemBySlot(EquipmentSlot.MAINHAND);
-      boolean armed = main.is(Items.IRON_SWORD) || main.is(Items.STONE_AXE) || main.is(Items.MACE);
+      boolean armed = main.is(Items.IRON_SWORD) || main.is(Items.STONE_AXE) || main.is(Items.MACE) || main.is(Items.DIAMOND_SWORD);
       AttributeInstance damage = this.getAttribute(Attributes.ATTACK_DAMAGE);
       if (damage != null) {
          damage.setBaseValue(armed ? Tuning.STAGNATED_ARMED_BASE_DAMAGE : Tuning.STAGNATED_DAMAGE);
@@ -352,7 +358,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0;
    }
 
    @Override
@@ -480,7 +486,7 @@ public class Stagnated extends Monster {
       this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
       this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
       this.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
-      this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.MACE));
+      this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_SWORD));
       for (EquipmentSlot slot : EquipmentSlot.values()) {
          this.setDropChance(slot, 0.0F);
       }
@@ -531,28 +537,48 @@ public class Stagnated extends Monster {
       if (!this.geared) {
          this.gear();
       }
-      if (this.smashCooldown > 0) {
-         this.smashCooldown--;
-      }
       LivingEntity target = this.getTarget();
+      boolean mace = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.MACE);
 
-      // Wind-up: throws the wind charge at its feet and bursts upward.
+      // The swap between the sword and the mace (reuses the unarm animation: the item changes at tick 7).
+      if (this.swapTicks > 0) {
+         this.swapTicks--;
+         this.faceTarget();
+         if (Tuning.STAGNATED_UNARM_TICKS - this.swapTicks == Tuning.STAGNATED_UNARM_AT) {
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(this.swapToMace ? Items.MACE : Items.DIAMOND_SWORD));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+            this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.0F);
+            this.refreshStats();
+            this.swordTicks = 0;
+            this.swordHits = 0;
+            this.maceStuck = 0;
+         }
+      } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0) {
+         if (!mace) {
+            // Sword phase: fight for a while, then go for the mace.
+            if (++this.swordTicks >= Tuning.SWEATY_SWORD_TICKS || this.swordHits >= Tuning.SWEATY_SWORD_HITS) {
+               this.startSwap(true);
+            }
+         } else {
+            // Mace phase: launch right away (from any distance within reach). If it cannot (low ceiling, too far), go back to the sword.
+            double dx = target.getX() - this.getX();
+            double dz = target.getZ() - this.getZ();
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            if (dist <= Tuning.SWEATY_RANGE_MAX && Math.abs(target.getY() - this.getY()) < 6.0 && this.roomAbove()) {
+               this.windTicks = Tuning.SWEATY_WIND_TICKS;
+               this.getNavigation().stop();
+               this.holdTemp(Items.WIND_CHARGE);
+               this.level().broadcastEntityEvent(this, (byte)77);
+            } else if (++this.maceStuck >= 40) {
+               this.startSwap(false);
+            }
+         }
+      }
       if (this.windTicks > 0) {
          this.windTicks--;
          this.faceTarget();
          if (Tuning.SWEATY_WIND_TICKS - this.windTicks == Tuning.SWEATY_LAUNCH_AT) {
             this.launch(target);
-         }
-      } else if (!this.diving && target != null && this.onGround() && this.smashCooldown <= 0 && this.spotTicks <= 0 && this.armoringTicks <= 0
-         && this.action == 0 && this.tickCount % 4 == 0 && this.random.nextFloat() < 0.3F) {
-         double dx = target.getX() - this.getX();
-         double dz = target.getZ() - this.getZ();
-         double dist = Math.sqrt(dx * dx + dz * dz);
-         if (dist >= Tuning.SWEATY_RANGE_MIN && dist <= Tuning.SWEATY_RANGE_MAX && Math.abs(target.getY() - this.getY()) < 6.0 && this.roomAbove()) {
-            this.windTicks = Tuning.SWEATY_WIND_TICKS;
-            this.getNavigation().stop();
-            this.holdTemp(Items.WIND_CHARGE);
-            this.level().broadcastEntityEvent(this, (byte)77);
          }
       }
 
@@ -568,10 +594,10 @@ public class Stagnated extends Monster {
          double dz = target.getZ() - this.getZ();
          double len = Math.sqrt(dx * dx + dz * dz);
          if (len > 0.5) {
-            double hx = motion.x + dx / len * 0.04;
-            double hz = motion.z + dz / len * 0.04;
+            double hx = motion.x + dx / len * 0.08;
+            double hz = motion.z + dz / len * 0.08;
             double speed = Math.sqrt(hx * hx + hz * hz);
-            double cap = Math.min(0.7, len / 6.0 + 0.1);
+            double cap = Math.min(0.9, len / 4.0 + 0.15);
             if (speed > cap) {
                hx = hx / speed * cap;
                hz = hz / speed * cap;
@@ -583,7 +609,16 @@ public class Stagnated extends Monster {
       if (motion.y < -0.2 && this.airTicks > 8 && !this.landed) {
          double ground = this.groundBelow();
          if (ground >= 0.0) {
-            if (this.smashing && target != null) {
+            if (!this.decided && ground <= -motion.y * 4.2 + 1.0) {
+               // Late decision: smash only if the target is under it, otherwise it is an MLG water clutch.
+               this.decided = true;
+               double ddx = target == null ? 99.0 : target.getX() - this.getX();
+               double ddz = target == null ? 99.0 : target.getZ() - this.getZ();
+               this.smashing = target != null && Math.sqrt(ddx * ddx + ddz * ddz) <= Tuning.SWEATY_SMASH_REACH;
+            }
+            if (!this.decided) {
+               // not close to the ground yet
+            } else if (this.smashing && target != null) {
                if (!this.smashAnim && ground <= -motion.y * 3.4 + 0.5) {
                   this.smashAnim = true;
                   this.level().broadcastEntityEvent(this, (byte)78);
@@ -627,10 +662,19 @@ public class Stagnated extends Monster {
       this.clutchPlaced = false;
    }
 
+   /** Starts the swap animation: to the mace (true) or back to the sword (false). */
+   private void startSwap(boolean toMace) {
+      this.swapToMace = toMace;
+      this.swapTicks = Tuning.STAGNATED_UNARM_TICKS;
+      this.getNavigation().stop();
+      this.level().broadcastEntityEvent(this, (byte)76);
+   }
+
    private void launch(LivingEntity target) {
       this.holdTemp(null);
       this.diving = true;
       this.smashing = target != null;
+      this.decided = false;
       this.smashAnim = false;
       this.landed = false;
       this.landedFall = 0.0F;
@@ -664,7 +708,8 @@ public class Stagnated extends Monster {
       this.pickUpWater(level);
       this.holdTemp(null);
       this.level().broadcastEntityEvent(this, (byte)80);
-      this.smashCooldown = Tuning.SWEATY_COOLDOWN_MIN + this.random.nextInt(Tuning.SWEATY_COOLDOWN_EXTRA);
+      this.decided = false;
+      this.startSwap(false);
       if (smash) {
          this.smash(level, fall);
       }
@@ -703,7 +748,7 @@ public class Stagnated extends Monster {
       if (!this.sweaty || !this.geared || !killedByPlayer) {
          return;
       }
-      this.dropHalf(level, this.getItemBySlot(EquipmentSlot.MAINHAND), 1.0F);
+      this.dropHalf(level, new ItemStack(Items.MACE), 1.0F);
       for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
          this.dropHalf(level, this.getItemBySlot(slot), Tuning.SWEATY_ARMOR_DROP);
       }
@@ -1176,6 +1221,17 @@ public class Stagnated extends Monster {
    public boolean doHurtTarget(ServerLevel level, Entity target) {
       if (this.shieldTicks > 0) {
          return false;
+      }
+      if (this.sweaty) {
+         // The mace is only used for the smash; on the ground and in the swaps it never melees.
+         if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD) || this.swapTicks > 0 || this.diving) {
+            return false;
+         }
+         boolean hit = this.strike(level, target);
+         if (hit) {
+            this.swordHits++;
+         }
+         return hit;
       }
       // With the axe in hand, a raised shield gets the clap: wind up, then break it (see shieldStrike).
       if (this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.STONE_AXE) && target instanceof Player player && player.isBlocking()

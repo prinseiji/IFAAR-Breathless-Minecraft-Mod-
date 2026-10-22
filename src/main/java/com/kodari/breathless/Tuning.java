@@ -263,17 +263,18 @@ public final class Tuning {
    public static final int SWEATY_CLUTCH_TICKS = 13;
    public static final int SWEATY_CLUTCH_PLACE_AT = 4;
    public static final int SWEATY_CLUTCH_PICKUP_AT = 8;
-   /** Upward speed of the wind-charge launch, and how far away the target may be (blocks) for it to try. */
+   /** Upward speed of the wind-charge launch, and how far away the target may be (blocks) for it to launch. */
    public static final double SWEATY_LAUNCH_UP = 1.1;
-   public static final double SWEATY_RANGE_MIN = 4.0;
    public static final double SWEATY_RANGE_MAX = 14.0;
    /** Smash damage = base + fall * per block, capped (12 = 6 hearts). */
    public static final float SWEATY_SMASH_BASE = 4.0F;
    public static final float SWEATY_SMASH_PER_BLOCK = 1.6F;
    public static final float SWEATY_SMASH_MAX = 12.0F;
-   /** Ticks between launches: minimum plus a random extra. */
-   public static final int SWEATY_COOLDOWN_MIN = 80;
-   public static final int SWEATY_COOLDOWN_EXTRA = 80;
+   /** The cycle: fights with the diamond sword for this many ticks or hits (whichever first), then swaps to the mace for a launch + smash, then swaps back. */
+   public static final int SWEATY_SWORD_TICKS = 120;
+   public static final int SWEATY_SWORD_HITS = 4;
+   /** At the end of the fall he smashes only if the target is within this many blocks (horizontally), otherwise he does the water clutch. */
+   public static final double SWEATY_SMASH_REACH = 3.5;
    /** Chance each armor piece drops (the mace always does). Everything drops at about half durability. */
    public static final float SWEATY_ARMOR_DROP = 0.85F;
 }
