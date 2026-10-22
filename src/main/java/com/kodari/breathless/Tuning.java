@@ -252,4 +252,28 @@ public final class Tuning {
       }
       return Math.min(STAGNATED_MAX_SIGHT, 24.0 + 48.0 * Math.min(1.0F, exposure / 100.0F));
    }
+
+   // ---- The sweaty Stagnated (rare diamond mace variant)
+   /** Chance that a new soldier is the sweaty one. */
+   public static final float SWEATY_CHANCE = 1.0F / 150.0F;
+   /** Wind-up (windburst, 0.54 s) with the burst at tick 6 (0.29 s), the smash swing (0.33 s), the clutch (0.63 s) with water placed at tick 4 and picked up at tick 8. */
+   public static final int SWEATY_WIND_TICKS = 11;
+   public static final int SWEATY_LAUNCH_AT = 6;
+   public static final int SWEATY_SMASH_TICKS = 7;
+   public static final int SWEATY_CLUTCH_TICKS = 13;
+   public static final int SWEATY_CLUTCH_PLACE_AT = 4;
+   public static final int SWEATY_CLUTCH_PICKUP_AT = 8;
+   /** Upward speed of the wind-charge launch, and how far away the target may be (blocks) for it to try. */
+   public static final double SWEATY_LAUNCH_UP = 1.1;
+   public static final double SWEATY_RANGE_MIN = 4.0;
+   public static final double SWEATY_RANGE_MAX = 14.0;
+   /** Smash damage = base + fall * per block, capped (12 = 6 hearts). */
+   public static final float SWEATY_SMASH_BASE = 4.0F;
+   public static final float SWEATY_SMASH_PER_BLOCK = 1.6F;
+   public static final float SWEATY_SMASH_MAX = 12.0F;
+   /** Ticks between launches: minimum plus a random extra. */
+   public static final int SWEATY_COOLDOWN_MIN = 80;
+   public static final int SWEATY_COOLDOWN_EXTRA = 80;
+   /** Chance each armor piece drops (the mace always does). Everything drops at about half durability. */
+   public static final float SWEATY_ARMOR_DROP = 0.85F;
 }

@@ -111,6 +111,17 @@ public class Breathless implements ModInitializer {
                context.getSource().sendSuccess(() -> Component.literal("Made " + list.size() + " Stagnated nearby soldiers with weapon " + value + " (0 none, 1 iron sword, 2 stone axe)"), false);
                return list.size();
             })))
+            .then(Commands.literal("sweaty").executes(context -> {
+               ServerPlayer player = context.getSource().getPlayerOrException();
+               var level = (net.minecraft.server.level.ServerLevel)player.level();
+               Stagnated mob = ModEntities.STAGNATED.spawn(level, player.blockPosition().relative(player.getDirection(), 6), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+               if (mob == null) {
+                  return 0;
+               }
+               mob.makeSweaty();
+               context.getSource().sendSuccess(() -> Component.literal("Spawned the sweaty Stagnated."), false);
+               return 1;
+            }))
             .then(Commands.literal("give").executes(context -> {
                ServerPlayer player = context.getSource().getPlayerOrException();
                player.getInventory().add(new ItemStack(ModItems.GAS_MASK_EMPTY));

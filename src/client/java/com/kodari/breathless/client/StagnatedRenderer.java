@@ -53,6 +53,10 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       state.shield = entity.shieldClock >= 0 ? (entity.shieldClock + partialTick) / 20.0F : -1.0F;
       state.spotArmed = entity.spotArmedClock >= 0 ? (entity.spotArmedClock + partialTick) / 20.0F : -1.0F;
       state.unarm = entity.unarmClock >= 0 ? (entity.unarmClock + partialTick) / 20.0F : -1.0F;
+      state.wind = entity.windClock >= 0 ? (entity.windClock + partialTick) / 20.0F : -1.0F;
+      state.smash = entity.smashClock >= 0 ? (entity.smashClock + partialTick) / 20.0F : -1.0F;
+      state.clutch = entity.clutchClock >= 0 ? (entity.clutchClock + partialTick) / 20.0F : -1.0F;
+      state.flying = entity.flying;
       state.spot = entity.spotClock >= 0 ? (entity.spotClock + partialTick) / 20.0F : -1.0F;
    }
 

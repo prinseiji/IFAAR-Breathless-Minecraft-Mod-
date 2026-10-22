@@ -49,6 +49,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.network.chat.Component;
 
 /** 5-L0's puppet: a Steve with a chest cavity engulfed in sculk. Stays calm until something disturbs the layer. */
 public class Stagnated extends Monster {
@@ -103,12 +104,37 @@ public class Stagnated extends Monster {
    /** Client-side clocks for the armed spot pose and the unarm, -1 when not doing it. */
    public int spotArmedClock = -1;
    public int unarmClock = -1;
+   /** The rare diamond-armored mace variant ("sweaty"): wind-charge launch, mace smash, water-bucket clutch. */
+   private boolean sweaty;
+   private boolean geared;
+   private int windTicks;
+   private int smashCooldown = 60;
+   private boolean diving;
+   private boolean smashing;
+   private boolean smashAnim;
+   private boolean landed;
+   private float landedFall;
+   private int airTicks;
+   private int clutchTicks;
+   private BlockPos clutchPos;
+   private boolean clutchPlaced;
+   /** Client-side clocks for the sweaty moves (-1 when not doing it) and whether it is in its airborne pose. */
+   public int windClock = -1;
+   public int smashClock = -1;
+   public int clutchClock = -1;
+   public boolean flying;
+   private int flyTicks;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
       super(type, level);
       this.role = level.getRandom().nextInt(2) + 1;
       float roll = level.getRandom().nextFloat();
       this.weapon = roll < Tuning.STAGNATED_SWORD_CHANCE ? 1 : (roll < Tuning.STAGNATED_SWORD_CHANCE + Tuning.STAGNATED_AXE_CHANCE ? 2 : 0);
+      // About 1 in 150 soldiers is the sweaty one (saved data overrides this when a world loads).
+      if (!level.isClientSide() && this.role == 1 && level.getRandom().nextFloat() < Tuning.SWEATY_CHANCE) {
+         this.sweaty = true;
+         this.weapon = 0;
+      }
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -282,14 +308,14 @@ public class Stagnated extends Monster {
          return;
       }
       ItemStack main = this.getItemBySlot(EquipmentSlot.MAINHAND);
-      boolean armed = main.is(Items.IRON_SWORD) || main.is(Items.STONE_AXE);
+      boolean armed = main.is(Items.IRON_SWORD) || main.is(Items.STONE_AXE) || main.is(Items.MACE);
       AttributeInstance damage = this.getAttribute(Attributes.ATTACK_DAMAGE);
       if (damage != null) {
          damage.setBaseValue(armed ? Tuning.STAGNATED_ARMED_BASE_DAMAGE : Tuning.STAGNATED_DAMAGE);
       }
       AttributeInstance speed = this.getAttribute(Attributes.MOVEMENT_SPEED);
       if (speed != null) {
-         slow(speed, "stagnated_armor_slow", this.isArmored() ? Tuning.STAGNATED_ARMOR_SLOW : 0.0);
+         slow(speed, "stagnated_armor_slow", this.isArmored() && !this.sweaty ? Tuning.STAGNATED_ARMOR_SLOW : 0.0);
          slow(speed, "stagnated_axe_slow", main.is(Items.STONE_AXE) ? Tuning.STAGNATED_AXE_SLOW : 0.0);
       }
    }
@@ -308,6 +334,8 @@ public class Stagnated extends Monster {
       super.addAdditionalSaveData(output);
       output.putInt("StagnatedRole", this.role);
       output.putInt("StagnatedWeapon", this.weapon);
+      output.putBoolean("Sweaty", this.sweaty);
+      output.putBoolean("SweatyGeared", this.geared);
    }
 
    @Override
@@ -317,12 +345,14 @@ public class Stagnated extends Monster {
       // The old builder role (3) became part of the excavator.
       this.role = saved == 3 ? 2 : saved;
       this.weapon = input.getIntOr("StagnatedWeapon", 0);
+      this.sweaty = input.getBooleanOr("Sweaty", false);
+      this.geared = input.getBooleanOr("SweatyGeared", false);
       this.refreshStats();
    }
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving;
    }
 
    @Override
@@ -356,9 +386,24 @@ public class Stagnated extends Monster {
          if (this.unarmClock >= 0 && ++this.unarmClock > Tuning.STAGNATED_UNARM_TICKS) {
             this.unarmClock = -1;
          }
+         if (this.windClock >= 0 && ++this.windClock > Tuning.SWEATY_WIND_TICKS) {
+            this.windClock = -1;
+         }
+         if (this.smashClock >= 0 && ++this.smashClock > Tuning.SWEATY_SMASH_TICKS) {
+            this.smashClock = -1;
+         }
+         if (this.clutchClock >= 0 && ++this.clutchClock > Tuning.SWEATY_CLUTCH_TICKS) {
+            this.clutchClock = -1;
+         }
+         if (this.flying && ++this.flyTicks > 8 && this.onGround()) {
+            this.flying = false;
+         }
       } else if (this.emergeTicks > 0) {
          this.emergeTicks--;
       } else {
+         if (this.sweaty) {
+            this.tickSweaty((ServerLevel)this.level());
+         }
          if (this.armoringTicks > 0) {
             this.armoringTicks--;
             if (Tuning.STAGNATED_ARMOR_TICKS - this.armoringTicks == Tuning.STAGNATED_ARMOR_EQUIP_AT) {
@@ -400,7 +445,7 @@ public class Stagnated extends Monster {
          }
          // Lost or finished with its target: it puts the weapon away.
          boolean hasTarget = this.getTarget() != null;
-         if (this.hadTarget && !hasTarget && this.role == 1 && this.unarmTicks <= 0 && !this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
+         if (this.hadTarget && !hasTarget && this.role == 1 && !this.sweaty && this.unarmTicks <= 0 && !this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
             this.unarmTicks = Tuning.STAGNATED_UNARM_TICKS;
             this.getNavigation().stop();
             this.level().broadcastEntityEvent(this, (byte)76);
@@ -415,6 +460,264 @@ public class Stagnated extends Monster {
             }
          }
       }
+   }
+
+
+   // ---------------------------------------------------------------- the sweaty variant
+
+   /** For testing (/breathless sweaty): turns it into the sweaty one, it puts its gear on next tick. */
+   public void makeSweaty() {
+      this.role = 1;
+      this.weapon = 0;
+      this.sweaty = true;
+      this.geared = false;
+   }
+
+   private void gear() {
+      this.geared = true;
+      this.armoredFlag = true;
+      this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+      this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+      this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
+      this.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
+      this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.MACE));
+      for (EquipmentSlot slot : EquipmentSlot.values()) {
+         this.setDropChance(slot, 0.0F);
+      }
+      this.setCustomName(Component.literal("xX_5L0TH_Xx"));
+      this.refreshStats();
+   }
+
+   /** Items it holds for a moment (wind charge, water bucket) go in the off hand, which the renderer shows in the left hand instead of the mace. */
+   private void holdTemp(net.minecraft.world.item.Item item) {
+      this.setItemSlot(EquipmentSlot.OFFHAND, item == null ? ItemStack.EMPTY : new ItemStack(item));
+      this.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
+   }
+
+   @Override
+   public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
+      if (this.sweaty) {
+         this.landed = true;
+         this.landedFall = (float)distance;
+         return false;
+      }
+      return super.causeFallDamage(distance, multiplier, source);
+   }
+
+   private boolean roomAbove() {
+      BlockPos base = this.blockPosition();
+      for (int i = 1; i <= 7; i++) {
+         if (!this.level().getBlockState(base.above(i)).getCollisionShape(this.level(), base.above(i)).isEmpty()) {
+            return false;
+         }
+      }
+      return true;
+   }
+
+   /** Distance from its feet to the top of the first solid block below, or -1 if nothing within 12 blocks. Sets clutchPos to the air block above it. */
+   private double groundBelow() {
+      BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.getBlockX(), this.getBlockY(), this.getBlockZ());
+      for (int i = 0; i < 12; i++) {
+         if (solid((ServerLevel)this.level(), pos)) {
+            this.clutchPos = pos.above().immutable();
+            return this.getY() - (pos.getY() + 1.0);
+         }
+         pos.move(0, -1, 0);
+      }
+      return -1.0;
+   }
+
+   private void tickSweaty(ServerLevel level) {
+      if (!this.geared) {
+         this.gear();
+      }
+      if (this.smashCooldown > 0) {
+         this.smashCooldown--;
+      }
+      LivingEntity target = this.getTarget();
+
+      // Wind-up: throws the wind charge at its feet and bursts upward.
+      if (this.windTicks > 0) {
+         this.windTicks--;
+         this.faceTarget();
+         if (Tuning.SWEATY_WIND_TICKS - this.windTicks == Tuning.SWEATY_LAUNCH_AT) {
+            this.launch(target);
+         }
+      } else if (!this.diving && target != null && this.onGround() && this.smashCooldown <= 0 && this.spotTicks <= 0 && this.armoringTicks <= 0
+         && this.action == 0 && this.tickCount % 4 == 0 && this.random.nextFloat() < 0.3F) {
+         double dx = target.getX() - this.getX();
+         double dz = target.getZ() - this.getZ();
+         double dist = Math.sqrt(dx * dx + dz * dz);
+         if (dist >= Tuning.SWEATY_RANGE_MIN && dist <= Tuning.SWEATY_RANGE_MAX && Math.abs(target.getY() - this.getY()) < 6.0 && this.roomAbove()) {
+            this.windTicks = Tuning.SWEATY_WIND_TICKS;
+            this.getNavigation().stop();
+            this.holdTemp(Items.WIND_CHARGE);
+            this.level().broadcastEntityEvent(this, (byte)77);
+         }
+      }
+
+      if (!this.diving) {
+         return;
+      }
+      this.airTicks++;
+      this.faceTarget();
+      Vec3 motion = this.getDeltaMovement();
+      // A little steering toward the target on the way up and down.
+      if (target != null && this.airTicks > 4 && !this.landed) {
+         double dx = target.getX() - this.getX();
+         double dz = target.getZ() - this.getZ();
+         double len = Math.sqrt(dx * dx + dz * dz);
+         if (len > 0.5) {
+            double hx = motion.x + dx / len * 0.04;
+            double hz = motion.z + dz / len * 0.04;
+            double speed = Math.sqrt(hx * hx + hz * hz);
+            double cap = Math.min(0.7, len / 6.0 + 0.1);
+            if (speed > cap) {
+               hx = hx / speed * cap;
+               hz = hz / speed * cap;
+            }
+            this.setDeltaMovement(hx, motion.y, hz);
+         }
+      }
+      // On the way down: the smash swing, or (with no one to smash) the water bucket clutch.
+      if (motion.y < -0.2 && this.airTicks > 8 && !this.landed) {
+         double ground = this.groundBelow();
+         if (ground >= 0.0) {
+            if (this.smashing && target != null) {
+               if (!this.smashAnim && ground <= -motion.y * 3.4 + 0.5) {
+                  this.smashAnim = true;
+                  this.level().broadcastEntityEvent(this, (byte)78);
+               }
+            } else if (this.clutchTicks <= 0 && !this.clutchPlaced && ground <= -motion.y * 4.2 + 1.0) {
+               this.clutchTicks = Tuning.SWEATY_CLUTCH_TICKS;
+               this.holdTemp(Items.WATER_BUCKET);
+               this.level().broadcastEntityEvent(this, (byte)79);
+            }
+         }
+      }
+      if (this.clutchTicks > 0) {
+         this.clutchTicks--;
+         int at = Tuning.SWEATY_CLUTCH_TICKS - this.clutchTicks;
+         if (at == Tuning.SWEATY_CLUTCH_PLACE_AT && this.clutchPos != null) {
+            this.playSound(SoundEvents.BUCKET_EMPTY, 1.0F, 1.0F);
+            if (level.getGameRules().get(GameRules.MOB_GRIEFING) && level.getBlockState(this.clutchPos).isAir()) {
+               level.setBlock(this.clutchPos, Blocks.WATER.defaultBlockState(), 3);
+               this.clutchPlaced = true;
+            }
+            // The water is what catches it: no fall damage either way, and the fall counts as broken.
+            this.fallDistance = 0.0;
+         } else if (at == Tuning.SWEATY_CLUTCH_PICKUP_AT) {
+            this.pickUpWater(level);
+         }
+      }
+      boolean done = this.landed || (this.airTicks > 6 && this.isInWater()) || (this.airTicks > 6 && this.onGround()) || this.airTicks > 140;
+      if (done && this.clutchTicks <= 0) {
+         this.finishDive(level);
+      } else if (done && this.landed) {
+         // Landed in the middle of the clutch: carry the pickup through.
+         this.landed = false;
+      }
+   }
+
+   private void pickUpWater(ServerLevel level) {
+      if (this.clutchPlaced && this.clutchPos != null && level.getBlockState(this.clutchPos).is(Blocks.WATER)) {
+         level.setBlock(this.clutchPos, Blocks.AIR.defaultBlockState(), 3);
+         this.playSound(SoundEvents.BUCKET_FILL, 1.0F, 1.0F);
+      }
+      this.clutchPlaced = false;
+   }
+
+   private void launch(LivingEntity target) {
+      this.holdTemp(null);
+      this.diving = true;
+      this.smashing = target != null;
+      this.smashAnim = false;
+      this.landed = false;
+      this.landedFall = 0.0F;
+      this.airTicks = 0;
+      this.clutchTicks = 0;
+      this.clutchPlaced = false;
+      this.clutchPos = null;
+      double dx = target == null ? 0.0 : target.getX() - this.getX();
+      double dz = target == null ? 0.0 : target.getZ() - this.getZ();
+      double dist = Math.sqrt(dx * dx + dz * dz);
+      double speed = Math.min(0.9, dist / 9.0);
+      double hx = dist > 0.01 ? dx / dist * speed : 0.0;
+      double hz = dist > 0.01 ? dz / dist * speed : 0.0;
+      this.setDeltaMovement(hx, Tuning.SWEATY_LAUNCH_UP, hz);
+      this.fallDistance = 0.0;
+      this.playSound(SoundEvents.WIND_CHARGE_BURST.value(), 1.5F, 1.0F);
+      ((ServerLevel)this.level()).sendParticles(ParticleTypes.GUST_EMITTER_SMALL, this.getX(), this.getY(), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+   }
+
+   private void finishDive(ServerLevel level) {
+      float fall = this.landedFall;
+      boolean smash = this.smashing && this.smashAnim && fall >= 1.5F;
+      if (this.smashing && !smash && this.landed && fall >= 1.5F) {
+         smash = true;
+      }
+      this.diving = false;
+      this.smashing = false;
+      this.smashAnim = false;
+      this.landed = false;
+      this.airTicks = 0;
+      this.pickUpWater(level);
+      this.holdTemp(null);
+      this.level().broadcastEntityEvent(this, (byte)80);
+      this.smashCooldown = Tuning.SWEATY_COOLDOWN_MIN + this.random.nextInt(Tuning.SWEATY_COOLDOWN_EXTRA);
+      if (smash) {
+         this.smash(level, fall);
+      }
+   }
+
+   /** The landing: damage grows with the fall (capped), everything close is thrown back. */
+   private void smash(ServerLevel level, float fall) {
+      float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, Tuning.SWEATY_SMASH_MAX);
+      this.playSound(fall > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND, 1.5F, 1.0F);
+      level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE, this.getX(), this.getY() + 0.1, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.0, 1.5, 3.0))) {
+         if (e == this || e instanceof Stagnated || e instanceof Warden || !e.isAlive()) {
+            continue;
+         }
+         if (e instanceof Player player && (player.isCreative() || player.isSpectator())) {
+            continue;
+         }
+         double d = this.distanceTo(e);
+         float amount = (e == this.getTarget() || d < 2.2) ? damage : damage * 0.5F;
+         if (e.hurtServer(level, this.damageSources().mobAttack(this), amount)) {
+            e.knockback(1.3, this.getX() - e.getX(), this.getZ() - e.getZ());
+            e.setDeltaMovement(e.getDeltaMovement().add(0.0, 0.35, 0.0));
+            e.hurtMarked = true;
+            if (e instanceof ServerPlayer player) {
+               Hazard.addExposure(player, Tuning.STAGNATED_HIT_EXPOSURE);
+            }
+         }
+      }
+   }
+
+   @Override
+   protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean killedByPlayer) {
+      super.dropCustomDeathLoot(level, source, killedByPlayer);
+      if (!this.sweaty || !this.geared || !killedByPlayer) {
+         return;
+      }
+      this.dropHalf(level, this.getItemBySlot(EquipmentSlot.MAINHAND), 1.0F);
+      for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+         this.dropHalf(level, this.getItemBySlot(slot), Tuning.SWEATY_ARMOR_DROP);
+      }
+   }
+
+   /** Drops a copy worn down to about half its durability. */
+   private void dropHalf(ServerLevel level, ItemStack stack, float chance) {
+      if (stack.isEmpty() || this.random.nextFloat() >= chance) {
+         return;
+      }
+      ItemStack copy = stack.copy();
+      int max = copy.getMaxDamage();
+      if (max > 4) {
+         copy.setDamageValue(Mth.clamp(max / 2 + this.random.nextInt(Math.max(1, max / 5)) - max / 10, 1, max - 1));
+      }
+      this.spawnAtLocation(level, copy);
    }
 
    /** For testing (/breathless role): 0 none, 1 soldier, 2 excavator. */
@@ -838,6 +1141,17 @@ public class Stagnated extends Monster {
          this.spotArmedClock = 0;
       } else if (event == 76) {
          this.unarmClock = 0;
+      } else if (event == 77) {
+         this.windClock = 0;
+         this.flying = true;
+         this.flyTicks = 0;
+      } else if (event == 78) {
+         this.smashClock = 0;
+      } else if (event == 79) {
+         this.clutchClock = 0;
+         this.flying = false;
+      } else if (event == 80) {
+         this.flying = false;
       } else {
          super.handleEntityEvent(event);
       }

@@ -203,3 +203,10 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 16e - advancement tab background
 - The Breathless tab now tiles your teal / dark / white block pattern as its background (`textures/gui/advancements/backgrounds/breathless.png`, set on `root.json`). I rebuilt the 16x16 tile from the block picture you sent (left face), so it is a close copy rather than your exact file. Send the flat 16x16 texture and I will swap it in, or just overwrite that png yourself.
+
+## Batch 17a: the sweaty Stagnated
+- About 1 in 150 soldiers is a diamond-armored Stagnated named xX_5L0TH_Xx with a mace (normal speed, no armor slowdown).
+- Wind charge launch toward the target, then a mace smash on landing (damage 4 + 1.6 per block fallen, capped at 12 = 6 hearts, knockback, mace smash sounds, gust particles). With no target it does the water bucket clutch instead (water placed at 0.21 s, picked up at 0.42 s, only with mob griefing on). No fall damage ever.
+- New animations: mace_smash, windburst, waterbucketclutch, airborne.
+- Kill it with a player: mace always drops, each armor piece 85%, all at about half durability.
+- Test with /breathless sweaty. Numbers are in Tuning (SWEATY_*).

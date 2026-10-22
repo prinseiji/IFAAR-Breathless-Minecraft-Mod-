@@ -23,6 +23,11 @@ public class StagnatedRenderState extends ArmedEntityRenderState {
    /** Seconds into the soldier's armed spot pose and the unarm, -1 when not doing them. */
    public float spotArmed = -1.0F;
    public float unarm = -1.0F;
+   /** Sweaty variant: seconds into the wind charge throw, the mace smash and the water clutch (-1 when not doing it), and whether it is airborne. */
+   public float wind = -1.0F;
+   public float smash = -1.0F;
+   public float clutch = -1.0F;
+   public boolean flying;
    /** Worn armor: helmet, chestplate, leggings, boots. */
    public final ItemStack[] armor = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
 }
