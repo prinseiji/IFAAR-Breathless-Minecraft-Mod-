@@ -654,7 +654,7 @@ public class Stagnated extends Monster {
             this.placeSculk(level);
             this.pillared++;
             if (this.pillared >= 2 && this.getTarget() instanceof ServerPlayer player && this.distanceTo(player) <= 4.5F) {
-               Achievements.award(player, "perseverance");
+               Achievements.award(player, "determination");
             }
          }
          if (high || this.actionTicks > 20) {

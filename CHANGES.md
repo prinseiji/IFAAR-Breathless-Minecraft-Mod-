@@ -196,3 +196,7 @@ Everything. See DEVELOPMENT.md.
 - **New icons:** Mandel's folder is the one you sent; Howard's letter is row 6, column 4 of the envelope sheet. McNally's folder is unchanged.
 - **Letter backgrounds:** Howard's recovered letter now opens on your glitched paper (one page, text over it), Vincent's note on the burnt paper (one page, text starts below and right of the burn). Mandel and McNally still use the folder. Each has its own layout block at the top of `LoreScreen` (picture, text columns, start height, lines per page, button height) if anything needs nudging.
 - **Names:** Mandel, McNally and Vincent's items have the purple (epic) name like the mace; Howard's is red.
+
+## Batch 16d - Stagnated advancements for two roles
+- **Perseverance is removed.** With the miner and builder merged into the excavator, **Determination** now covers it: an excavator breaks a block with you within 4 blocks, or has placed 2 pillar blocks and is within 4.5 blocks of you. Description: "Let a Stagnated excavator dig or build its way to you. My hands may grow weak, but never my resolve." **Bravery** (kill a Stagnated in iron armor) stays the soldier's.
+- **Delete this file from your project** (a zip cannot remove it): `src/main/resources/data/breathless/advancement/perseverance.json`. Otherwise Perseverance stays in the tab as an advancement that can no longer be earned.
