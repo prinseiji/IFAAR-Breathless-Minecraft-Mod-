@@ -112,9 +112,15 @@ public class Stagnated extends Monster {
    private int surfaceTicks;
    /** The wind charge hop is a retreat before eating (away from the target, no smash). */
    private boolean fleeing;
+   /** Shield: engaged once he has been hit twice quickly, then held up (lowered only for each swing) until a player's axe disables it. */
+   private boolean engaged;
+   private boolean guardUp;
+   private int guardDown;
+   private int guardCooldown;
+   private int recentHits;
+   private int hitWindow;
    /** The last player he fought, and the countdown until he leaves the "game" after winning. */
    private ServerPlayer lastPlayer;
-   private int leaveTicks;
    /** The landing spot is locked at the top of the arc (no steering after that). */
    private boolean locked;
    private double lockVx;
@@ -268,7 +274,27 @@ public class Stagnated extends Monster {
       if (this.emergeTicks > 0) {
          return false;
       }
+      if (this.sweaty && this.guardUp && this.blocksShield(source)) {
+         if (source.getEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(net.minecraft.tags.ItemTags.AXES)) {
+            // An axe breaks the shield: it goes down for a while and he cannot raise it again until the cooldown is over.
+            this.dropGuard();
+            this.engaged = false;
+            this.recentHits = 0;
+            this.guardCooldown = Tuning.SWEATY_GUARD_DISABLE_TICKS;
+            level.broadcastEntityEvent(this, (byte)30);
+         } else {
+            level.broadcastEntityEvent(this, (byte)29);
+         }
+         return false;
+      }
       boolean hurt = super.hurtServer(level, source, amount);
+      if (this.sweaty && hurt && source.getEntity() instanceof Player) {
+         this.hitWindow = Tuning.SWEATY_GUARD_WINDOW;
+         if (++this.recentHits >= Tuning.SWEATY_GUARD_HITS && this.guardCooldown <= 0 && !this.engaged) {
+            this.engaged = true;
+            this.guardDown = 0;
+         }
+      }
       // A soldier puts its iron on the moment anything hits it (a player or a mob).
       if (hurt && this.role == 1 && this.armoringTicks <= 0 && this.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && source.getEntity() instanceof LivingEntity && this.isAlive()) {
          this.armoringTicks = Tuning.STAGNATED_ARMOR_TICKS;
@@ -612,7 +638,7 @@ public class Stagnated extends Monster {
    /** Distance from its feet to the top of the first solid block below, or -1 if nothing within 12 blocks. Sets clutchPos to the air block above it. */
    private double groundBelow() {
       BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.getBlockX(), this.getBlockY(), this.getBlockZ());
-      for (int i = 0; i < 12; i++) {
+      for (int i = 0; i < 40; i++) {
          if (solid((ServerLevel)this.level(), pos)) {
             this.groundPos = pos.above().immutable();
             return this.getY() - (pos.getY() + 1.0);
@@ -630,26 +656,37 @@ public class Stagnated extends Monster {
          this.voiceCooldown--;
       }
       LivingEntity target = this.getTarget();
-      // He leaves after a win: "gg ez" in chat, a moment later the yellow "left the game" and he is gone (no second Ethan wandering around).
-      if (this.leaveTicks > 0) {
-         this.setTarget(null);
-         this.getNavigation().stop();
-         if (--this.leaveTicks == 0) {
-            this.announceLeave(level);
-            level.sendParticles(ParticleTypes.POOF, this.getX(), this.getY() + 1.0, this.getZ(), 20, 0.3, 0.6, 0.3, 0.02);
-            this.discard();
-         }
-         return;
-      }
       if (target instanceof ServerPlayer fighting) {
          this.lastPlayer = fighting;
       }
       if (this.lastPlayer != null && (this.lastPlayer.isDeadOrDying() || !this.lastPlayer.isAlive())) {
+         // He leaves after a win, right away: nothing ticks near a dead player, so a countdown would never finish.
          this.lastPlayer = null;
-         this.leaveTicks = Tuning.SWEATY_LEAVE_TICKS;
-         this.holdTemp(null);
          level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", this.getDisplayName(), "gg ez"), false);
+         this.announceLeave(level);
+         level.sendParticles(ParticleTypes.POOF, this.getX(), this.getY() + 1.0, this.getZ(), 20, 0.3, 0.6, 0.3, 0.02);
+         this.discard();
          return;
+      }
+      // Shield: while he is in his sword phase and engaged it is up, except for a moment around each swing.
+      if (this.guardCooldown > 0) {
+         this.guardCooldown--;
+      }
+      if (this.hitWindow > 0 && --this.hitWindow == 0) {
+         this.recentHits = 0;
+      }
+      boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD) && this.swapTicks <= 0 && !this.diving
+         && this.windTicks <= 0 && this.eatTicks <= 0 && target != null && this.onGround();
+      if (this.engaged && swordPhase) {
+         if (this.guardDown > 0) {
+            this.guardDown--;
+         }
+         boolean want = this.guardDown <= 0 && this.guardCooldown <= 0;
+         if (want != this.guardUp) {
+            this.setGuard(want);
+         }
+      } else if (this.guardUp) {
+         this.setGuard(false);
       }
       // Golden apple when low: stands still for the whole bite. The apples refill once the fight has been over for 10 seconds.
       if (target == null) {
@@ -797,10 +834,10 @@ public class Stagnated extends Monster {
       if (this.locked && !this.landed && !this.fleeing) {
          this.setDeltaMovement(this.lockVx, this.getDeltaMovement().y, this.lockVz);
          // The stun slam shows where it is coming down: a ring of red dust on the ground.
-         if (this.stunPlan && !Double.isNaN(this.markY) && this.airTicks % 3 == 0) {
-            for (int i = 0; i < 14; i++) {
-               double a = i * Math.PI * 2.0 / 14.0;
-               level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 1.5F),
+         if (this.stunPlan && !Double.isNaN(this.markY) && this.airTicks % 2 == 0) {
+            for (int i = 0; i < 28; i++) {
+               double a = i * Math.PI * 2.0 / 28.0;
+               level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F),
                   this.markX + Math.cos(a) * Tuning.SWEATY_SMASH_RADIUS, this.markY, this.markZ + Math.sin(a) * Tuning.SWEATY_SMASH_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
             }
          }
@@ -864,6 +901,30 @@ public class Stagnated extends Monster {
          this.pickUpWater((ServerLevel)this.level());
       }
       super.remove(reason);
+   }
+
+   /** Does his raised shield stop this hit? Only things that come at him from the front, and not what bypasses shields. */
+   private boolean blocksShield(DamageSource source) {
+      Entity direct = source.getDirectEntity();
+      if (direct == null || source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_SHIELD)) {
+         return false;
+      }
+      Vec3 to = direct.position().subtract(this.position());
+      Vec3 look = this.getViewVector(1.0F);
+      return to.x * look.x + to.z * look.z > 0.0;
+   }
+
+   private void setGuard(boolean up) {
+      this.guardUp = up;
+      if (up) {
+         this.holdTemp(Items.SHIELD);
+      } else if (this.getItemBySlot(EquipmentSlot.OFFHAND).is(Items.SHIELD)) {
+         this.holdTemp(null);
+      }
+   }
+
+   private void dropGuard() {
+      this.setGuard(false);
    }
 
    private void announceLeave(ServerLevel level) {
@@ -1493,6 +1554,10 @@ public class Stagnated extends Monster {
          // The mace is only used for the smash; on the ground and in the swaps it never melees.
          if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD) || this.swapTicks > 0 || this.diving) {
             return false;
+         }
+         if (this.guardUp) {
+            this.setGuard(false);
+            this.guardDown = Tuning.SWEATY_GUARD_DROP_TICKS;
          }
          // Ethan's own hit: his own death message, and no spore exposure (he is not infected).
          float swing = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);

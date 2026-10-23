@@ -262,3 +262,8 @@ Everything. See DEVELOPMENT.md.
 ## Batch 18c: Ethan leaves
 - When the player he was fighting dies (or disconnects), he says "<xX_5L0TH_Xx> gg ez" in chat, waits 1.5 seconds, then the yellow "xX_5L0TH_Xx left the game" appears and he despawns with a puff. This stops a second one from being spawned by accident. Tuning: SWEATY_LEAVE_TICKS.
 - When he dies, the same yellow "left the game" line shows.
+
+## Batch 18d: Ethan's shield, plus the ring and leave fixes
+- Shield: after he has been hit twice within 3 seconds he raises a shield in his sword phase and keeps it up. It only drops for a moment around each of his swings (so: swing, shield, swing, shield). A raised shield blocks hits and arrows from the front (shield sound). A player's axe hit breaks it: he lowers it and cannot raise it again for 5 seconds; after that, two more quick hits make him raise it again. The shield shows in his left hand in place of the sword while it is up (no blocking animation yet). Tuning: SWEATY_GUARD_*.
+- Fix: the red ring for the stun slam was never drawn because the ground search only looked 12 blocks down and the top of his arc is higher than that. It now looks 40 blocks down, and the ring has more and bigger particles.
+- Fix: he never left after a win. Nothing ticks near a dead player, so the old 1.5 second countdown never finished. He now says "gg ez", shows the yellow "left the game" line and despawns in the same moment (the leave-delay tuning value is gone).

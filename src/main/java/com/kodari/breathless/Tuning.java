@@ -305,6 +305,9 @@ public final class Tuning {
    public static final double SWEATY_FLEE_SPEED = 0.8;
    /** The smash hits things within about this many blocks of him (smaller = a near miss is a miss). */
    public static final double SWEATY_SMASH_RADIUS = 2.2;
-   /** After he wins ("gg ez") he waits this many ticks, then leaves the game and despawns. */
-   public static final int SWEATY_LEAVE_TICKS = 30;
+   /** Shield: hits within the window that make him raise it, the window (ticks), how long it stays down for a swing, how long an axe disables it. */
+   public static final int SWEATY_GUARD_HITS = 2;
+   public static final int SWEATY_GUARD_WINDOW = 60;
+   public static final int SWEATY_GUARD_DROP_TICKS = 10;
+   public static final int SWEATY_GUARD_DISABLE_TICKS = 100;
 }
