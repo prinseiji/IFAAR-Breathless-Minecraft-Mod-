@@ -303,4 +303,8 @@ public final class Tuning {
    /** Before eating he hops away (wind charge) if you are closer than this many blocks; the hop's horizontal speed. */
    public static final double SWEATY_EAT_SAFE = 8.0;
    public static final double SWEATY_FLEE_SPEED = 0.8;
+   /** The smash hits things within about this many blocks of him (smaller = a near miss is a miss). */
+   public static final double SWEATY_SMASH_RADIUS = 2.2;
+   /** After he wins ("gg ez") he waits this many ticks, then leaves the game and despawns. */
+   public static final int SWEATY_LEAVE_TICKS = 30;
 }

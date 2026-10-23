@@ -112,6 +112,18 @@ public class Stagnated extends Monster {
    private int surfaceTicks;
    /** The wind charge hop is a retreat before eating (away from the target, no smash). */
    private boolean fleeing;
+   /** The last player he fought, and the countdown until he leaves the "game" after winning. */
+   private ServerPlayer lastPlayer;
+   private int leaveTicks;
+   /** The landing spot is locked at the top of the arc (no steering after that). */
+   private boolean locked;
+   private double lockVx;
+   private double lockVz;
+   private double markX;
+   private double markY;
+   private double markZ;
+   private BlockPos groundPos;
+   private BlockPos placedPos;
    private boolean hopDone;
    private int voiceCooldown;
    private int eatTicks;
@@ -602,7 +614,7 @@ public class Stagnated extends Monster {
       BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.getBlockX(), this.getBlockY(), this.getBlockZ());
       for (int i = 0; i < 12; i++) {
          if (solid((ServerLevel)this.level(), pos)) {
-            this.clutchPos = pos.above().immutable();
+            this.groundPos = pos.above().immutable();
             return this.getY() - (pos.getY() + 1.0);
          }
          pos.move(0, -1, 0);
@@ -618,6 +630,27 @@ public class Stagnated extends Monster {
          this.voiceCooldown--;
       }
       LivingEntity target = this.getTarget();
+      // He leaves after a win: "gg ez" in chat, a moment later the yellow "left the game" and he is gone (no second Ethan wandering around).
+      if (this.leaveTicks > 0) {
+         this.setTarget(null);
+         this.getNavigation().stop();
+         if (--this.leaveTicks == 0) {
+            this.announceLeave(level);
+            level.sendParticles(ParticleTypes.POOF, this.getX(), this.getY() + 1.0, this.getZ(), 20, 0.3, 0.6, 0.3, 0.02);
+            this.discard();
+         }
+         return;
+      }
+      if (target instanceof ServerPlayer fighting) {
+         this.lastPlayer = fighting;
+      }
+      if (this.lastPlayer != null && (this.lastPlayer.isDeadOrDying() || !this.lastPlayer.isAlive())) {
+         this.lastPlayer = null;
+         this.leaveTicks = Tuning.SWEATY_LEAVE_TICKS;
+         this.holdTemp(null);
+         level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", this.getDisplayName(), "gg ez"), false);
+         return;
+      }
       // Golden apple when low: stands still for the whole bite. The apples refill once the fight has been over for 10 seconds.
       if (target == null) {
          if (++this.noTargetTicks > 200) {
@@ -715,7 +748,7 @@ public class Stagnated extends Monster {
       this.faceTarget();
       Vec3 motion = this.getDeltaMovement();
       // A little steering toward the target on the way up and down.
-      if (target != null && !this.fleeing && this.airTicks > 4 && !this.landed) {
+      if (target != null && !this.fleeing && motion.y > 0.0 && this.airTicks > 4 && !this.landed) {
          double dx = target.getX() - this.getX();
          double dz = target.getZ() - this.getZ();
          double len = Math.sqrt(dx * dx + dz * dz);
@@ -729,6 +762,47 @@ public class Stagnated extends Monster {
                hz = hz / speed * cap;
             }
             this.setDeltaMovement(hx, motion.y, hz);
+         }
+      }
+      // At the top of the arc the landing spot is locked: it works out the speed that brings it down on the target's spot of that moment.
+      if (!this.locked && !this.fleeing && motion.y <= 0.0 && this.airTicks > 3 && !this.landed) {
+         this.locked = true;
+         double h = this.groundBelow();
+         if (target != null && h >= 0.0) {
+            double vy = motion.y;
+            double y = h;
+            int t = 0;
+            while (y > 0.0 && t < 100) {
+               vy = (vy - 0.08) * 0.98;
+               y += vy;
+               t++;
+            }
+            t = Math.max(t, 1);
+            this.lockVx = (target.getX() - this.getX()) / t;
+            this.lockVz = (target.getZ() - this.getZ()) / t;
+            double sp = Math.sqrt(this.lockVx * this.lockVx + this.lockVz * this.lockVz);
+            if (sp > 0.9) {
+               this.lockVx *= 0.9 / sp;
+               this.lockVz *= 0.9 / sp;
+            }
+            this.markX = this.getX() + this.lockVx * t;
+            this.markZ = this.getZ() + this.lockVz * t;
+            this.markY = this.getY() - h + 0.1;
+         } else {
+            this.lockVx = motion.x;
+            this.lockVz = motion.z;
+            this.markY = Double.NaN;
+         }
+      }
+      if (this.locked && !this.landed && !this.fleeing) {
+         this.setDeltaMovement(this.lockVx, this.getDeltaMovement().y, this.lockVz);
+         // The stun slam shows where it is coming down: a ring of red dust on the ground.
+         if (this.stunPlan && !Double.isNaN(this.markY) && this.airTicks % 3 == 0) {
+            for (int i = 0; i < 14; i++) {
+               double a = i * Math.PI * 2.0 / 14.0;
+               level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 1.5F),
+                  this.markX + Math.cos(a) * Tuning.SWEATY_SMASH_RADIUS, this.markY, this.markZ + Math.sin(a) * Tuning.SWEATY_SMASH_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
+            }
          }
       }
       // On the way down: the smash swing, or (with no one to smash) the water bucket clutch.
@@ -750,6 +824,7 @@ public class Stagnated extends Monster {
                   this.level().broadcastEntityEvent(this, (byte)78);
                }
             } else if (this.clutchTicks <= 0 && !this.clutchPlaced && ground <= -motion.y * 4.2 + 1.0) {
+               this.clutchPos = this.groundPos;
                this.clutchTicks = Tuning.SWEATY_CLUTCH_TICKS;
                this.holdTemp(Items.WATER_BUCKET);
                this.say(ModSounds.ETHAN_CLUTCH);
@@ -765,6 +840,7 @@ public class Stagnated extends Monster {
             if (level.getGameRules().get(GameRules.MOB_GRIEFING) && level.getBlockState(this.clutchPos).isAir()) {
                level.setBlock(this.clutchPos, Blocks.WATER.defaultBlockState(), 3);
                this.clutchPlaced = true;
+               this.placedPos = this.clutchPos;
             }
             // The water is what catches it: no fall damage either way, and the fall counts as broken.
             this.fallDistance = 0.0;
@@ -781,12 +857,36 @@ public class Stagnated extends Monster {
       }
    }
 
+   @Override
+   public void remove(Entity.RemovalReason reason) {
+      // Never leave his clutch water behind if he dies or leaves in the middle of it.
+      if (!this.level().isClientSide() && this.placedPos != null) {
+         this.pickUpWater((ServerLevel)this.level());
+      }
+      super.remove(reason);
+   }
+
+   private void announceLeave(ServerLevel level) {
+      level.getServer().getPlayerList().broadcastSystemMessage(
+         Component.translatable("multiplayer.player.left", this.getDisplayName()).withStyle(net.minecraft.ChatFormatting.YELLOW), false);
+   }
+
+   @Override
+   public void die(DamageSource source) {
+      super.die(source);
+      // Dying counts as leaving too.
+      if (this.sweaty && this.level() instanceof ServerLevel level) {
+         this.announceLeave(level);
+      }
+   }
+
    private void pickUpWater(ServerLevel level) {
-      if (this.clutchPlaced && this.clutchPos != null && level.getBlockState(this.clutchPos).is(Blocks.WATER)) {
-         level.setBlock(this.clutchPos, Blocks.AIR.defaultBlockState(), 3);
+      if (this.clutchPlaced && this.placedPos != null && level.getBlockState(this.placedPos).is(Blocks.WATER)) {
+         level.setBlock(this.placedPos, Blocks.AIR.defaultBlockState(), 3);
          this.playSound(SoundEvents.BUCKET_FILL, 1.0F, 1.0F);
       }
       this.clutchPlaced = false;
+      this.placedPos = null;
    }
 
    /** Starts the swap animation: to the mace (true) or back to the sword (false). */
@@ -801,6 +901,7 @@ public class Stagnated extends Monster {
       this.holdTemp(null);
       this.diving = true;
       this.smashing = target != null && !this.fleeing;
+      this.locked = false;
       this.decided = false;
       this.smashAnim = false;
       this.landed = false;
@@ -863,7 +964,7 @@ public class Stagnated extends Monster {
    private boolean smash(ServerLevel level, float fall, boolean stun) {
       float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, stun ? Tuning.SWEATY_STUN_MAX : Tuning.SWEATY_SMASH_MAX);
       boolean connected = false;
-      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.0, 1.5, 3.0))) {
+      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(Tuning.SWEATY_SMASH_RADIUS, 1.5, Tuning.SWEATY_SMASH_RADIUS))) {
          if (e == this || e instanceof Stagnated || e instanceof Warden || !e.isAlive()) {
             continue;
          }
@@ -879,7 +980,7 @@ public class Stagnated extends Monster {
             level.broadcastEntityEvent(player, (byte)30);
          }
          double d = this.distanceTo(e);
-         float amount = (e == this.getTarget() || d < 2.2) ? damage : damage * 0.5F;
+         float amount = (e == this.getTarget() || d < Tuning.SWEATY_SMASH_RADIUS) ? damage : damage * 0.5F;
          amount *= breachFactor(e, amount);
          // A shield is the only thing that counts as a block: resistance, absorption and armor still mean the smash landed.
          boolean shielded = e instanceof Player guard && guard.isBlocking();

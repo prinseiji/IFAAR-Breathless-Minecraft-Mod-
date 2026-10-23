@@ -252,3 +252,13 @@ Everything. See DEVELOPMENT.md.
 - Stun slam launches higher (1.5 instead of 1.1, needs 12 blocks of room) so there is time to get away, and its damage cap is 16 (8 hearts). Tuning: SWEATY_STUN_LAUNCH_UP, SWEATY_STUN_MAX.
 - Weaker steering in the air for every launch. Tuning: SWEATY_STEER, SWEATY_STEER_CAP.
 - Before eating a golden apple, if you are within 8 blocks he hops away with a wind charge (no smash, he can still clutch) and eats where he lands. Tuning: SWEATY_EAT_SAFE, SWEATY_FLEE_SPEED.
+
+## Batch 18b: dodgeable smashes, clutch water fix
+- He steers only while rising. At the top of the arc he locks his landing spot (the target's position at that moment) and falls on a fixed path, so moving away then works.
+- The stun slam draws a ring of red dust on the ground where he will land.
+- The smash area is smaller (SWEATY_SMASH_RADIUS 2.2, was about 3).
+- Clutch water: the spot where he placed it is now remembered, so he always picks up the same block (before, the position was recalculated while he fell and the water stayed behind). Water is also removed if he dies or despawns mid-clutch.
+
+## Batch 18c: Ethan leaves
+- When the player he was fighting dies (or disconnects), he says "<xX_5L0TH_Xx> gg ez" in chat, waits 1.5 seconds, then the yellow "xX_5L0TH_Xx left the game" appears and he despawns with a puff. This stops a second one from being spawned by accident. Tuning: SWEATY_LEAVE_TICKS.
+- When he dies, the same yellow "left the game" line shows.
