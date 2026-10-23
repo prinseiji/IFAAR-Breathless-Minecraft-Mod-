@@ -38,6 +38,8 @@ public final class ModSounds {
    public static SoundEvent ETHAN_STUN;
    public static SoundEvent ETHAN_CLUTCH;
    public static SoundEvent ETHAN_DEATH;
+   public static SoundEvent ETHAN_ENRAGE;
+   public static SoundEvent ETHAN_ENRAGED_SFX;
 
    private static SoundEvent reg(String name) {
       return Registry.register(BuiltInRegistries.SOUND_EVENT, Breathless.id(name), SoundEvent.createVariableRangeEvent(Breathless.id(name)));
@@ -73,5 +75,7 @@ public final class ModSounds {
       ETHAN_STUN = reg("ethan_stun");
       ETHAN_CLUTCH = reg("ethan_clutch");
       ETHAN_DEATH = reg("ethan_death");
+      ETHAN_ENRAGE = reg("ethan_enrage");
+      ETHAN_ENRAGED_SFX = reg("ethan_enraged_sfx");
    }
 }

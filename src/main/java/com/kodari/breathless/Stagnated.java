@@ -53,6 +53,11 @@ import net.minecraft.network.chat.Component;
 
 /** 5-L0's puppet: a Steve with a chest cavity engulfed in sculk. Stays calm until something disturbs the layer. */
 public class Stagnated extends Monster {
+   /** Phase two: synced to every client (teal outline, no more voicelines, netherite). */
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ENRAGED = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+   /** Server-side: ticks left of the enrage intro (invulnerable and busy until then). Client-side clock for the animation, -1 when not playing. */
+   private int enrageTicks;
+   public int enrageClock = -1;
    /** Client-side: ticks since the "spots you" pose began, -1 when idle. */
    public int spotClock = -1;
    /** Server-side: ticks left frozen in place after spotting a target. */
@@ -149,12 +154,25 @@ public class Stagnated extends Monster {
    /** The stun slam telegraph: a red outline like a spectral arrow's (client-side only, since only the client sets stunning). */
    @Override
    public boolean isCurrentlyGlowing() {
-      return this.stunning || super.isCurrentlyGlowing();
+      return this.stunning || this.looksLikeEthan() || super.isCurrentlyGlowing();
    }
 
+   /** Client-side: he wears diamond (phase one) or netherite (phase two) on his head. That is how the client tells Ethan from the others. */
+   private boolean looksLikeEthan() {
+      if (!this.level().isClientSide()) {
+         return false;
+      }
+      ItemStack head = this.getItemBySlot(EquipmentSlot.HEAD);
+      return head.is(Items.DIAMOND_HELMET) || head.is(Items.NETHERITE_HELMET);
+   }
+
+   /** Red for the stun slam warning, otherwise a constant dark sculk teal. */
    @Override
    public int getTeamColor() {
-      return this.stunning ? 0xFF2020 : super.getTeamColor();
+      if (this.stunning) {
+         return 0xFF2020;
+      }
+      return this.looksLikeEthan() ? 0x0F7F7A : super.getTeamColor();
    }
    private boolean diving;
    private boolean smashing;
@@ -195,6 +213,16 @@ public class Stagnated extends Monster {
          .add(Attributes.ATTACK_DAMAGE, Tuning.STAGNATED_DAMAGE)
          .add(Attributes.FOLLOW_RANGE, Tuning.STAGNATED_MAX_SIGHT)
          .add(Attributes.KNOCKBACK_RESISTANCE, 0.4);
+   }
+
+   @Override
+   protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+      super.defineSynchedData(builder);
+      builder.define(ENRAGED, false);
+   }
+
+   public boolean isEnraged() {
+      return this.entityData.get(ENRAGED);
    }
 
    @Override
@@ -275,7 +303,7 @@ public class Stagnated extends Monster {
 
    @Override
    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-      if (this.emergeTicks > 0) {
+      if (this.emergeTicks > 0 || (this.enrageTicks > 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY))) {
          return false;
       }
       if (this.sweaty && this.guardUp && this.blocksShield(source)) {
@@ -413,6 +441,7 @@ public class Stagnated extends Monster {
       output.putInt("StagnatedWeapon", this.weapon);
       output.putBoolean("Sweaty", this.sweaty);
       output.putBoolean("SweatyGeared", this.geared);
+      output.putBoolean("SweatyEnraged", this.isEnraged());
    }
 
    @Override
@@ -424,12 +453,13 @@ public class Stagnated extends Monster {
       this.weapon = input.getIntOr("StagnatedWeapon", 0);
       this.sweaty = input.getBooleanOr("Sweaty", false);
       this.geared = input.getBooleanOr("SweatyGeared", false);
+      this.entityData.set(ENRAGED, input.getBooleanOr("SweatyEnraged", false));
       this.refreshStats();
    }
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0;
    }
 
    @Override
@@ -471,6 +501,9 @@ public class Stagnated extends Monster {
          }
          if (this.clutchClock >= 0 && ++this.clutchClock > Tuning.SWEATY_CLUTCH_TICKS) {
             this.clutchClock = -1;
+         }
+         if (this.enrageClock >= 0 && ++this.enrageClock > Tuning.SWEATY_ENRAGE_TICKS) {
+            this.enrageClock = -1;
          }
          if (this.shieldUpClock >= 0 && ++this.shieldUpClock > 10) {
             this.shieldUpClock = -1;
@@ -636,11 +669,54 @@ public class Stagnated extends Monster {
 
    /** One voiceline at a time: skipped if he spoke less than 1.5 seconds ago. */
    private void say(SoundEvent line) {
-      if (!this.sweaty || this.voiceCooldown > 0) {
+      if (!this.sweaty || this.voiceCooldown > 0 || this.isEnraged()) {
          return;
       }
       this.voiceCooldown = 30;
       this.playSound(line, 1.6F, 1.0F);
+   }
+
+   /** The stun slam is wider than the plain smash, except in phase two where it comes often. */
+   private float stunRadius() {
+      return this.isEnraged() ? (float)Tuning.SWEATY_SMASH_RADIUS : (float)Tuning.SWEATY_STUN_RADIUS;
+   }
+
+   /** Phase two. Called when his health would reach zero for the first time (or by /breathless enrage). */
+   private void startEnrage(ServerLevel level) {
+      this.entityData.set(ENRAGED, true);
+      this.setHealth(this.getMaxHealth() * Tuning.SWEATY_ENRAGE_HEALTH);
+      this.removeAllEffects();
+      this.pickUpWater(level);
+      this.diving = false;
+      this.windTicks = 0;
+      this.swapTicks = 0;
+      this.eatTicks = 0;
+      this.clutchTicks = 0;
+      this.stunPlan = false;
+      this.fleeing = false;
+      this.locked = false;
+      this.decided = false;
+      this.smashing = false;
+      this.smashAnim = false;
+      this.landed = false;
+      this.engaged = false;
+      this.guardUp = false;
+      this.guardCooldown = 0;
+      this.recentHits = 0;
+      this.getNavigation().stop();
+      this.holdTemp(Items.ENCHANTED_GOLDEN_APPLE);
+      this.enrageTicks = Tuning.SWEATY_ENRAGE_TICKS;
+      level.broadcastEntityEvent(this, (byte)80);
+      level.broadcastEntityEvent(this, (byte)85);
+      this.playSound(ModSounds.ETHAN_ENRAGED_SFX, 2.5F, 1.0F);
+      this.playSound(ModSounds.ETHAN_ENRAGE, 2.0F, 1.0F);
+   }
+
+   /** For testing (/breathless enrage). */
+   public void forceEnrage() {
+      if (this.sweaty && this.geared && !this.isEnraged() && this.level() instanceof ServerLevel level) {
+         this.startEnrage(level);
+      }
    }
 
    private boolean roomAbove(int height) {
@@ -674,6 +750,36 @@ public class Stagnated extends Monster {
          this.voiceCooldown--;
       }
       LivingEntity target = this.getTarget();
+      // The enrage intro: invulnerable and busy for the whole animation. He eats the enchanted golden apple, then the netherite goes on.
+      if (this.enrageTicks > 0) {
+         this.enrageTicks--;
+         int at = Tuning.SWEATY_ENRAGE_TICKS - this.enrageTicks;
+         this.faceTarget();
+         if (at == Tuning.SWEATY_ENRAGE_EAT_DONE) {
+            this.holdTemp(null);
+            this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 400, 1));
+            this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.ABSORPTION, 2400, 3));
+            this.playSound(SoundEvents.PLAYER_BURP, 1.0F, 0.8F);
+         }
+         if (at == Tuning.SWEATY_ENRAGE_ARMOR_AT) {
+            this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.NETHERITE_HELMET));
+            this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.NETHERITE_CHESTPLATE));
+            this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.NETHERITE_LEGGINGS));
+            this.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.NETHERITE_BOOTS));
+            for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+               this.setDropChance(slot, 0.0F);
+            }
+            this.playSound(SoundEvents.ARMOR_EQUIP_NETHERITE.value(), 1.5F, 1.0F);
+         }
+         if (this.enrageTicks == 0) {
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_SWORD));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+            this.refreshStats();
+            this.swordTicks = 0;
+            this.swordHits = 0;
+         }
+         return;
+      }
       if (target instanceof ServerPlayer fighting) {
          this.lastPlayer = fighting;
       }
@@ -754,7 +860,7 @@ public class Stagnated extends Monster {
          this.faceTarget();
          if (Tuning.STAGNATED_UNARM_TICKS - this.swapTicks == Tuning.STAGNATED_UNARM_AT) {
             // Going for the heavy hit: sometimes it is a stun slam (axe on the way down), more often against a raised shield.
-            this.stunPlan = this.swapToMace && this.random.nextFloat() < (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE);
+            this.stunPlan = this.swapToMace && this.random.nextFloat() < (this.isEnraged() ? Tuning.SWEATY_ENRAGED_STUN_CHANCE : (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE));
             this.setItemSlot(EquipmentSlot.MAINHAND, this.swapToMace ? (this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace()) : new ItemStack(Items.DIAMOND_SWORD));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.0F);
@@ -766,7 +872,7 @@ public class Stagnated extends Monster {
       } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0) {
          if (!mace) {
             // Sword phase: fight for a while, then go for the mace.
-            if (++this.swordTicks >= Tuning.SWEATY_SWORD_TICKS || this.swordHits >= Tuning.SWEATY_SWORD_HITS) {
+            if (++this.swordTicks >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_TICKS : Tuning.SWEATY_SWORD_TICKS) || this.swordHits >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_HITS : Tuning.SWEATY_SWORD_HITS)) {
                this.startSwap(true);
             }
          } else {
@@ -856,7 +962,7 @@ public class Stagnated extends Monster {
             for (int i = 0; i < 28; i++) {
                double a = i * Math.PI * 2.0 / 28.0;
                level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F),
-                  this.markX + Math.cos(a) * Tuning.SWEATY_STUN_RADIUS, this.markY, this.markZ + Math.sin(a) * Tuning.SWEATY_STUN_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
+                  this.markX + Math.cos(a) * this.stunRadius(), this.markY, this.markZ + Math.sin(a) * this.stunRadius(), 1, 0.0, 0.0, 0.0, 0.0);
             }
          }
       }
@@ -953,6 +1059,12 @@ public class Stagnated extends Monster {
 
    @Override
    public void die(DamageSource source) {
+      // First lethal hit: no death, phase two instead (like a totem). /kill and the void still kill him.
+      if (this.sweaty && this.geared && !this.isEnraged() && this.enrageTicks <= 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
+         && this.level() instanceof ServerLevel enrageLevel) {
+         this.startEnrage(enrageLevel);
+         return;
+      }
       super.die(source);
       // Dying counts as leaving too.
       if (this.sweaty && this.level() instanceof ServerLevel level) {
@@ -1044,7 +1156,7 @@ public class Stagnated extends Monster {
    private boolean smash(ServerLevel level, float fall, boolean stun) {
       float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, stun ? Tuning.SWEATY_STUN_MAX : Tuning.SWEATY_SMASH_MAX);
       boolean connected = false;
-      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(stun ? Tuning.SWEATY_STUN_RADIUS : Tuning.SWEATY_SMASH_RADIUS, 1.5, stun ? Tuning.SWEATY_STUN_RADIUS : Tuning.SWEATY_SMASH_RADIUS))) {
+      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(stun ? this.stunRadius() : Tuning.SWEATY_SMASH_RADIUS, 1.5, stun ? this.stunRadius() : Tuning.SWEATY_SMASH_RADIUS))) {
          if (e == this || e instanceof Stagnated || e instanceof Warden || !e.isAlive()) {
             continue;
          }
@@ -1060,7 +1172,7 @@ public class Stagnated extends Monster {
             level.broadcastEntityEvent(player, (byte)30);
          }
          double d = this.distanceTo(e);
-         float amount = (e == this.getTarget() || d < (stun ? Tuning.SWEATY_STUN_RADIUS : Tuning.SWEATY_SMASH_RADIUS)) ? damage : damage * 0.5F;
+         float amount = (e == this.getTarget() || d < (stun ? this.stunRadius() : Tuning.SWEATY_SMASH_RADIUS)) ? damage : damage * 0.5F;
          amount *= breachFactor(e, amount);
          // A shield is the only thing that counts as a block: resistance, absorption and armor still mean the smash landed.
          boolean shielded = e instanceof Player guard && guard.isBlocking();
@@ -1093,8 +1205,11 @@ public class Stagnated extends Monster {
          return;
       }
       this.dropHalf(level, this.ethansMace(), 1.0F);
-      for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
-         this.dropHalf(level, this.getItemBySlot(slot), Tuning.SWEATY_ARMOR_DROP);
+      if (this.isEnraged()) {
+         // Only the netherite set drops; the diamond one is swapped out in the enrage.
+         for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            this.dropHalf(level, this.getItemBySlot(slot), Tuning.SWEATY_ARMOR_DROP);
+         }
       }
    }
 
@@ -1541,6 +1656,10 @@ public class Stagnated extends Monster {
       } else if (event == 79) {
          this.clutchClock = 0;
          this.flying = false;
+      } else if (event == 85) {
+         this.enrageClock = 0;
+         this.flying = false;
+         this.stunning = false;
       } else if (event == 82) {
          this.shieldUpClock = 0;
       } else if (event == 83) {
@@ -1653,7 +1772,8 @@ public class Stagnated extends Monster {
 
    @Override
    protected SoundEvent getDeathSound() {
-      return this.sweaty ? ModSounds.ETHAN_DEATH : ModSounds.STAGNATED_DEATH;
+      // His voice at the real death only: nothing when the first lethal hit just starts phase two.
+      return this.sweaty ? (this.isEnraged() ? ModSounds.ETHAN_DEATH : null) : ModSounds.STAGNATED_DEATH;
    }
 
    @Override

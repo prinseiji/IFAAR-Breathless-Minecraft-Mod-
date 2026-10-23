@@ -210,4 +210,17 @@ public final class StagnatedAnims {
          new Track("right_leg", 1, new float[]{0F}, new float[]{0F, 0F, 1F}),
          new Track("left_leg", 0, new float[]{0F}, new float[]{-0.08727F, 0F, 0F}),
          new Track("left_leg", 1, new float[]{0F}, new float[]{0F, 0F, -3F}));
+   public static final Clip ENRAGED = new Clip(5.5F, false,
+         new Track("waist", 1, new float[]{0F, 0.375F, 0.91667F}, new float[]{0F, 0F, 0F, 0F, 3F, 0F, 0F, 0F, 0F}),
+         new Track("head", 0, new float[]{0F, 0.16667F, 0.375F, 0.58333F, 0.70833F, 0.79167F, 0.91667F, 2.04167F, 2.33333F, 3.95833F, 4.125F, 4.45833F, 4.75F, 5.41667F}, new float[]{0F, 0F, 0F, -2.0944F, 0F, 0F, 0F, 0F, 0F, 0F, 0F, -0.61087F, 0F, 0F, 0.2618F, 0F, 0F, -0.08727F, 0.08727F, 0F, -0.08727F, 0.09333F, -0.18003F, -0.60499F, 0.21503F, 0.03762F, 0.1259F, 0.23328F, -0.06336F, -0.2524F, 0.27583F, -0.06336F, -0.2524F, -1.73021F, -0.06336F, -0.2524F, -0.59568F, -0.06336F, -0.25237F, -0.75222F, -0.12595F, -0.08845F}),
+         new Track("body", 0, new float[]{0F, 0.16667F, 0.375F, 0.5F, 0.91667F, 3.95833F, 4.45833F, 4.875F}, new float[]{0F, 0F, 0F, -0.30543F, 0F, 0F, 0.47997F, 0F, 0F, 0.56723F, 0F, 0F, 0.1309F, 0F, 0F, 0.30543F, 0F, 0F, -0.30543F, 0F, 0F, 0.17453F, 0F, 0F}),
+         new Track("body", 2, new float[]{0F, 2.25F, 2.5F, 2.66667F, 2.83333F, 3.04167F, 3.20833F, 3.375F, 3.5F, 3.625F, 3.70833F}, new float[]{1F, 1F, 1F, 1F, 1F, 1.1F, 1F, 1F, 1F, 1F, 1F, 1.1F, 1F, 1F, 0.9F, 1F, 1F, 1F, 1F, 1F, 0.8F, 1F, 1F, 0.9F, 1F, 1F, 0.8F, 1F, 1F, 0.9F, 1F, 1F, 0.8F}),
+         new Track("right_arm", 0, new float[]{0F, 4F, 4.375F, 4.45833F, 4.875F}, new float[]{0F, 0F, 0F, 0F, 0F, 0F, -0.78357F, -0.49373F, -0.51572F, -0.65427F, 0.97338F, 0.69315F, 0.06307F, -0.00154F, 0.05768F}),
+         new Track("right_arm", 1, new float[]{0F, 0.16667F, 0.375F, 4F}, new float[]{0F, 0F, 0F, 0F, 1F, -1F, 0F, 0F, -1F, 0F, 0F, -1F}),
+         new Track("left_arm", 0, new float[]{0F, 3.29167F, 4F, 4.375F, 4.45833F, 4.875F}, new float[]{0F, 0F, 0F, -1.21425F, 0.62001F, 0.37759F, 0F, 0F, 0F, -0.86176F, 0.40191F, 0.47328F, -0.65752F, -0.94282F, -0.83005F, -0.24445F, -0.4462F, -0.04617F}),
+         new Track("left_arm", 1, new float[]{0F, 0.20833F, 0.375F, 4F, 4.875F}, new float[]{0F, 0F, 0F, 0F, 0F, 2F, 0F, 0F, 0F, 0F, 0F, 0F, -1F, 0F, 0F}),
+         new Track("right_leg", 0, new float[]{0F, 0.5F, 0.91667F, 4.20833F}, new float[]{0F, 0F, 0F, 0.34907F, 0F, 0F, 0.08727F, 0F, 0F, -0.2618F, 0F, 0F}),
+         new Track("right_leg", 1, new float[]{0F, 0.16667F, 0.375F, 0.45833F, 0.91667F, 3.95833F, 4.20833F, 4.45833F, 4.875F}, new float[]{0F, 0F, 0F, 0F, 0F, -3F, 0F, 0F, 0F, 0F, 3F, 5F, 0F, 2F, 0F, 0F, 2F, 3F, 0F, 0F, 3F, 0F, -1F, 0F, 0F, -1F, 4F}),
+         new Track("left_leg", 0, new float[]{0F, 0.16667F, 0.375F}, new float[]{0F, 0F, 0F, -0.34907F, 0F, 0F, -0.17453F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F, 0.16667F, 0.375F, 4.45833F, 4.875F}, new float[]{0F, 0F, 0F, 0F, 0F, -3F, 0F, 0F, 0F, 0F, -1F, -5F, 0F, -1F, 0F}));
 }

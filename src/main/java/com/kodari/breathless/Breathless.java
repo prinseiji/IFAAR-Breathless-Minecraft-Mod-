@@ -122,6 +122,13 @@ public class Breathless implements ModInitializer {
                context.getSource().sendSuccess(() -> Component.literal("Spawned the sweaty Stagnated."), false);
                return 1;
             }))
+            .then(Commands.literal("enrage").executes(context -> {
+               ServerPlayer player = context.getSource().getPlayerOrException();
+               var list = ((net.minecraft.server.level.ServerLevel)player.level()).getEntitiesOfClass(Stagnated.class, player.getBoundingBox().inflate(32.0));
+               list.forEach(Stagnated::forceEnrage);
+               context.getSource().sendSuccess(() -> Component.literal("Sent " + list.size() + " Stagnated nearby into phase two (only sweaty ones react)."), false);
+               return list.size();
+            }))
             .then(Commands.literal("give").executes(context -> {
                ServerPlayer player = context.getSource().getPlayerOrException();
                player.getInventory().add(new ItemStack(ModItems.GAS_MASK_EMPTY));

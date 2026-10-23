@@ -312,4 +312,13 @@ public final class Tuning {
    public static final int SWEATY_GUARD_DISABLE_TICKS = 100;
    /** The stun slam hits a wider area than the plain smash. */
    public static final double SWEATY_STUN_RADIUS = 3.0;
+   /** Phase two (the "enrage", after the first lethal hit): intro length in ticks (the 5.5 s animation), the health he comes back with (fraction), when the apple is finished and when the netherite goes on. */
+   public static final int SWEATY_ENRAGE_TICKS = 110;
+   public static final float SWEATY_ENRAGE_HEALTH = 0.5F;
+   public static final int SWEATY_ENRAGE_EAT_DONE = 45;
+   public static final int SWEATY_ENRAGE_ARMOR_AT = 70;
+   /** Phase two attack rhythm: shorter sword phases and more stun slams. */
+   public static final int SWEATY_ENRAGED_SWORD_TICKS = 60;
+   public static final int SWEATY_ENRAGED_SWORD_HITS = 2;
+   public static final float SWEATY_ENRAGED_STUN_CHANCE = 0.6F;
 }

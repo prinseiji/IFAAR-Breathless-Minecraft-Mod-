@@ -276,3 +276,10 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 18f: shield sounds
 - A hit on his raised shield plays the shield block thunk; an axe breaking it plays the shield break sound plus a tool-break crack. Both are played from the server so the attacker hears them (the old entity events were not reliable).
+
+## Batch 18g: Ethan's phase two (enrage)
+- His first lethal hit does not kill him (totem style). He goes invulnerable and plays the 5.5 s enraged animation: he eats an enchanted golden apple (gone at tick 45), the diamond armor is swapped for netherite (tick 70), the ENRAGED sound and one of six random voicelines play at the start. Then he comes back with half of his max health and Regeneration II / Absorption IV. /kill and the void still kill him. Test with /breathless enrage.
+- Phase two: shorter sword phases (60 ticks or 2 hits), 60% of heavy attacks are stun slams, stun slams use the plain smash radius again (2.2), and he stops talking until he dies (the death voicelines play then).
+- Drops: the mace as before, and the armor he is wearing (netherite), no diamond set. All at about half durability, 85% each.
+- His outline is now a constant dark sculk teal for as long as he is Ethan (diamond or netherite helmet), replaced by red during the stun slam warning.
+- Tuning: SWEATY_ENRAGE_*, SWEATY_ENRAGED_*.

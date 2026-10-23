@@ -33,6 +33,8 @@ public class StagnatedRenderState extends ArmedEntityRenderState {
    public float shieldDis = -1.0F;
    public float shieldHit = -1.0F;
    public boolean guard;
+   /** Seconds into the enrage intro, -1 when not playing. */
+   public float enrage = -1.0F;
    /** Worn armor: helmet, chestplate, leggings, boots. */
    public final ItemStack[] armor = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
 }

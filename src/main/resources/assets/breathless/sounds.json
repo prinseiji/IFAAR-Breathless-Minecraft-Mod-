@@ -375,5 +375,41 @@
         "weight": 1
       }
     ]
+  },
+  "ethan_enrage": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_enrage_1",
+        "stream": false
+      },
+      {
+        "name": "breathless:ethan_enrage_2",
+        "stream": false
+      },
+      {
+        "name": "breathless:ethan_enrage_3",
+        "stream": false
+      },
+      {
+        "name": "breathless:ethan_enrage_4",
+        "stream": false
+      },
+      {
+        "name": "breathless:ethan_enrage_5",
+        "stream": false
+      },
+      {
+        "name": "breathless:ethan_enrage_6",
+        "stream": false
+      }
+    ]
+  },
+  "ethan_enraged_sfx": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_enraged_sfx",
+        "stream": false
+      }
+    ]
   }
 }
