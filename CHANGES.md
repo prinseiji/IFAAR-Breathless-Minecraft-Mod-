@@ -246,3 +246,9 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 17i: Breach for real
 - The smash now counts the victim's armor as 30% weaker (Breach II), so it hits armored players harder. Tuning: SWEATY_BREACH.
+
+## Batch 18a: Ethan as a boss, balance
+- Ethan has 80 health of his own (set when he gears up; Ethans spawned before this keep their old health). Tuning: SWEATY_HEALTH.
+- Stun slam launches higher (1.5 instead of 1.1, needs 12 blocks of room) so there is time to get away, and its damage cap is 16 (8 hearts). Tuning: SWEATY_STUN_LAUNCH_UP, SWEATY_STUN_MAX.
+- Weaker steering in the air for every launch. Tuning: SWEATY_STEER, SWEATY_STEER_CAP.
+- Before eating a golden apple, if you are within 8 blocks he hops away with a wind charge (no smash, he can still clutch) and eats where he lands. Tuning: SWEATY_EAT_SAFE, SWEATY_FLEE_SPEED.

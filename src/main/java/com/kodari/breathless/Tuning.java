@@ -292,4 +292,15 @@ public final class Tuning {
    public static final int SWEATY_SURFACE_COOLDOWN_SECONDS = 600;
    /** Breach II on his mace: the smash counts the victim's armor as this much weaker (0.3 = 30%). */
    public static final double SWEATY_BREACH = 0.3;
+   /** Boss balance: Ethan's own max health (the other Stagnated stay at STAGNATED_HEALTH). */
+   public static final double SWEATY_HEALTH = 80.0;
+   /** Stun slam: launches higher (more time to get out of the way) and may hit harder (cap 16 = 8 hearts). */
+   public static final double SWEATY_STUN_LAUNCH_UP = 1.5;
+   public static final float SWEATY_STUN_MAX = 16.0F;
+   /** Steering toward the target in the air: acceleration per tick and top speed (lower = easier to dodge). */
+   public static final double SWEATY_STEER = 0.045;
+   public static final double SWEATY_STEER_CAP = 0.7;
+   /** Before eating he hops away (wind charge) if you are closer than this many blocks; the hop's horizontal speed. */
+   public static final double SWEATY_EAT_SAFE = 8.0;
+   public static final double SWEATY_FLEE_SPEED = 0.8;
 }

@@ -110,6 +110,9 @@ public class Stagnated extends Monster {
    private int windTicks;
    /** Sweaty attack cycle: sword fight, swap to the mace, launch + smash/clutch, swap back. */
    private int surfaceTicks;
+   /** The wind charge hop is a retreat before eating (away from the target, no smash). */
+   private boolean fleeing;
+   private boolean hopDone;
    private int voiceCooldown;
    private int eatTicks;
    private int applesLeft = Tuning.SWEATY_APPLES;
@@ -525,6 +528,11 @@ public class Stagnated extends Monster {
       }
       this.setCustomName(Component.literal("xX_5L0TH_Xx"));
       this.setCustomNameVisible(true);
+      AttributeInstance health = this.getAttribute(Attributes.MAX_HEALTH);
+      if (health != null) {
+         health.setBaseValue(Tuning.SWEATY_HEALTH);
+      }
+      this.setHealth((float)Tuning.SWEATY_HEALTH);
       this.refreshStats();
    }
 
@@ -579,9 +587,9 @@ public class Stagnated extends Monster {
       this.playSound(line, 1.6F, 1.0F);
    }
 
-   private boolean roomAbove() {
+   private boolean roomAbove(int height) {
       BlockPos base = this.blockPosition();
-      for (int i = 1; i <= 7; i++) {
+      for (int i = 1; i <= height; i++) {
          if (!this.level().getBlockState(base.above(i)).getCollisionShape(this.level(), base.above(i)).isEmpty()) {
             return false;
          }
@@ -633,6 +641,17 @@ public class Stagnated extends Monster {
       }
       if (target != null && this.applesLeft > 0 && this.getHealth() <= this.getMaxHealth() * Tuning.SWEATY_EAT_BELOW && this.onGround() && !this.diving
          && this.windTicks <= 0 && this.swapTicks <= 0 && this.spotTicks <= 0 && this.armoringTicks <= 0) {
+         if (!this.hopDone && this.distanceTo(target) < Tuning.SWEATY_EAT_SAFE && this.roomAbove(7)) {
+            // Too close to eat in peace: hop away with a wind charge first, then eat where it landed.
+            this.hopDone = true;
+            this.fleeing = true;
+            this.windTicks = Tuning.SWEATY_WIND_TICKS;
+            this.getNavigation().stop();
+            this.holdTemp(Items.WIND_CHARGE);
+            this.level().broadcastEntityEvent(this, (byte)77);
+            return;
+         }
+         this.hopDone = false;
          this.applesLeft--;
          this.eatTicks = Tuning.SWEATY_EAT_TICKS;
          this.getNavigation().stop();
@@ -667,7 +686,7 @@ public class Stagnated extends Monster {
             double dx = target.getX() - this.getX();
             double dz = target.getZ() - this.getZ();
             double dist = Math.sqrt(dx * dx + dz * dz);
-            if (dist <= Tuning.SWEATY_RANGE_MAX && Math.abs(target.getY() - this.getY()) < 6.0 && this.roomAbove()) {
+            if (dist <= Tuning.SWEATY_RANGE_MAX && Math.abs(target.getY() - this.getY()) < 6.0 && this.roomAbove(this.stunPlan ? 12 : 7)) {
                this.windTicks = Tuning.SWEATY_WIND_TICKS;
                this.getNavigation().stop();
                this.holdTemp(Items.WIND_CHARGE);
@@ -696,15 +715,15 @@ public class Stagnated extends Monster {
       this.faceTarget();
       Vec3 motion = this.getDeltaMovement();
       // A little steering toward the target on the way up and down.
-      if (target != null && this.airTicks > 4 && !this.landed) {
+      if (target != null && !this.fleeing && this.airTicks > 4 && !this.landed) {
          double dx = target.getX() - this.getX();
          double dz = target.getZ() - this.getZ();
          double len = Math.sqrt(dx * dx + dz * dz);
          if (len > 0.5) {
-            double hx = motion.x + dx / len * 0.08;
-            double hz = motion.z + dz / len * 0.08;
+            double hx = motion.x + dx / len * Tuning.SWEATY_STEER;
+            double hz = motion.z + dz / len * Tuning.SWEATY_STEER;
             double speed = Math.sqrt(hx * hx + hz * hz);
-            double cap = Math.min(0.9, len / 4.0 + 0.15);
+            double cap = Math.min(Tuning.SWEATY_STEER_CAP, len / 5.0 + 0.1);
             if (speed > cap) {
                hx = hx / speed * cap;
                hz = hz / speed * cap;
@@ -721,7 +740,7 @@ public class Stagnated extends Monster {
                this.decided = true;
                double ddx = target == null ? 99.0 : target.getX() - this.getX();
                double ddz = target == null ? 99.0 : target.getZ() - this.getZ();
-               this.smashing = target != null && Math.sqrt(ddx * ddx + ddz * ddz) <= Tuning.SWEATY_SMASH_REACH;
+               this.smashing = target != null && !this.fleeing && Math.sqrt(ddx * ddx + ddz * ddz) <= Tuning.SWEATY_SMASH_REACH;
             }
             if (!this.decided) {
                // not close to the ground yet
@@ -781,7 +800,7 @@ public class Stagnated extends Monster {
    private void launch(LivingEntity target) {
       this.holdTemp(null);
       this.diving = true;
-      this.smashing = target != null;
+      this.smashing = target != null && !this.fleeing;
       this.decided = false;
       this.smashAnim = false;
       this.landed = false;
@@ -792,11 +811,15 @@ public class Stagnated extends Monster {
       this.clutchPos = null;
       double dx = target == null ? 0.0 : target.getX() - this.getX();
       double dz = target == null ? 0.0 : target.getZ() - this.getZ();
+      if (this.fleeing) {
+         dx = -dx;
+         dz = -dz;
+      }
       double dist = Math.sqrt(dx * dx + dz * dz);
-      double speed = Math.min(0.9, dist / 9.0);
+      double speed = this.fleeing ? Tuning.SWEATY_FLEE_SPEED : Math.min(0.9, dist / 9.0);
       double hx = dist > 0.01 ? dx / dist * speed : 0.0;
       double hz = dist > 0.01 ? dz / dist * speed : 0.0;
-      this.setDeltaMovement(hx, Tuning.SWEATY_LAUNCH_UP, hz);
+      this.setDeltaMovement(hx, this.stunPlan ? Tuning.SWEATY_STUN_LAUNCH_UP : Tuning.SWEATY_LAUNCH_UP, hz);
       this.fallDistance = 0.0;
       this.playSound(SoundEvents.WIND_CHARGE_BURST.value(), 1.5F, 1.0F);
       ((ServerLevel)this.level()).sendParticles(ParticleTypes.GUST_EMITTER_SMALL, this.getX(), this.getY(), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
@@ -823,7 +846,10 @@ public class Stagnated extends Monster {
          // The axe turns into the mace on the landing.
          this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansMace());
       }
-      this.startSwap(false);
+      this.fleeing = false;
+      if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD)) {
+         this.startSwap(false);
+      }
       if (smash && !this.smash(level, fall, stun)) {
          // The smash did nothing (a shield soaked it): the fall is its own to take.
          this.hurtServer(level, this.damageSources().fall(), Math.max(0.0F, (float)Math.ceil(fall - 3.0F)));
@@ -835,7 +861,7 @@ public class Stagnated extends Monster {
     * happen if it really hurt someone. A stun slam breaks a raised shield first so the hit lands. Returns whether it connected.
     */
    private boolean smash(ServerLevel level, float fall, boolean stun) {
-      float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, Tuning.SWEATY_SMASH_MAX);
+      float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, stun ? Tuning.SWEATY_STUN_MAX : Tuning.SWEATY_SMASH_MAX);
       boolean connected = false;
       for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.0, 1.5, 3.0))) {
          if (e == this || e instanceof Stagnated || e instanceof Warden || !e.isAlive()) {
