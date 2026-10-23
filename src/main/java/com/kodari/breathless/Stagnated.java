@@ -110,6 +110,10 @@ public class Stagnated extends Monster {
    private int windTicks;
    /** Sweaty attack cycle: sword fight, swap to the mace, launch + smash/clutch, swap back. */
    private int surfaceTicks;
+   private int voiceCooldown;
+   private int eatTicks;
+   private int applesLeft = Tuning.SWEATY_APPLES;
+   private int noTargetTicks;
    private int swordTicks;
    private int swordHits;
    private int swapTicks;
@@ -221,6 +225,7 @@ public class Stagnated extends Monster {
          this.spotTicks = drawing ? Tuning.STAGNATED_SPOT_ARMED_TICKS : Tuning.STAGNATED_SPOT_TICKS;
          this.level().broadcastEntityEvent(this, drawing ? (byte)75 : (byte)61);
          this.playSound(ModSounds.STAGNATED_SPOT, 1.2F, 1.0F);
+         this.say(ModSounds.ETHAN_SPOT);
          this.placed = 0;
          this.heading = null;
          if (this.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty() && this.role == 2) {
@@ -374,7 +379,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0;
    }
 
    @Override
@@ -519,6 +524,7 @@ public class Stagnated extends Monster {
          this.setDropChance(slot, 0.0F);
       }
       this.setCustomName(Component.literal("xX_5L0TH_Xx"));
+      this.setCustomNameVisible(true);
       this.refreshStats();
    }
 
@@ -536,6 +542,15 @@ public class Stagnated extends Monster {
          return false;
       }
       return super.causeFallDamage(distance, multiplier, source);
+   }
+
+   /** One voiceline at a time: skipped if he spoke less than 1.5 seconds ago. */
+   private void say(SoundEvent line) {
+      if (!this.sweaty || this.voiceCooldown > 0) {
+         return;
+      }
+      this.voiceCooldown = 30;
+      this.playSound(line, 1.6F, 1.0F);
    }
 
    private boolean roomAbove() {
@@ -565,7 +580,39 @@ public class Stagnated extends Monster {
       if (!this.geared) {
          this.gear();
       }
+      if (this.voiceCooldown > 0) {
+         this.voiceCooldown--;
+      }
       LivingEntity target = this.getTarget();
+      // Golden apple when low: stands still for the whole bite. The apples refill once the fight has been over for 10 seconds.
+      if (target == null) {
+         if (++this.noTargetTicks > 200) {
+            this.applesLeft = Tuning.SWEATY_APPLES;
+         }
+      } else {
+         this.noTargetTicks = 0;
+      }
+      if (this.eatTicks > 0) {
+         this.faceTarget();
+         if (--this.eatTicks % 4 == 0) {
+            this.playSound(SoundEvents.GENERIC_EAT.value(), 0.8F, 1.0F);
+         }
+         if (this.eatTicks == 0) {
+            this.holdTemp(null);
+            this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 100, 1));
+            this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.ABSORPTION, 2400, 0));
+            this.playSound(SoundEvents.PLAYER_BURP, 0.8F, 1.0F);
+         }
+         return;
+      }
+      if (target != null && this.applesLeft > 0 && this.getHealth() <= this.getMaxHealth() * Tuning.SWEATY_EAT_BELOW && this.onGround() && !this.diving
+         && this.windTicks <= 0 && this.swapTicks <= 0 && this.spotTicks <= 0 && this.armoringTicks <= 0) {
+         this.applesLeft--;
+         this.eatTicks = Tuning.SWEATY_EAT_TICKS;
+         this.getNavigation().stop();
+         this.holdTemp(Items.GOLDEN_APPLE);
+         return;
+      }
       boolean mace = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.MACE) || this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE);
 
       // The swap between the sword and the mace (reuses the unarm animation: the item changes at tick 7).
@@ -602,6 +649,7 @@ public class Stagnated extends Monster {
                if (this.stunPlan) {
                   this.level().broadcastEntityEvent(this, (byte)81);
                }
+               this.say(this.stunPlan ? ModSounds.ETHAN_STUN : ModSounds.ETHAN_WIND);
             } else if (++this.maceStuck >= 40) {
                this.startSwap(false);
             }
@@ -659,6 +707,7 @@ public class Stagnated extends Monster {
             } else if (this.clutchTicks <= 0 && !this.clutchPlaced && ground <= -motion.y * 4.2 + 1.0) {
                this.clutchTicks = Tuning.SWEATY_CLUTCH_TICKS;
                this.holdTemp(Items.WATER_BUCKET);
+               this.say(ModSounds.ETHAN_CLUTCH);
                this.level().broadcastEntityEvent(this, (byte)79);
             }
          }
@@ -782,7 +831,7 @@ public class Stagnated extends Monster {
          // A shield is the only thing that counts as a block: resistance, absorption and armor still mean the smash landed.
          boolean shielded = e instanceof Player guard && guard.isBlocking();
          float before = e.getHealth() + e.getAbsorptionAmount();
-         boolean hurt = e.hurtServer(level, this.damageSources().mobAttack(this), amount);
+         boolean hurt = e.hurtServer(level, ModDamage.ethanMace(level, this), amount);
          boolean lostHealth = e.getHealth() + e.getAbsorptionAmount() < before - 0.01F || !e.isAlive();
          if (lostHealth || (hurt && !shielded)) {
             connected = true;
@@ -791,12 +840,12 @@ public class Stagnated extends Monster {
             double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
             e.setDeltaMovement(e.getDeltaMovement().add(kx / kl * 1.1, 0.4, kz / kl * 1.1));
             e.hurtMarked = true;
-            if (e instanceof ServerPlayer player) {
-               Hazard.addExposure(player, Tuning.STAGNATED_HIT_EXPOSURE);
-            }
          }
       }
       if (connected) {
+         if (!stun) {
+            this.say(ModSounds.ETHAN_SMASH);
+         }
          this.playSound(fall > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND, 1.5F, 1.0F);
          level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE, this.getX(), this.getY() + 0.1, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
       }
@@ -1298,9 +1347,19 @@ public class Stagnated extends Monster {
          if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD) || this.swapTicks > 0 || this.diving) {
             return false;
          }
-         boolean hit = this.strike(level, target);
+         // Ethan's own hit: his own death message, and no spore exposure (he is not infected).
+         float swing = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+         boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), swing);
          if (hit) {
             this.swordHits++;
+            this.playSound(ModSounds.STAGNATED_HIT, 1.0F, 1.0F);
+            if (target instanceof LivingEntity victim) {
+               double kx = victim.getX() - this.getX();
+               double kz = victim.getZ() - this.getZ();
+               double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
+               victim.setDeltaMovement(victim.getDeltaMovement().add(kx / kl * 0.45, 0.25, kz / kl * 0.45));
+               victim.hurtMarked = true;
+            }
          }
          return hit;
       }
@@ -1357,7 +1416,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected SoundEvent getDeathSound() {
-      return ModSounds.STAGNATED_DEATH;
+      return this.sweaty ? ModSounds.ETHAN_DEATH : ModSounds.STAGNATED_DEATH;
    }
 
    @Override

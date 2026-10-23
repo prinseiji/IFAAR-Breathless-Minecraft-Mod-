@@ -229,3 +229,14 @@ Everything. See DEVELOPMENT.md.
 - The sweaty one now also turns up above ground: each second a player is on the surface, 1 in 1800 (about once per half hour of surface time), then a 10 minute cooldown, only one near a player (96 blocks), 20-30 blocks away, no emerge animation. Tuning: SWEATY_SURFACE_ODDS, SWEATY_SURFACE_COOLDOWN_SECONDS.
 - Every other Stagnated now withers when it is at Y=0 or above (overworld): 3 seconds grace, then 1 heart per second with sculk souls. Ethan is exempt. A Stagnated Head used on the surface will wither too. Tuning: STAGNATED_SURFACE_GRACE_TICKS, STAGNATED_SURFACE_DAMAGE.
 - The dropped mace is named "Ethan's Mace".
+
+## Batch 17f: Ethan behavior
+- Golden apple: at 40% health or less he stops and eats for 32 ticks (standing still), then gets Regeneration II (5 s) and Absorption. At most 2 per fight (refills after 10 s without a target). Tuning: SWEATY_EAT_BELOW, SWEATY_APPLES, SWEATY_EAT_TICKS.
+- No spore exposure from his sword or his smash.
+- His name tag is always visible, like a mob's.
+- Death messages: "<player> had their skull caved in by xX_5L0TH_Xx" (mace and stun slam), "<player> had their guts spilled by xX_5L0TH_Xx" (sword). New damage types ethan_mace and ethan_sword. His sword hit now goes through its own code (damage from his attack attribute, small knockback).
+
+## Batch 17g: Ethan's voicelines
+- 22 clips converted to mono .ogg (assets/breathless/sounds/ethan_*.ogg) and listed in sounds.json as six events: ethan_spot, ethan_wind, ethan_smash, ethan_stun, ethan_clutch, ethan_death. Weighted so the "soul" lines are rare (stop, don't hurt them: about 13% of stun slams; finally.. / thank you..: about 17% of deaths).
+- Plays on spotting a target, at the wind charge wind-up (stun slam wind-up uses the stun lines instead), at the water clutch, when a mace smash lands (not on stun slams), and as his death sound. One line at a time (1.5 s gap).
+- To swap or add a line: drop a mono .ogg in the sounds folder and add it to that event in sounds.json (weight sets how often).

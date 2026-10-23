@@ -241,5 +241,139 @@
       }
     ],
     "subtitle": "subtitles.breathless.stagnated_emerge"
+  },
+  "ethan_spot": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_spot_1",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_spot_2",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_spot_3",
+        "stream": false,
+        "weight": 1
+      }
+    ]
+  },
+  "ethan_wind": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_wind_1",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_wind_2",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_wind_3",
+        "stream": false,
+        "weight": 1
+      }
+    ]
+  },
+  "ethan_smash": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_smash_1",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_smash_2",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_smash_3",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_smash_4",
+        "stream": false,
+        "weight": 1
+      }
+    ]
+  },
+  "ethan_stun": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_stun_1",
+        "stream": false,
+        "weight": 5
+      },
+      {
+        "name": "breathless:ethan_stun_2",
+        "stream": false,
+        "weight": 5
+      },
+      {
+        "name": "breathless:ethan_stun_3",
+        "stream": false,
+        "weight": 5
+      },
+      {
+        "name": "breathless:ethan_stun_4",
+        "stream": false,
+        "weight": 5
+      },
+      {
+        "name": "breathless:ethan_stun_soul",
+        "stream": false,
+        "weight": 3
+      }
+    ]
+  },
+  "ethan_clutch": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_clutch_1",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_clutch_2",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_clutch_3",
+        "stream": false,
+        "weight": 1
+      }
+    ]
+  },
+  "ethan_death": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_death_1",
+        "stream": false,
+        "weight": 5
+      },
+      {
+        "name": "breathless:ethan_death_2",
+        "stream": false,
+        "weight": 5
+      },
+      {
+        "name": "breathless:ethan_death_soul_1",
+        "stream": false,
+        "weight": 1
+      },
+      {
+        "name": "breathless:ethan_death_soul_2",
+        "stream": false,
+        "weight": 1
+      }
+    ]
   }
 }
