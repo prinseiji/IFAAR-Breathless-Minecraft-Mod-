@@ -117,6 +117,9 @@ public class Stagnated extends Monster {
    private int surfaceTicks;
    /** The wind charge hop is a retreat before eating (away from the target, no smash). */
    private boolean fleeing;
+   /** Phase two: how many more slams he may chain right after a landing, and whether this stun slam has already used its lunge. */
+   private int chainLeft;
+   private boolean lunged;
    /** Shield: engaged once he has been hit twice quickly, then held up (lowered only for each swing) until a player's axe disables it. */
    private boolean engaged;
    private boolean guardUp;
@@ -151,28 +154,18 @@ public class Stagnated extends Monster {
    /** Client-side: red glow while it is about to stun slam. */
    public boolean stunning;
 
-   /** The stun slam telegraph: a red outline like a spectral arrow's (client-side only, since only the client sets stunning). */
+   /** The stun slam telegraph: a red outline like a spectral arrow's (client-side only, since only the client sets stunning). In phase two he also glows dark sculk teal the whole time. */
    @Override
    public boolean isCurrentlyGlowing() {
-      return this.stunning || this.looksLikeEthan() || super.isCurrentlyGlowing();
+      return this.stunning || this.isEnraged() || super.isCurrentlyGlowing();
    }
 
-   /** Client-side: he wears diamond (phase one) or netherite (phase two) on his head. That is how the client tells Ethan from the others. */
-   private boolean looksLikeEthan() {
-      if (!this.level().isClientSide()) {
-         return false;
-      }
-      ItemStack head = this.getItemBySlot(EquipmentSlot.HEAD);
-      return head.is(Items.DIAMOND_HELMET) || head.is(Items.NETHERITE_HELMET);
-   }
-
-   /** Red for the stun slam warning, otherwise a constant dark sculk teal. */
    @Override
    public int getTeamColor() {
       if (this.stunning) {
          return 0xFF2020;
       }
-      return this.looksLikeEthan() ? 0x0F7F7A : super.getTeamColor();
+      return this.isEnraged() ? 0x0F7F7A : super.getTeamColor();
    }
    private boolean diving;
    private boolean smashing;
@@ -413,7 +406,7 @@ public class Stagnated extends Monster {
          return;
       }
       ItemStack main = this.getItemBySlot(EquipmentSlot.MAINHAND);
-      boolean armed = main.is(Items.IRON_SWORD) || main.is(Items.STONE_AXE) || main.is(Items.MACE) || main.is(Items.DIAMOND_SWORD);
+      boolean armed = main.is(Items.IRON_SWORD) || main.is(Items.STONE_AXE) || main.is(Items.MACE) || main.is(Items.NETHERITE_SWORD);
       AttributeInstance damage = this.getAttribute(Attributes.ATTACK_DAMAGE);
       if (damage != null) {
          damage.setBaseValue(armed ? Tuning.STAGNATED_ARMED_BASE_DAMAGE : Tuning.STAGNATED_DAMAGE);
@@ -607,11 +600,11 @@ public class Stagnated extends Monster {
    private void gear() {
       this.geared = true;
       this.armoredFlag = true;
-      this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
-      this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
-      this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
-      this.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
-      this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_SWORD));
+      this.setItemSlot(EquipmentSlot.HEAD, this.protectedPiece(Items.DIAMOND_HELMET));
+      this.setItemSlot(EquipmentSlot.CHEST, this.protectedPiece(Items.DIAMOND_CHESTPLATE));
+      this.setItemSlot(EquipmentSlot.LEGS, this.protectedPiece(Items.DIAMOND_LEGGINGS));
+      this.setItemSlot(EquipmentSlot.FEET, this.protectedPiece(Items.DIAMOND_BOOTS));
+      this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansSword());
       for (EquipmentSlot slot : EquipmentSlot.values()) {
          this.setDropChance(slot, 0.0F);
       }
@@ -655,6 +648,22 @@ public class Stagnated extends Monster {
       double weakened = armor * (1.0 - Tuning.SWEATY_BREACH);
       double breached = 1.0 - Math.min(20.0, Math.max(weakened / 5.0, weakened - damage / (2.0 + toughness / 4.0))) / 25.0;
       return (float)(breached / normal);
+   }
+
+   /** An armor piece with Protection II (Tuning.SWEATY_PROTECTION). */
+   private ItemStack protectedPiece(net.minecraft.world.item.Item item) {
+      ItemStack piece = new ItemStack(item);
+      var enchants = this.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+      piece.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.PROTECTION), Tuning.SWEATY_PROTECTION);
+      return piece;
+   }
+
+   /** His sword: netherite with Fire Aspect (the fire itself is applied on his hit, see doHurtTarget). */
+   private ItemStack ethansSword() {
+      ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
+      var enchants = this.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+      sword.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT), 1);
+      return sword;
    }
 
    /** The mace he carries and drops: Breach II, Unbreaking III, named Ethan's Mace. */
@@ -708,6 +717,8 @@ public class Stagnated extends Monster {
       this.enrageTicks = Tuning.SWEATY_ENRAGE_TICKS;
       level.broadcastEntityEvent(this, (byte)80);
       level.broadcastEntityEvent(this, (byte)85);
+      // The vanilla totem pop (particles and sound, played on every nearby client).
+      level.broadcastEntityEvent(this, (byte)35);
       this.playSound(ModSounds.ETHAN_ENRAGED_SFX, 2.5F, 1.0F);
       this.playSound(ModSounds.ETHAN_ENRAGE, 2.0F, 1.0F);
    }
@@ -759,20 +770,23 @@ public class Stagnated extends Monster {
             this.holdTemp(null);
             this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 400, 1));
             this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.ABSORPTION, 2400, 3));
+            // Phase two: stronger and faster for the rest of the fight (the vanilla effect swirl shows it).
+            this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 24000, Tuning.SWEATY_STRENGTH));
+            this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, 24000, Tuning.SWEATY_SPEED));
             this.playSound(SoundEvents.PLAYER_BURP, 1.0F, 0.8F);
          }
          if (at == Tuning.SWEATY_ENRAGE_ARMOR_AT) {
-            this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.NETHERITE_HELMET));
-            this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.NETHERITE_CHESTPLATE));
-            this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.NETHERITE_LEGGINGS));
-            this.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.NETHERITE_BOOTS));
+            this.setItemSlot(EquipmentSlot.HEAD, this.protectedPiece(Items.NETHERITE_HELMET));
+            this.setItemSlot(EquipmentSlot.CHEST, this.protectedPiece(Items.NETHERITE_CHESTPLATE));
+            this.setItemSlot(EquipmentSlot.LEGS, this.protectedPiece(Items.NETHERITE_LEGGINGS));
+            this.setItemSlot(EquipmentSlot.FEET, this.protectedPiece(Items.NETHERITE_BOOTS));
             for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
                this.setDropChance(slot, 0.0F);
             }
             this.playSound(SoundEvents.ARMOR_EQUIP_NETHERITE.value(), 1.5F, 1.0F);
          }
          if (this.enrageTicks == 0) {
-            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_SWORD));
+            this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansSword());
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
             this.refreshStats();
             this.swordTicks = 0;
@@ -799,7 +813,7 @@ public class Stagnated extends Monster {
       if (this.hitWindow > 0 && --this.hitWindow == 0) {
          this.recentHits = 0;
       }
-      boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD) && this.swapTicks <= 0 && !this.diving
+      boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving
          && this.windTicks <= 0 && this.eatTicks <= 0 && target != null && this.onGround();
       if (this.engaged && swordPhase) {
          if (this.guardDown > 0) {
@@ -861,13 +875,14 @@ public class Stagnated extends Monster {
          if (Tuning.STAGNATED_UNARM_TICKS - this.swapTicks == Tuning.STAGNATED_UNARM_AT) {
             // Going for the heavy hit: sometimes it is a stun slam (axe on the way down), more often against a raised shield.
             this.stunPlan = this.swapToMace && this.random.nextFloat() < (this.isEnraged() ? Tuning.SWEATY_ENRAGED_STUN_CHANCE : (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE));
-            this.setItemSlot(EquipmentSlot.MAINHAND, this.swapToMace ? (this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace()) : new ItemStack(Items.DIAMOND_SWORD));
+            this.setItemSlot(EquipmentSlot.MAINHAND, this.swapToMace ? (this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace()) : this.ethansSword());
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.0F);
             this.refreshStats();
             this.swordTicks = 0;
             this.swordHits = 0;
             this.maceStuck = 0;
+            this.chainLeft = this.swapToMace ? Tuning.SWEATY_CHAIN_MAX : 0;
          }
       } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0) {
          if (!mace) {
@@ -956,6 +971,20 @@ public class Stagnated extends Monster {
          }
       }
       if (this.locked && !this.landed && !this.fleeing) {
+         // The feint (see lunge): once per stun slam, with about half a second of fall left, only on a target that dodged the ring but is still close.
+         if (this.stunPlan && !this.lunged && target != null && !Double.isNaN(this.markY) && this.getDeltaMovement().y < -0.2) {
+            double g = this.groundBelow();
+            if (g >= 0.0 && g <= -this.getDeltaMovement().y * Tuning.SWEATY_LUNGE_TICKS) {
+               this.lunged = true;
+               double fx = target.getX() - this.markX;
+               double fz = target.getZ() - this.markZ;
+               double off = Math.sqrt(fx * fx + fz * fz);
+               double ring = this.stunRadius();
+               if ((this.isEnraged() || this.random.nextFloat() < Tuning.SWEATY_LUNGE_CHANCE) && off > ring + 0.3 && off <= ring + Tuning.SWEATY_LUNGE_REACH) {
+                  this.lunge(target, g);
+               }
+            }
+         }
          this.setDeltaMovement(this.lockVx, this.getDeltaMovement().y, this.lockVz);
          // The stun slam shows where it is coming down: a ring of red dust on the ground.
          if (this.stunPlan && !Double.isNaN(this.markY) && this.airTicks % 2 == 0) {
@@ -1089,11 +1118,58 @@ public class Stagnated extends Monster {
       this.level().broadcastEntityEvent(this, (byte)76);
    }
 
+   /** The next slam of a chain: wind up again right away, maybe as a stun slam. */
+   private void startChain() {
+      this.stunPlan = this.random.nextFloat() < Tuning.SWEATY_ENRAGED_STUN_CHANCE;
+      this.setItemSlot(EquipmentSlot.MAINHAND, this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace());
+      this.windTicks = Tuning.SWEATY_WIND_TICKS;
+      this.getNavigation().stop();
+      this.holdTemp(Items.WIND_CHARGE);
+      this.level().broadcastEntityEvent(this, (byte)77);
+      if (this.stunPlan) {
+         this.level().broadcastEntityEvent(this, (byte)81);
+      }
+   }
+
+   /**
+    * The feint: halfway down a stun slam, if the target has dodged the ring but is still close, he lunges mid-air toward it. The landing spot (and the ring) move
+    * a fixed distance toward where the target stands right then, with about half a second of fall left, so only a player who stopped moving gets caught.
+    */
+   private void lunge(LivingEntity target, double ground) {
+      double tx = target.getX() - this.markX;
+      double tz = target.getZ() - this.markZ;
+      double d = Math.sqrt(tx * tx + tz * tz);
+      double shift = Math.min(Tuning.SWEATY_LUNGE_SHIFT, d);
+      double newX = this.markX + tx / d * shift;
+      double newZ = this.markZ + tz / d * shift;
+      double vy = this.getDeltaMovement().y;
+      double y = ground;
+      int t = 0;
+      while (y > 0.0 && t < 100) {
+         vy = (vy - 0.08) * 0.98;
+         y += vy;
+         t++;
+      }
+      t = Math.max(t, 1);
+      this.lockVx = (newX - this.getX()) / t;
+      this.lockVz = (newZ - this.getZ()) / t;
+      double sp = Math.sqrt(this.lockVx * this.lockVx + this.lockVz * this.lockVz);
+      if (sp > 0.9) {
+         this.lockVx *= 0.9 / sp;
+         this.lockVz *= 0.9 / sp;
+      }
+      this.markX = newX;
+      this.markZ = newZ;
+      this.playSound(SoundEvents.WIND_CHARGE_BURST.value(), 1.6F, 1.5F);
+      ((ServerLevel)this.level()).sendParticles(ParticleTypes.GUST_EMITTER_SMALL, this.getX(), this.getY() + 0.5, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+   }
+
    private void launch(LivingEntity target) {
       this.holdTemp(null);
       this.diving = true;
       this.smashing = target != null && !this.fleeing;
       this.locked = false;
+      this.lunged = false;
       this.decided = false;
       this.smashAnim = false;
       this.landed = false;
@@ -1140,7 +1216,12 @@ public class Stagnated extends Monster {
          this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansMace());
       }
       this.fleeing = false;
-      if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD)) {
+      LivingEntity next = this.getTarget();
+      if (this.isEnraged() && this.chainLeft > 0 && next != null && next.isAlive() && this.distanceTo(next) <= Tuning.SWEATY_CHAIN_RANGE && this.roomAbove(12)) {
+         // Chain: still close to his target, so straight into the next slam with no sword phase between.
+         this.chainLeft--;
+         this.startChain();
+      } else if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
          this.startSwap(false);
       }
       if (smash && !this.smash(level, fall, stun)) {
@@ -1696,7 +1777,7 @@ public class Stagnated extends Monster {
       }
       if (this.sweaty) {
          // The mace is only used for the smash; on the ground and in the swaps it never melees.
-         if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_SWORD) || this.swapTicks > 0 || this.diving) {
+         if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) || this.swapTicks > 0 || this.diving) {
             return false;
          }
          if (this.guardUp) {
@@ -1715,6 +1796,7 @@ public class Stagnated extends Monster {
                double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
                victim.setDeltaMovement(victim.getDeltaMovement().add(kx / kl * 0.45, 0.25, kz / kl * 0.45));
                victim.hurtMarked = true;
+               victim.igniteForSeconds(Tuning.SWEATY_FIRE_SECONDS);
             }
          }
          return hit;

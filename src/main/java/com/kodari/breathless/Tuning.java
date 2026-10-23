@@ -321,4 +321,18 @@ public final class Tuning {
    public static final int SWEATY_ENRAGED_SWORD_TICKS = 60;
    public static final int SWEATY_ENRAGED_SWORD_HITS = 2;
    public static final float SWEATY_ENRAGED_STUN_CHANCE = 0.6F;
+   /** Gear: Protection level on his armor (diamond and netherite), seconds a player burns after his Fire Aspect sword hit. */
+   public static final int SWEATY_PROTECTION = 2;
+   public static final float SWEATY_FIRE_SECONDS = 4.0F;
+   /** Phase two effect levels (0 = I, 1 = II). */
+   public static final int SWEATY_STRENGTH = 0;
+   public static final int SWEATY_SPEED = 0;
+   /** Phase two chain: extra slams right after a landing if the target is within this many blocks. */
+   public static final int SWEATY_CHAIN_MAX = 1;
+   public static final double SWEATY_CHAIN_RANGE = 6.0;
+   /** The lunge feint: chance in phase one (phase two is always), ticks of fall left when it happens, how far the landing spot moves, and how far past the ring the target may be for it to happen. */
+   public static final float SWEATY_LUNGE_CHANCE = 0.4F;
+   public static final int SWEATY_LUNGE_TICKS = 10;
+   public static final double SWEATY_LUNGE_SHIFT = 4.0;
+   public static final double SWEATY_LUNGE_REACH = 4.0;
 }

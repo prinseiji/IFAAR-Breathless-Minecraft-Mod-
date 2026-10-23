@@ -283,3 +283,17 @@ Everything. See DEVELOPMENT.md.
 - Drops: the mace as before, and the armor he is wearing (netherite), no diamond set. All at about half durability, 85% each.
 - His outline is now a constant dark sculk teal for as long as he is Ethan (diamond or netherite helmet), replaced by red during the stun slam warning.
 - Tuning: SWEATY_ENRAGE_*, SWEATY_ENRAGED_*.
+
+## Batch 18h: glow only in phase two, totem pop
+- The teal outline only shows in phase two (the red stun slam warning still replaces it). Fixed my misreading of the earlier request.
+- Entering phase two plays the vanilla totem of undying pop (particles and sound) on him.
+
+## Batch 19a: Ethan, harder (gear and effects)
+- His sword is netherite with Fire Aspect: a player he hits burns for 4 seconds. (Both phases.)
+- His armor, diamond and netherite, has Protection II (the dropped pieces keep it). Tuning: SWEATY_PROTECTION. Ethans spawned before this keep their old gear.
+- Phase two: Strength I and Speed I for the rest of the fight (24000 ticks), with the vanilla effect swirl. Tuning: SWEATY_STRENGTH, SWEATY_SPEED (0 = level I, 1 = II).
+
+## Batch 19b: chain slams and the lunge feint
+- Phase two: after a slam lands, if his target is within 6 blocks he winds up again right away (no sword phase between), once per heavy phase. The second slam can be a stun slam too. Tuning: SWEATY_CHAIN_MAX, SWEATY_CHAIN_RANGE.
+- Lunge feint (stun slams): with about half a second of fall left, if the target has dodged the red ring but is still within 4 blocks of it, he lunges mid-air: the ring jumps up to 4 blocks toward where the target is standing right then, and he comes down on the new ring. Always in phase two, 40% in phase one; at most once per slam. A whoosh and a gust mark the lunge. If you keep moving or run far, he misses (or clutches). Tuning: SWEATY_LUNGE_*.
+- The lunge reuses his airborne pose; there is no separate arm thrust animation.
