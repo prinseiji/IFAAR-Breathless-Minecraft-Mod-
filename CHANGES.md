@@ -273,3 +273,6 @@ Everything. See DEVELOPMENT.md.
 - His shield is in the right hand, the sword stays in the left.
 - The stun slam hit area is wider: SWEATY_STUN_RADIUS 3.0 (the plain smash stays 2.2). The red ring uses it too.
 - The enraged animation is in the bbmodel but not used yet.
+
+## Batch 18f: shield sounds
+- A hit on his raised shield plays the shield block thunk; an axe breaking it plays the shield break sound plus a tool-break crack. Both are played from the server so the attacker hears them (the old entity events were not reliable).

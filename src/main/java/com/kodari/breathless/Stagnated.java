@@ -285,10 +285,13 @@ public class Stagnated extends Monster {
             this.engaged = false;
             this.recentHits = 0;
             this.guardCooldown = Tuning.SWEATY_GUARD_DISABLE_TICKS;
-            level.broadcastEntityEvent(this, (byte)30);
+            // Played from the server so every nearby player hears it: the shield break plus a tool-break crack.
+            this.playSound(SoundEvents.SHIELD_BREAK.value(), 1.3F, 1.0F);
+            this.playSound(SoundEvents.ITEM_BREAK.value(), 1.0F, 0.9F);
             level.broadcastEntityEvent(this, (byte)83);
          } else {
-            level.broadcastEntityEvent(this, (byte)29);
+            // The thunk of a blocked hit.
+            this.playSound(SoundEvents.SHIELD_BLOCK.value(), 1.2F, 0.8F + this.random.nextFloat() * 0.4F);
             level.broadcastEntityEvent(this, (byte)84);
          }
          return false;
