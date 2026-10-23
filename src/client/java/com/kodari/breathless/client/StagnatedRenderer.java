@@ -35,8 +35,16 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       ArmedEntityRenderState.extractArmedEntityRenderState(entity, state, this.itemModelResolver, partialTick);
       // Everything it carries is held in the LEFT hand (its dominant hand): the soldier's weapon (main hand) or the excavator's tool (off hand).
       ItemStack held = entity.getOffhandItem().isEmpty() ? entity.getMainHandItem() : entity.getOffhandItem();
-      state.rightHandItemStack = ItemStack.EMPTY;
-      state.rightHandItemState.clear();
+      if (entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD)) {
+         // His shield is in the right hand, the sword stays in the left.
+         ItemStack shield = entity.getOffhandItem();
+         held = entity.getMainHandItem();
+         state.rightHandItemStack = shield;
+         this.itemModelResolver.updateForLiving(state.rightHandItemState, shield, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, entity);
+      } else {
+         state.rightHandItemStack = ItemStack.EMPTY;
+         state.rightHandItemState.clear();
+      }
       state.leftHandItemStack = held;
       this.itemModelResolver.updateForLiving(state.leftHandItemState, held, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, entity);
       state.aggressive = entity.isAggressive();
@@ -57,6 +65,10 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       state.smash = entity.smashClock >= 0 ? (entity.smashClock + partialTick) / 20.0F : -1.0F;
       state.clutch = entity.clutchClock >= 0 ? (entity.clutchClock + partialTick) / 20.0F : -1.0F;
       state.flying = entity.flying;
+      state.shieldUp = entity.shieldUpClock >= 0 ? (entity.shieldUpClock + partialTick) / 20.0F : -1.0F;
+      state.shieldDis = entity.shieldDisClock >= 0 ? (entity.shieldDisClock + partialTick) / 20.0F : -1.0F;
+      state.shieldHit = entity.shieldHitClock >= 0 ? (entity.shieldHitClock + partialTick) / 20.0F : -1.0F;
+      state.guard = entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD);
       state.spot = entity.spotClock >= 0 ? (entity.spotClock + partialTick) / 20.0F : -1.0F;
    }
 

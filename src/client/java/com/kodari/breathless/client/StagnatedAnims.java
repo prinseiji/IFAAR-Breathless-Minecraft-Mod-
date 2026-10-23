@@ -177,4 +177,37 @@ public final class StagnatedAnims {
          new Track("left_arm", 1, new float[]{0F}, new float[]{1F, 0F, 0F}),
          new Track("right_leg", 1, new float[]{0F}, new float[]{0F, -18F, 0F}),
          new Track("left_leg", 1, new float[]{0F}, new float[]{0F, -18F, -4F}));
+   public static final Clip SHIELD_UP = new Clip(0.45833F, false,
+         new Track("head", 0, new float[]{0F, 0.33333F}, new float[]{-0.81392F, 0.04217F, -0.34533F, -0.74189F, -0.10938F, 0.07043F}),
+         new Track("right_arm", 0, new float[]{0F, 0.16667F}, new float[]{0F, 0F, 0F, -1.22104F, -0.91284F, -0.35405F}),
+         new Track("right_arm", 1, new float[]{0F, 0.16667F}, new float[]{0F, 0F, 0F, -1F, 0F, 0F}),
+         new Track("right_leg", 0, new float[]{0F, 0.125F}, new float[]{0F, 0F, 0F, 0.08727F, 0F, 0F}),
+         new Track("right_leg", 1, new float[]{0F, 0.125F}, new float[]{0F, 0F, 0F, 0F, 0F, 2F}),
+         new Track("left_leg", 0, new float[]{0F, 0.125F}, new float[]{0F, 0F, 0F, -0.17453F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F, 0.125F}, new float[]{0F, 0F, 0F, 0F, 0F, -3F}));
+   public static final Clip SHIELD_POSE = new Clip(0.25F, false,
+         new Track("head", 0, new float[]{0.125F}, new float[]{-0.74189F, -0.10938F, 0.07043F}),
+         new Track("right_arm", 0, new float[]{0F}, new float[]{-1.22104F, -0.91284F, -0.35405F}),
+         new Track("right_arm", 1, new float[]{0F}, new float[]{-1F, 0F, 0F}),
+         new Track("right_leg", 1, new float[]{0F}, new float[]{0F, 0F, 1F}),
+         new Track("left_leg", 0, new float[]{0F}, new float[]{-0.2618F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F}, new float[]{0F, 0F, -2F}));
+   public static final Clip SHIELD_DISABLED = new Clip(0.5F, false,
+         new Track("head", 0, new float[]{0.08333F, 0.16667F, 0.375F}, new float[]{-0.74189F, -0.10938F, 0.07043F, -1.70182F, -0.10938F, 0.07043F, -0.21829F, -0.10938F, 0.07043F}),
+         new Track("body", 0, new float[]{0F, 0.16667F, 0.375F}, new float[]{0F, 0F, 0F, -0.21817F, 0F, 0F, 0.17453F, 0F, 0F}),
+         new Track("right_arm", 0, new float[]{0F, 0.16667F, 0.375F}, new float[]{-1.22104F, -0.91284F, -0.35405F, 0.07412F, 1.30547F, 1.73793F, 0.14649F, 0.14985F, 0.11977F}),
+         new Track("right_arm", 1, new float[]{0F}, new float[]{-1F, 0F, 0F}),
+         new Track("right_leg", 0, new float[]{0F}, new float[]{0.04363F, 0F, 0F}),
+         new Track("right_leg", 1, new float[]{0F, 0.08333F, 0.16667F, 0.375F}, new float[]{0F, 0F, 1F, 0F, 0F, 0F, 0F, 0F, 1F, 0F, 0F, 3F}),
+         new Track("left_leg", 0, new float[]{0F, 0.16667F}, new float[]{-0.21817F, 0F, 0F, -0.2618F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F, 0.16667F, 0.375F}, new float[]{0F, 0F, -2F, 0F, 0F, -5F, 0F, 0F, -1F}));
+   public static final Clip SHIELD_HIT = new Clip(0.5F, true,
+         new Track("head", 0, new float[]{0.125F, 0.29167F, 0.41667F}, new float[]{-0.74189F, -0.10938F, 0.07043F, -0.76275F, -0.04533F, -0.09329F, -0.74601F, -0.17501F, 0.08307F}),
+         new Track("right_arm", 0, new float[]{0F, 0.16667F, 0.29167F}, new float[]{-1.22104F, -0.91284F, -0.35405F, -1.0465F, -0.91284F, -0.35405F, -1.26467F, -0.91284F, -0.35405F}),
+         new Track("right_arm", 1, new float[]{0F}, new float[]{-1F, 0F, 0F}),
+         new Track("left_arm", 0, new float[]{0F, 0.08333F, 0.20833F, 0.29167F, 0.375F}, new float[]{0F, 0F, 0F, -0.34526F, -1.05041F, -1.12175F, -1.25776F, -0.16021F, 0.20121F, -0.34526F, -1.05041F, -1.12175F, 0.74557F, -1.05041F, -1.12175F}),
+         new Track("right_leg", 0, new float[]{0F}, new float[]{0.01526F, -0.00501F, -0.07411F}),
+         new Track("right_leg", 1, new float[]{0F}, new float[]{0F, 0F, 1F}),
+         new Track("left_leg", 0, new float[]{0F}, new float[]{-0.08727F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F}, new float[]{0F, 0F, -3F}));
 }

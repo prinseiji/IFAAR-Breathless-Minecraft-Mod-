@@ -28,6 +28,11 @@ public class StagnatedRenderState extends ArmedEntityRenderState {
    public float smash = -1.0F;
    public float clutch = -1.0F;
    public boolean flying;
+   /** Shield: seconds into raising it, it being broken and a blocked hit (-1 when not playing), and whether it is held up. */
+   public float shieldUp = -1.0F;
+   public float shieldDis = -1.0F;
+   public float shieldHit = -1.0F;
+   public boolean guard;
    /** Worn armor: helmet, chestplate, leggings, boots. */
    public final ItemStack[] armor = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
 }

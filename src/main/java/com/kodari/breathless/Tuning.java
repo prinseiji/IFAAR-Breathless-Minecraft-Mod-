@@ -310,4 +310,6 @@ public final class Tuning {
    public static final int SWEATY_GUARD_WINDOW = 60;
    public static final int SWEATY_GUARD_DROP_TICKS = 10;
    public static final int SWEATY_GUARD_DISABLE_TICKS = 100;
+   /** The stun slam hits a wider area than the plain smash. */
+   public static final double SWEATY_STUN_RADIUS = 3.0;
 }

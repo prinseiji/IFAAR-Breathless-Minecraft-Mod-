@@ -267,3 +267,9 @@ Everything. See DEVELOPMENT.md.
 - Shield: after he has been hit twice within 3 seconds he raises a shield in his sword phase and keeps it up. It only drops for a moment around each of his swings (so: swing, shield, swing, shield). A raised shield blocks hits and arrows from the front (shield sound). A player's axe hit breaks it: he lowers it and cannot raise it again for 5 seconds; after that, two more quick hits make him raise it again. The shield shows in his left hand in place of the sword while it is up (no blocking animation yet). Tuning: SWEATY_GUARD_*.
 - Fix: the red ring for the stun slam was never drawn because the ground search only looked 12 blocks down and the top of his arc is higher than that. It now looks 40 blocks down, and the ring has more and bigger particles.
 - Fix: he never left after a win. Nothing ticks near a dead player, so the old 1.5 second countdown never finished. He now says "gg ez", shows the yellow "left the game" line and despawns in the same moment (the leave-delay tuning value is gone).
+
+## Batch 18e: shield animations, hands, wider stun slam
+- New clips: shieldup (raising it), shieldup(poseoneframe) (held up), shielddisabledforhim (axe breaks it), shieldupwithhit (blocked a hit). The raise, hold and block clips only drive his head, body and arms, laid over his walking, so his legs keep moving. The break clip is the whole body.
+- His shield is in the right hand, the sword stays in the left.
+- The stun slam hit area is wider: SWEATY_STUN_RADIUS 3.0 (the plain smash stays 2.2). The red ring uses it too.
+- The enraged animation is in the bbmodel but not used yet.

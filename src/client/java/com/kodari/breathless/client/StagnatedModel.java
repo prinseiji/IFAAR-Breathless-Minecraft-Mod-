@@ -131,8 +131,24 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
    }
 
    private void apply(StagnatedAnims.Clip clip, float seconds) {
+      this.apply(clip, seconds, false);
+   }
+
+   /** The shield poses only drive the upper body, laid over whatever he is doing (so his legs keep walking). */
+   private void overlay(StagnatedAnims.Clip clip, float seconds) {
+      this.head.resetPose();
+      this.body.resetPose();
+      this.rightArm.resetPose();
+      this.leftArm.resetPose();
+      this.apply(clip, seconds, true);
+   }
+
+   private void apply(StagnatedAnims.Clip clip, float seconds, boolean upperOnly) {
       float t = clip.time(seconds);
       for (StagnatedAnims.Track track : clip.tracks()) {
+         if (upperOnly && !(track.bone().equals("head") || track.bone().equals("body") || track.bone().equals("right_arm") || track.bone().equals("left_arm"))) {
+            continue;
+         }
          ModelPart part = this.bone(track.bone());
          if (part == null) {
             continue;
@@ -173,6 +189,8 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
          this.apply(StagnatedAnims.WINDBURST, state.wind);
       } else if (state.flying) {
          this.apply(StagnatedAnims.AIRBORNE, 0.0F);
+      } else if (state.shieldDis >= 0.0F) {
+         this.apply(StagnatedAnims.SHIELD_DISABLED, state.shieldDis);
       } else if (state.shield >= 0.0F) {
          this.apply(StagnatedAnims.SHIELD_BREAK, state.shield);
       } else if (state.armoring >= 0.0F) {
@@ -197,6 +215,14 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
          this.apply(StagnatedAnims.WALK, time);
       } else {
          this.apply(StagnatedAnims.IDLE, time);
+      }
+      // Shield up: the upper body takes the shield pose on top of the movement.
+      if (state.shieldHit >= 0.0F) {
+         this.overlay(StagnatedAnims.SHIELD_HIT, state.shieldHit);
+      } else if (state.shieldUp >= 0.0F) {
+         this.overlay(StagnatedAnims.SHIELD_UP, state.shieldUp);
+      } else if (state.guard) {
+         this.overlay(StagnatedAnims.SHIELD_POSE, 0.0F);
       }
    }
 }

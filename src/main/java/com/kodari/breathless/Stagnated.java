@@ -170,6 +170,10 @@ public class Stagnated extends Monster {
    public int smashClock = -1;
    public int clutchClock = -1;
    public boolean flying;
+   /** Client-side clocks for the shield animations (raising it, it being broken, a blocked hit), -1 when not playing. */
+   public int shieldUpClock = -1;
+   public int shieldDisClock = -1;
+   public int shieldHitClock = -1;
    private int flyTicks;
 
    public Stagnated(EntityType<? extends Stagnated> type, Level level) {
@@ -282,8 +286,10 @@ public class Stagnated extends Monster {
             this.recentHits = 0;
             this.guardCooldown = Tuning.SWEATY_GUARD_DISABLE_TICKS;
             level.broadcastEntityEvent(this, (byte)30);
+            level.broadcastEntityEvent(this, (byte)83);
          } else {
             level.broadcastEntityEvent(this, (byte)29);
+            level.broadcastEntityEvent(this, (byte)84);
          }
          return false;
       }
@@ -462,6 +468,15 @@ public class Stagnated extends Monster {
          }
          if (this.clutchClock >= 0 && ++this.clutchClock > Tuning.SWEATY_CLUTCH_TICKS) {
             this.clutchClock = -1;
+         }
+         if (this.shieldUpClock >= 0 && ++this.shieldUpClock > 10) {
+            this.shieldUpClock = -1;
+         }
+         if (this.shieldDisClock >= 0 && ++this.shieldDisClock > 10) {
+            this.shieldDisClock = -1;
+         }
+         if (this.shieldHitClock >= 0 && ++this.shieldHitClock > 10) {
+            this.shieldHitClock = -1;
          }
          if (this.flying && ++this.flyTicks > 8 && this.onGround()) {
             this.flying = false;
@@ -838,7 +853,7 @@ public class Stagnated extends Monster {
             for (int i = 0; i < 28; i++) {
                double a = i * Math.PI * 2.0 / 28.0;
                level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F),
-                  this.markX + Math.cos(a) * Tuning.SWEATY_SMASH_RADIUS, this.markY, this.markZ + Math.sin(a) * Tuning.SWEATY_SMASH_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
+                  this.markX + Math.cos(a) * Tuning.SWEATY_STUN_RADIUS, this.markY, this.markZ + Math.sin(a) * Tuning.SWEATY_STUN_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
             }
          }
       }
@@ -918,6 +933,7 @@ public class Stagnated extends Monster {
       this.guardUp = up;
       if (up) {
          this.holdTemp(Items.SHIELD);
+         this.level().broadcastEntityEvent(this, (byte)82);
       } else if (this.getItemBySlot(EquipmentSlot.OFFHAND).is(Items.SHIELD)) {
          this.holdTemp(null);
       }
@@ -1025,7 +1041,7 @@ public class Stagnated extends Monster {
    private boolean smash(ServerLevel level, float fall, boolean stun) {
       float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, stun ? Tuning.SWEATY_STUN_MAX : Tuning.SWEATY_SMASH_MAX);
       boolean connected = false;
-      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(Tuning.SWEATY_SMASH_RADIUS, 1.5, Tuning.SWEATY_SMASH_RADIUS))) {
+      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(stun ? Tuning.SWEATY_STUN_RADIUS : Tuning.SWEATY_SMASH_RADIUS, 1.5, stun ? Tuning.SWEATY_STUN_RADIUS : Tuning.SWEATY_SMASH_RADIUS))) {
          if (e == this || e instanceof Stagnated || e instanceof Warden || !e.isAlive()) {
             continue;
          }
@@ -1041,7 +1057,7 @@ public class Stagnated extends Monster {
             level.broadcastEntityEvent(player, (byte)30);
          }
          double d = this.distanceTo(e);
-         float amount = (e == this.getTarget() || d < Tuning.SWEATY_SMASH_RADIUS) ? damage : damage * 0.5F;
+         float amount = (e == this.getTarget() || d < (stun ? Tuning.SWEATY_STUN_RADIUS : Tuning.SWEATY_SMASH_RADIUS)) ? damage : damage * 0.5F;
          amount *= breachFactor(e, amount);
          // A shield is the only thing that counts as a block: resistance, absorption and armor still mean the smash landed.
          boolean shielded = e instanceof Player guard && guard.isBlocking();
@@ -1522,6 +1538,12 @@ public class Stagnated extends Monster {
       } else if (event == 79) {
          this.clutchClock = 0;
          this.flying = false;
+      } else if (event == 82) {
+         this.shieldUpClock = 0;
+      } else if (event == 83) {
+         this.shieldDisClock = 0;
+      } else if (event == 84) {
+         this.shieldHitClock = 0;
       } else if (event == 81) {
          this.stunning = true;
       } else if (event == 80) {
