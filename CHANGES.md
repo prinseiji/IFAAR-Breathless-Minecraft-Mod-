@@ -240,3 +240,9 @@ Everything. See DEVELOPMENT.md.
 - 22 clips converted to mono .ogg (assets/breathless/sounds/ethan_*.ogg) and listed in sounds.json as six events: ethan_spot, ethan_wind, ethan_smash, ethan_stun, ethan_clutch, ethan_death. Weighted so the "soul" lines are rare (stop, don't hurt them: about 13% of stun slams; finally.. / thank you..: about 17% of deaths).
 - Plays on spotting a target, at the wind charge wind-up (stun slam wind-up uses the stun lines instead), at the water clutch, when a mace smash lands (not on stun slams), and as his death sound. One line at a time (1.5 s gap).
 - To swap or add a line: drop a mono .ogg in the sounds folder and add it to that event in sounds.json (weight sets how often).
+
+## Batch 17h: the mace he holds is the enchanted one
+- Ethan's held mace now has Breach II, Unbreaking III and the name "Ethan's Mace" (so it glints in his hand), and the drop is a copy of it at about half durability.
+
+## Batch 17i: Breach for real
+- The smash now counts the victim's armor as 30% weaker (Breach II), so it hits armored players harder. Tuning: SWEATY_BREACH.

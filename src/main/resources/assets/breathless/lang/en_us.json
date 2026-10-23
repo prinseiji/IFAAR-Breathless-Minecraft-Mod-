@@ -36,6 +36,8 @@
   "breathless.tooltip.nv": "Night vision below Y=0",
   "death.attack.breathless_spores": "%1$s bursted by the seams.",
   "death.attack.breathless_sear": "%1$s crashed due to an unexpected issue.",
+  "death.attack.breathless_ethan_mace": "%1$s had their skull caved in by %2$s",
+  "death.attack.breathless_ethan_sword": "%1$s had their guts spilled by %2$s",
   "subtitles.breathless.stagnated_spot": "Stagnated notices you",
   "subtitles.breathless.stagnated_hurt": "Stagnated is hurt",
   "subtitles.breathless.stagnated_idle": "Stagnated groans",

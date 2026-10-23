@@ -11,11 +11,22 @@ public final class ModDamage {
    public static final ResourceKey<DamageType> SPORES = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("spores"));
    public static final ResourceKey<DamageType> SEAR = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("sear"));
 
+   public static final ResourceKey<DamageType> ETHAN_MACE = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("ethan_mace"));
+   public static final ResourceKey<DamageType> ETHAN_SWORD = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("ethan_sword"));
+
    private ModDamage() {
    }
 
    public static DamageSource spores(ServerLevel level) {
       return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(SPORES));
+   }
+
+   public static DamageSource ethanMace(ServerLevel level, net.minecraft.world.entity.Entity attacker) {
+      return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ETHAN_MACE), attacker);
+   }
+
+   public static DamageSource ethanSword(ServerLevel level, net.minecraft.world.entity.Entity attacker) {
+      return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ETHAN_SWORD), attacker);
    }
 
    public static DamageSource sear(ServerLevel level) {

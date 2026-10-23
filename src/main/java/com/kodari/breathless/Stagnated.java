@@ -544,6 +544,32 @@ public class Stagnated extends Monster {
       return super.causeFallDamage(distance, multiplier, source);
    }
 
+   /**
+    * Breach II made real: the smash ignores part of the victim's armor. Vanilla armor takes off min(20, max(armor / 5, armor - damage / (2 + toughness / 4))) / 25
+    * of the damage; with Breach the armor counts for 30% less. Returns how much more damage that is (1.0 with no armor).
+    */
+   private static float breachFactor(LivingEntity victim, float damage) {
+      double armor = victim.getAttributeValue(Attributes.ARMOR);
+      if (armor <= 0.0) {
+         return 1.0F;
+      }
+      double toughness = victim.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
+      double normal = 1.0 - Math.min(20.0, Math.max(armor / 5.0, armor - damage / (2.0 + toughness / 4.0))) / 25.0;
+      double weakened = armor * (1.0 - Tuning.SWEATY_BREACH);
+      double breached = 1.0 - Math.min(20.0, Math.max(weakened / 5.0, weakened - damage / (2.0 + toughness / 4.0))) / 25.0;
+      return (float)(breached / normal);
+   }
+
+   /** The mace he carries and drops: Breach II, Unbreaking III, named Ethan's Mace. */
+   private ItemStack ethansMace() {
+      ItemStack mace = new ItemStack(Items.MACE);
+      var enchants = this.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+      mace.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BREACH), 2);
+      mace.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 3);
+      mace.set(net.minecraft.core.component.DataComponents.ITEM_NAME, Component.literal("Ethan's Mace"));
+      return mace;
+   }
+
    /** One voiceline at a time: skipped if he spoke less than 1.5 seconds ago. */
    private void say(SoundEvent line) {
       if (!this.sweaty || this.voiceCooldown > 0) {
@@ -622,7 +648,7 @@ public class Stagnated extends Monster {
          if (Tuning.STAGNATED_UNARM_TICKS - this.swapTicks == Tuning.STAGNATED_UNARM_AT) {
             // Going for the heavy hit: sometimes it is a stun slam (axe on the way down), more often against a raised shield.
             this.stunPlan = this.swapToMace && this.random.nextFloat() < (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE);
-            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(this.swapToMace ? (this.stunPlan ? Items.DIAMOND_AXE : Items.MACE) : Items.DIAMOND_SWORD));
+            this.setItemSlot(EquipmentSlot.MAINHAND, this.swapToMace ? (this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace()) : new ItemStack(Items.DIAMOND_SWORD));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.0F);
             this.refreshStats();
@@ -795,7 +821,7 @@ public class Stagnated extends Monster {
       this.stunPlan = false;
       if (stun) {
          // The axe turns into the mace on the landing.
-         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.MACE));
+         this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansMace());
       }
       this.startSwap(false);
       if (smash && !this.smash(level, fall, stun)) {
@@ -828,6 +854,7 @@ public class Stagnated extends Monster {
          }
          double d = this.distanceTo(e);
          float amount = (e == this.getTarget() || d < 2.2) ? damage : damage * 0.5F;
+         amount *= breachFactor(e, amount);
          // A shield is the only thing that counts as a block: resistance, absorption and armor still mean the smash landed.
          boolean shielded = e instanceof Player guard && guard.isBlocking();
          float before = e.getHealth() + e.getAbsorptionAmount();
@@ -858,7 +885,7 @@ public class Stagnated extends Monster {
       if (!this.sweaty || !this.geared || !killedByPlayer) {
          return;
       }
-      this.dropHalf(level, new ItemStack(Items.MACE), 1.0F);
+      this.dropHalf(level, this.ethansMace(), 1.0F);
       for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
          this.dropHalf(level, this.getItemBySlot(slot), Tuning.SWEATY_ARMOR_DROP);
       }
@@ -870,13 +897,6 @@ public class Stagnated extends Monster {
          return;
       }
       ItemStack copy = stack.copy();
-      if (copy.is(Items.MACE)) {
-         // Breach II and Unbreaking III: the half-worn mace shows how much he really used it.
-         var enchants = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
-         copy.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BREACH), 2);
-         copy.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 3);
-         copy.set(net.minecraft.core.component.DataComponents.ITEM_NAME, Component.literal("Ethan's Mace"));
-      }
       int max = copy.getMaxDamage();
       if (max > 4) {
          copy.setDamageValue(Mth.clamp(max / 2 + this.random.nextInt(Math.max(1, max / 5)) - max / 10, 1, max - 1));
