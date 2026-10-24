@@ -1068,6 +1068,12 @@ public class Stagnated extends Monster {
       }
       if (this.sweaty && this.level() instanceof ServerLevel bossLevel) {
          this.pingBoss(bossLevel, 0);
+         if (this.isEnraged() && reason == Entity.RemovalReason.KILLED) {
+            // He bursts into sculk when he is finally gone.
+            bossLevel.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 90, 0.5, 0.9, 0.5, 0.12);
+            bossLevel.sendParticles(ParticleTypes.SCULK_CHARGE_POP, this.getX(), this.getY() + 1.0, this.getZ(), 70, 0.6, 0.9, 0.6, 0.1);
+            bossLevel.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SCULK_BLOCK_BREAK, net.minecraft.sounds.SoundSource.HOSTILE, 2.0F, 0.8F);
+         }
       }
       super.remove(reason);
    }

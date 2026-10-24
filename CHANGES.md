@@ -352,3 +352,8 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 21e: boss bar fade
 - The boss bar fades in (about 0.4 s) when phase two starts and fades out (about 0.6 s) when Elijah dies, leaves or you walk away. Boss bar health no longer vanishes instantly.
+
+## Batch 21f: new boss bar, voice range, sculk death burst
+- Boss bar uses your new transparent picture (scaled to 144x48, black, no edge). The fill rail is set in EliBoss.java (RAIL_*) if you want to nudge it.
+- All of Elijah's voicelines can be heard from 64 blocks (was 16).
+- When Elijah finally dies he bursts into sculk soul and sculk charge particles, with a sculk break sound.

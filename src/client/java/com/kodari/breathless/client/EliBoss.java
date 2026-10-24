@@ -23,12 +23,12 @@ final class EliBoss {
 
    private static final Identifier BAR = Breathless.id("textures/gui/eli_bar.png");
    private static final int BAR_W = 144;
-   private static final int BAR_H = 52;
+   private static final int BAR_H = 48;
    /** The hollow rail inside the picture that the health fills (pixels inside the texture). */
-   private static final int RAIL_X = 22;
-   private static final int RAIL_W = 98;
-   private static final int RAIL_Y = 30;
-   private static final int RAIL_H = 5;
+   private static final int RAIL_X = 32;
+   private static final int RAIL_W = 78;
+   private static final int RAIL_Y = 27;
+   private static final int RAIL_H = 6;
 
    private static int phase;
    private static float health = 1.0F;
