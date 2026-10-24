@@ -6,7 +6,11 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -29,7 +33,33 @@ final class EliBoss {
    private static int phase;
    private static float health = 1.0F;
    private static int silent;
-   private static SimpleSoundInstance playing;
+   /** A music track that can be faded out. */
+   private static final class Track extends AbstractTickableSoundInstance {
+      private boolean fading;
+
+      Track(SoundEvent event) {
+         super(event, SoundSource.MUSIC, RandomSource.create());
+         this.attenuation = SoundInstance.Attenuation.NONE;
+         this.relative = true;
+         this.volume = 1.0F;
+      }
+
+      void fade() {
+         this.fading = true;
+      }
+
+      @Override
+      public void tick() {
+         if (this.fading) {
+            this.volume -= 0.04F;
+            if (this.volume <= 0.0F) {
+               this.stop();
+            }
+         }
+      }
+   }
+
+   private static Track playing;
    private static int playingSince;
    private static boolean intro;
    private static int ticks;
@@ -39,7 +69,7 @@ final class EliBoss {
       silent = 0;
       health = newHealth;
       if (newPhase == 0) {
-         stop(mc);
+         fadeOut();
          return;
       }
       if (newPhase != phase) {
@@ -54,9 +84,18 @@ final class EliBoss {
       if (phase == 0) {
          return;
       }
-      playing = SimpleSoundInstance.forMusic(phase == 2 ? (intro ? ModSounds.ELI_TENEBRE_START : ModSounds.ELI_TENEBRE) : ModSounds.ELI_PHASE_ONE);
+      playing = new Track(phase == 2 ? (intro ? ModSounds.ELI_TENEBRE_START : ModSounds.ELI_TENEBRE) : ModSounds.ELI_PHASE_ONE);
       mc.getSoundManager().play(playing);
       playingSince = ticks;
+   }
+
+   /** The fight is over: the music fades out over about a second instead of cutting off. */
+   private static void fadeOut() {
+      if (playing != null) {
+         playing.fade();
+      }
+      playing = null;
+      phase = 0;
    }
 
    private static void stop(Minecraft mc) {
@@ -76,7 +115,7 @@ final class EliBoss {
          return;
       }
       if (++silent > 60) {
-         stop(mc);
+         fadeOut();
          return;
       }
       // When a track ends the next one starts: the phase one song repeats, the phase two theme repeats from the start after the first 22-second-in run.

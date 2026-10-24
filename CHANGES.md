@@ -345,3 +345,7 @@ Everything. See DEVELOPMENT.md.
 - Boss bar: black fill and black outline (the white edge is gone), moved up.
 - Fixed: Elijah's axe hit (the shield clap) gave you spore exposure. His axe hit is now like his sword: no exposure.
 - Phase one now also pings the music/bar from the general tick, so it starts while he is still climbing out.
+
+## Batch 21d: music timing
+- Tenebre now starts the instant the totem pops (the phase change is announced immediately, not at the next update), and phase one music starts the moment he appears.
+- When Elijah dies the music fades out over about a second (the fade also happens if you walk away or he leaves). The phase one to phase two switch is still an abrupt cut.

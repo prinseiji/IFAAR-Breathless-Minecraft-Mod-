@@ -715,6 +715,7 @@ public class Stagnated extends Monster {
    /** Phase two. Called when his health would reach zero for the first time (or by /breathless enrage). */
    private void startEnrage(ServerLevel level) {
       this.entityData.set(ENRAGED, true);
+      this.pingBoss(level, 2);
       this.setHealth(this.getMaxHealth() * Tuning.SWEATY_ENRAGE_HEALTH);
       this.removeAllEffects();
       this.pickUpWater(level);
@@ -1119,6 +1120,7 @@ public class Stagnated extends Monster {
       super.die(source);
       // Dying counts as leaving too.
       if (this.sweaty && this.level() instanceof ServerLevel level) {
+         this.pingBoss(level, 0);
          level.playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.ELI_DEATH_SFX, net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 1.0F);
          this.announceLeave(level);
       }
@@ -1823,7 +1825,7 @@ public class Stagnated extends Monster {
    }
 
    /** Tells the players within earshot which phase the fight is in (music, boss bar). Phase 0 = it is over. */
-   private void pingBoss(ServerLevel level, int phase) {
+   public void pingBoss(ServerLevel level, int phase) {
       float health = Math.max(0.0F, Math.min(1.0F, this.getHealth() / this.getMaxHealth()));
       for (ServerPlayer player : level.players()) {
          if (player.distanceToSqr(this) < 80.0 * 80.0) {

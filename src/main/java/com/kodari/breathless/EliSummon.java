@@ -200,6 +200,7 @@ public final class EliSummon {
       eli.makeSweaty();
       level.addFreshEntity(eli);
       eli.startEmerging();
+      eli.pingBoss(level, 1);
       level.playSound(null, x, y, z, ModSounds.ETHAN_SUMMON, SoundSource.HOSTILE, 3.0F, 1.0F);
       Component name = Component.literal("xX_5L0TH_Xx");
       level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("multiplayer.player.joined", name).withStyle(ChatFormatting.YELLOW), false);
