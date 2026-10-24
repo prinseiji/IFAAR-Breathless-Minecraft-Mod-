@@ -293,7 +293,7 @@ public final class Tuning {
    public static final int SWEATY_SURFACE_ODDS = 1800;
    public static final int SWEATY_SURFACE_COOLDOWN_SECONDS = 600;
    /** Breach II on his mace: the smash counts the victim's armor as this much weaker (0.3 = 30%). */
-   public static final double SWEATY_BREACH = 0.3;
+   public static final double SWEATY_BREACH = 0.38;
    /** Boss balance: Elijah's own max health (the other Stagnated stay at STAGNATED_HEALTH). */
    public static final double SWEATY_HEALTH = 80.0;
    /** Stun slam: launches higher (more time to get out of the way) and may hit harder (cap 16 = 8 hearts). */

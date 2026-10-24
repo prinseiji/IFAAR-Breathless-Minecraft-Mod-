@@ -304,6 +304,15 @@
       }
     ]
   },
+  "stun_warning": {
+    "sounds": [
+      {
+        "name": "breathless:stun_warning",
+        "stream": false,
+        "attenuation_distance": 48
+      }
+    ]
+  },
   "ethan_stun": {
     "sounds": [
       {

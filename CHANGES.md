@@ -307,3 +307,7 @@ Everything. See DEVELOPMENT.md.
 - The red stun-slam ring now shows from the launch: on the way up it follows his target, then freezes at the top of the jump where he will land.
 - While he falls onto the ring, a pling sounds at the ring, rising in pitch and repeating faster the closer he gets, so you can hear it even when he is above you.
 - With his shield up he now keeps it raised for about 2.5 seconds (SWEATY_GUARD_HOLD_TICKS) before lowering it to swing, then raises it again, until an axe disables it.
+
+## Batch 20b2: stun warning sound, Breach III
+- The repeating pling is replaced by your flash sound (stun_warning), played once as he winds up a stun slam.
+- His mace is now Breach III (the drop too). His pseudo-breach (armor reduction on his slam) went from 30% to 38%, between II and III. Tuning: SWEATY_BREACH.

@@ -674,11 +674,11 @@ public class Stagnated extends Monster {
       return sword;
    }
 
-   /** The mace he carries and drops: Breach II, Unbreaking III, named Elijah's Mace. */
+   /** The mace he carries and drops: Breach III, Unbreaking III, named Elijah's Mace. */
    private ItemStack ethansMace() {
       ItemStack mace = new ItemStack(Items.MACE);
       var enchants = this.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
-      mace.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BREACH), 2);
+      mace.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BREACH), 3);
       mace.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 3);
       mace.set(net.minecraft.core.component.DataComponents.ITEM_NAME, Component.literal("Elijah's Mace"));
       return mace;
@@ -912,6 +912,7 @@ public class Stagnated extends Monster {
                this.level().broadcastEntityEvent(this, (byte)77);
                if (this.stunPlan) {
                   this.level().broadcastEntityEvent(this, (byte)81);
+                  this.playSound(ModSounds.STUN_WARNING, 3.0F, 1.0F);
                }
                this.say(this.stunPlan ? ModSounds.ETHAN_STUN : ModSounds.ETHAN_WIND);
             } else if (++this.maceStuck >= 40) {
@@ -982,15 +983,9 @@ public class Stagnated extends Monster {
       }
       if (this.locked && !this.landed && !this.fleeing) {
          this.setDeltaMovement(this.lockVx, this.getDeltaMovement().y, this.lockVz);
-         // The stun slam shows where it is coming down: a ring of red dust on the ground, and a warning tone that speeds up and rises as he falls.
+         // The stun slam shows where it is coming down: a ring of red dust on the ground, and 
          if (this.stunPlan && !Double.isNaN(this.markY)) {
             this.stunRing(level, this.markX, this.markY, this.markZ);
-            double g = this.groundBelow();
-            int gap = g > 14.0 ? 10 : (g > 8.0 ? 7 : (g > 4.0 ? 4 : 2));
-            if (g >= 0.0 && this.airTicks % gap == 0) {
-               float pitch = Math.min(2.0F, 0.7F + (float)(14.0 - Math.min(g, 14.0)) / 14.0F * 1.3F);
-               level.playSound(null, this.markX, this.markY, this.markZ, SoundEvents.NOTE_BLOCK_PLING.value(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, pitch);
-            }
          }
       } else if (this.stunPlan && !this.locked && !this.landed && !this.fleeing && target != null && this.airTicks % 2 == 0) {
          // On the way up the ring already follows his target, so it never appears out of nowhere.
