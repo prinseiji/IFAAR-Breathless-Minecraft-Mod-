@@ -456,5 +456,29 @@
         "attenuation_distance": 40
       }
     ]
+  },
+  "eli_phase_one": {
+    "sounds": [
+      {
+        "name": "breathless:eli_phase_one",
+        "stream": true
+      }
+    ]
+  },
+  "eli_tenebre": {
+    "sounds": [
+      {
+        "name": "breathless:eli_tenebre",
+        "stream": true
+      }
+    ]
+  },
+  "eli_tenebre_start": {
+    "sounds": [
+      {
+        "name": "breathless:eli_tenebre_start",
+        "stream": true
+      }
+    ]
   }
 }

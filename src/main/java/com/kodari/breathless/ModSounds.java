@@ -37,6 +37,9 @@ public final class ModSounds {
    public static SoundEvent ETHAN_SMASH;
    public static SoundEvent ETHAN_STUN;
    public static SoundEvent ETHAN_SUMMON;
+   public static SoundEvent ELI_PHASE_ONE;
+   public static SoundEvent ELI_TENEBRE;
+   public static SoundEvent ELI_TENEBRE_START;
    public static SoundEvent ELI_DEATH_SFX;
    public static SoundEvent HEART_DESTROYED;
    public static SoundEvent STUN_WARNING;
@@ -79,6 +82,9 @@ public final class ModSounds {
       ETHAN_SMASH = reg("ethan_smash");
       ETHAN_STUN = reg("ethan_stun");
       ETHAN_SUMMON = reg("ethan_summon");
+      ELI_PHASE_ONE = reg("eli_phase_one");
+      ELI_TENEBRE = reg("eli_tenebre");
+      ELI_TENEBRE_START = reg("eli_tenebre_start");
       ELI_DEATH_SFX = reg("eli_death_sfx");
       HEART_DESTROYED = reg("heart_destroyed");
       STUN_WARNING = reg("stun_warning");

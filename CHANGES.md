@@ -331,3 +331,11 @@ Everything. See DEVELOPMENT.md.
 - Eli's Sword (diamond sword stats, your texture, your description) drops when you defeat him through phase two. It makes whoever it hits bleed (Hemorrhage: 1 armor-ignoring damage per second for 6 seconds, not stacking) and cannot be enchanted. Sword blocking and the parry come later with your sfx.
 - Elijah's final death plays your death sfx on top of his voiceline.
 - New: ModItems.ROTTING_HEART/ELI_SWORD, ModEffects.HEMORRHAGE, EliSummon.java; textures item/rotting_heart.png, item/eli_sword.png, mob_effect/hemorrhage.png (my placeholder icon, replace it any time).
+
+## Batch 21b: music, boss bar, sculk splotch fix, louder voicelines
+- Fixed: the sculk splotch around the burned heart did not appear (the ground search stopped too early).
+- Heart burst and shriek sounds a bit quieter; every Elijah voiceline file is about 9 dB louder (limiter on, so nothing clips).
+- Phase one music (eli_phase_one) starts when he appears and repeats while the fight goes on. It stops dead when phase two begins.
+- Phase two theme (Tenebre Rosso Sangue): starts at its 22 second mark, then repeats from the beginning. Stops when he dies or leaves, or when you walk about 80 blocks away.
+- Boss bar: only in phase two, small (144x52), at the top centre, teal health fill in the rail. Constants RAIL_* in EliBoss.java if the fill is off.
+- New: EliPayload, EliBoss (client), music ids eli_phase_one / eli_tenebre / eli_tenebre_start.

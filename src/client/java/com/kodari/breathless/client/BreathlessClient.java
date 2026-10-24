@@ -39,9 +39,12 @@ public class BreathlessClient implements ClientModInitializer {
       EntityRendererRegistry.register(ModEntities.STAGNATED, StagnatedRenderer::new);
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
+      ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.EliPayload.TYPE, (payload, context) -> EliBoss.ping(payload.phase(), payload.health()));
       ClientPlayNetworking.registerGlobalReceiver(SpotPayload.TYPE, (payload, context) -> SlothText.spotted());
       ClientPlayNetworking.registerGlobalReceiver(OpenLorePayload.TYPE, (payload, context) -> net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new LoreScreen(payload.doc())));
       ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
+      ClientTickEvents.END_CLIENT_TICK.register(EliBoss::tick);
+      HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("eli_bar"), EliBoss::render);
 
       // Under the vanilla overlays: spore haze, vision pulses, floating spores, then the mask visor.
       HudElementRegistry.attachElementBefore(VanillaHudElements.MISC_OVERLAYS, Breathless.id("fog_and_mask"), SporeHud::renderFogAndMask);

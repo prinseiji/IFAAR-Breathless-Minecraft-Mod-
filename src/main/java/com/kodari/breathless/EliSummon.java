@@ -120,8 +120,8 @@ public final class EliSummon {
       double x = pos.getX() + 0.5;
       double y = pos.getY() + 0.3;
       double z = pos.getZ() + 0.5;
-      level.playSound(null, x, y, z, ModSounds.HEART_DESTROYED, SoundSource.HOSTILE, 3.0F, 1.0F);
-      level.playSound(null, x, y, z, SoundEvents.SCULK_SHRIEKER_SHRIEK, SoundSource.HOSTILE, 2.0F, 0.7F);
+      level.playSound(null, x, y, z, ModSounds.HEART_DESTROYED, SoundSource.HOSTILE, 2.0F, 1.0F);
+      level.playSound(null, x, y, z, SoundEvents.SCULK_SHRIEKER_SHRIEK, SoundSource.HOSTILE, 1.0F, 0.7F);
       for (int i = 0; i < 3; i++) {
          final int delay = i * 6;
          level.sendParticles(new ShriekParticleOption(delay), x, y + 0.2, z, 1, 0.0, 0.0, 0.0, 0.0);
@@ -148,13 +148,13 @@ public final class EliSummon {
             }
             for (int dy = 2; dy >= -3; dy--) {
                BlockPos p = pos.offset(dx, dy, dz);
+               BlockState here = level.getBlockState(p);
                BlockState below = level.getBlockState(p.below());
-               if (level.getBlockState(p).isAir() || level.getBlockState(p).canBeReplaced()) {
-                  if (below.isSolidRender() && !below.hasBlockEntity() && below.getDestroySpeed(level, p.below()) >= 0.0F && below.getDestroySpeed(level, p.below()) < 20.0F && !below.is(Blocks.SCULK)) {
-                     level.setBlock(p.below(), Blocks.SCULK.defaultBlockState(), 3);
-                     if (dx == 0 && dz == 0) {
-                        surface = p.getY();
-                     }
+               if ((here.isAir() || here.canBeReplaced()) && !below.isAir() && !below.canBeReplaced() && !below.hasBlockEntity()
+                  && below.getDestroySpeed(level, p.below()) >= 0.0F && below.getDestroySpeed(level, p.below()) < 20.0F && !below.is(Blocks.SCULK)) {
+                  level.setBlock(p.below(), Blocks.SCULK.defaultBlockState(), 3);
+                  if (dx == 0 && dz == 0) {
+                     surface = p.getY();
                   }
                   break;
                }

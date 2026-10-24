@@ -836,6 +836,9 @@ public class Stagnated extends Monster {
          this.guardHold--;
       }
       this.tickMelee(level, target);
+      if (this.tickCount % 10 == 0) {
+         this.pingBoss(level, this.emergeTicks > 0 || this.isEnraged() ? (this.isEnraged() ? 2 : 1) : 1);
+      }
       boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving
          && this.windTicks <= 0 && this.eatTicks <= 0 && target != null && this.onGround();
       if (this.engaged && swordPhase) {
@@ -1061,6 +1064,9 @@ public class Stagnated extends Monster {
       // Never leave his clutch water behind if he dies or leaves in the middle of it.
       if (!this.level().isClientSide() && this.placedPos != null) {
          this.pickUpWater((ServerLevel)this.level());
+      }
+      if (this.sweaty && this.level() instanceof ServerLevel bossLevel) {
+         this.pingBoss(bossLevel, 0);
       }
       super.remove(reason);
    }
@@ -1814,6 +1820,16 @@ public class Stagnated extends Monster {
          }
       }
       return hit;
+   }
+
+   /** Tells the players within earshot which phase the fight is in (music, boss bar). Phase 0 = it is over. */
+   private void pingBoss(ServerLevel level, int phase) {
+      float health = Math.max(0.0F, Math.min(1.0F, this.getHealth() / this.getMaxHealth()));
+      for (ServerPlayer player : level.players()) {
+         if (player.distanceToSqr(this) < 80.0 * 80.0) {
+            ServerPlayNetworking.send(player, new EliPayload(phase, health));
+         }
+      }
    }
 
    /** Sword-fight behavior each tick: the heavy third swing and its tell, crit hops, strafing behind the shield, the axe against a held-up shield. */
