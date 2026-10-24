@@ -346,4 +346,13 @@ public final class Tuning {
    /** Axe: ticks a target must keep blocking before he swaps to it, and the cooldown after. */
    public static final int SWEATY_AXE_AFTER = 60;
    public static final int SWEATY_AXE_COOLDOWN = 300;
+   /** Eli's Sword: bleed length, how often it hurts, damage per hit of it. */
+   public static final int HEMORRHAGE_TICKS = 120;
+   public static final int HEMORRHAGE_INTERVAL = 20;
+   public static final float HEMORRHAGE_DAMAGE = 1.0F;
+   /** Rotting Heart: chance to drop from a Stagnated killed by a player, chance per ancient city chest. */
+   public static final float HEART_STAGNATED_DROP = 0.04F;
+   public static final float HEART_CHEST_CHANCE = 0.12F;
+   /** Summon: radius of the sculk splotch. */
+   public static final int HEART_SPLOTCH_RADIUS = 4;
 }

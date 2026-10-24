@@ -1113,6 +1113,7 @@ public class Stagnated extends Monster {
       super.die(source);
       // Dying counts as leaving too.
       if (this.sweaty && this.level() instanceof ServerLevel level) {
+         level.playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.ELI_DEATH_SFX, net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 1.0F);
          this.announceLeave(level);
       }
    }
@@ -1254,10 +1255,16 @@ public class Stagnated extends Monster {
    @Override
    protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean killedByPlayer) {
       super.dropCustomDeathLoot(level, source, killedByPlayer);
+      if (!this.sweaty && killedByPlayer && this.random.nextFloat() < Tuning.HEART_STAGNATED_DROP) {
+         this.spawnAtLocation(level, new ItemStack(ModItems.ROTTING_HEART));
+      }
       if (!this.sweaty || !this.geared || !killedByPlayer) {
          return;
       }
       this.dropHalf(level, this.ethansMace(), 1.0F);
+      if (this.isEnraged()) {
+         this.spawnAtLocation(level, new ItemStack(ModItems.ELI_SWORD));
+      }
       if (this.isEnraged()) {
          // Only the netherite set drops; the diamond one is swapped out in the enrage.
          for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {

@@ -41,6 +41,8 @@ public final class ModItems {
    public static Item GAS_MASK_FILTER_REINFORCED;
 
    public static Item STAGNATED_HEAD;
+   public static Item ROTTING_HEART;
+   public static Item ELI_SWORD;
    public static Item AMETHYST_DUST;
    public static Item CHARCOAL_DUST;
 
@@ -120,6 +122,17 @@ public final class ModItems {
 
       ResourceKey<Item> headKey = key("stagnated_head");
       STAGNATED_HEAD = Registry.register(BuiltInRegistries.ITEM, headKey, new StagnatedHeadItem(new Item.Properties().setId(headKey)));
+      ResourceKey<Item> heartKey = key("rotting_heart");
+      ROTTING_HEART = Registry.register(BuiltInRegistries.ITEM, heartKey, new Item(new Item.Properties().setId(heartKey).stacksTo(16).fireResistant()
+         .rarity(net.minecraft.world.item.Rarity.EPIC)
+         .component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+            net.minecraft.network.chat.Component.translatable("breathless.lore.rotting_heart_1").withStyle(net.minecraft.ChatFormatting.DARK_AQUA),
+            net.minecraft.network.chat.Component.translatable("breathless.lore.rotting_heart_2").withStyle(net.minecraft.ChatFormatting.DARK_AQUA))))));
+      ResourceKey<Item> swordKey = key("eli_sword");
+      ELI_SWORD = Registry.register(BuiltInRegistries.ITEM, swordKey, new Item(new Item.Properties().setId(swordKey).stacksTo(1)
+         .sword(net.minecraft.world.item.ToolMaterial.DIAMOND, 3.0F, -2.4F).rarity(net.minecraft.world.item.Rarity.EPIC)
+         .component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+            net.minecraft.network.chat.Component.translatable("breathless.lore.eli_sword").withStyle(net.minecraft.ChatFormatting.DARK_RED))))));
       AMETHYST_DUST = registerPlain("amethyst_dust");
       CHARCOAL_DUST = registerPlain("charcoal_dust");
 

@@ -36,6 +36,9 @@ public final class ModSounds {
    public static SoundEvent ETHAN_WIND;
    public static SoundEvent ETHAN_SMASH;
    public static SoundEvent ETHAN_STUN;
+   public static SoundEvent ETHAN_SUMMON;
+   public static SoundEvent ELI_DEATH_SFX;
+   public static SoundEvent HEART_DESTROYED;
    public static SoundEvent STUN_WARNING;
    public static SoundEvent COMBO_WARNING;
    public static SoundEvent ETHAN_CLUTCH;
@@ -75,6 +78,9 @@ public final class ModSounds {
       ETHAN_WIND = reg("ethan_wind");
       ETHAN_SMASH = reg("ethan_smash");
       ETHAN_STUN = reg("ethan_stun");
+      ETHAN_SUMMON = reg("ethan_summon");
+      ELI_DEATH_SFX = reg("eli_death_sfx");
+      HEART_DESTROYED = reg("heart_destroyed");
       STUN_WARNING = reg("stun_warning");
       COMBO_WARNING = reg("combo_warning");
       ETHAN_CLUTCH = reg("ethan_clutch");

@@ -48,6 +48,7 @@ public class Breathless implements ModInitializer {
       Achievements.init();
       Lore.init();
       MobRules.init();
+      EliSummon.init();
 
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> {
          entries.accept(ModItems.GAS_MASK_EMPTY);
@@ -59,6 +60,8 @@ public class Breathless implements ModInitializer {
          entries.accept(ModItems.GAS_MASK_FILTER);
          entries.accept(ModItems.GAS_MASK_FILTER_REINFORCED);
       });
+      CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> entries.accept(ModItems.ELI_SWORD));
+      CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(entries -> entries.accept(ModItems.ROTTING_HEART));
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS).register(entries -> entries.accept(ModItems.STAGNATED_HEAD));
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(entries -> {
          entries.accept(ModItems.AMETHYST_DUST);

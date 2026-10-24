@@ -429,5 +429,32 @@
         "stream": false
       }
     ]
+  },
+  "ethan_summon": {
+    "sounds": [
+      {
+        "name": "breathless:ethan_summon",
+        "stream": false,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "eli_death_sfx": {
+    "sounds": [
+      {
+        "name": "breathless:eli_death_sfx",
+        "stream": false,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "heart_destroyed": {
+    "sounds": [
+      {
+        "name": "breathless:heart_destroyed",
+        "stream": false,
+        "attenuation_distance": 40
+      }
+    ]
   }
 }

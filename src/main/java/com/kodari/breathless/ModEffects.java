@@ -19,6 +19,7 @@ public final class ModEffects {
 
    public static Holder<MobEffect> SPORE_EXPOSURE;
    public static Holder<MobEffect> MORIBUND;
+   public static Holder<MobEffect> HEMORRHAGE;
 
    private static final class Marker extends MobEffect {
       Marker(int color) {
@@ -26,7 +27,26 @@ public final class ModEffects {
       }
    }
 
+   /** Bleeding from Eli's Sword: a little damage now and then that ignores armor. */
+   private static final class Bleed extends MobEffect {
+      Bleed() {
+         super(MobEffectCategory.HARMFUL, 0x8E0F18);
+      }
+
+      @Override
+      public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
+         return duration % Tuning.HEMORRHAGE_INTERVAL == 0;
+      }
+
+      @Override
+      public boolean applyEffectTick(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.LivingEntity entity, int amplifier) {
+         entity.hurtServer(level, level.damageSources().magic(), Tuning.HEMORRHAGE_DAMAGE * (amplifier + 1));
+         return true;
+      }
+   }
+
    public static void register() {
+      HEMORRHAGE = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(Registry.register(BuiltInRegistries.MOB_EFFECT, Breathless.id("hemorrhage"), new Bleed()));
       MobEffect effect = Registry.register(BuiltInRegistries.MOB_EFFECT, Breathless.id("spore_exposure"), new Marker(0x2FB4D8));
       SPORE_EXPOSURE = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect);
       MobEffect moribund = Registry.register(BuiltInRegistries.MOB_EFFECT, Breathless.id("moribund"), new Marker(0x1B4F63));

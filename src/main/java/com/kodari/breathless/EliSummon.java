@@ -1,0 +1,178 @@
+package com.kodari.breathless;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.item.v1.EnchantmentEvents;
+import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
+import net.fabricmc.fabric.api.util.TriState;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.ShriekParticleOption;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+
+/**
+ * The Rotting Heart and Eli's Sword. A heart that lies in fire, lava or a lit campfire is destroyed: it shrieks, the fire goes out, the ground
+ * around it turns to sculk and Elijah climbs out of it. Eli's Sword makes its victims bleed (Hemorrhage) and cannot be enchanted.
+ */
+public final class EliSummon {
+   private EliSummon() {
+   }
+
+   private static final Set<ItemEntity> HEARTS = new HashSet<>();
+   private static final List<Object[]> LATER = new ArrayList<>();
+
+   public static void init() {
+      ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+         if (entity instanceof ItemEntity item && item.getItem().is(ModItems.ROTTING_HEART)) {
+            HEARTS.add(item);
+         }
+      });
+      ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
+         if (entity instanceof ItemEntity item) {
+            HEARTS.remove(item);
+         }
+      });
+      ServerTickEvents.END_SERVER_TICK.register(server -> {
+         Iterator<ItemEntity> it = HEARTS.iterator();
+         List<ItemEntity> burning = new ArrayList<>();
+         while (it.hasNext()) {
+            ItemEntity item = it.next();
+            if (item.isRemoved()) {
+               it.remove();
+            } else if (item.tickCount % 4 == 0 && inFire(item)) {
+               burning.add(item);
+            }
+         }
+         for (ItemEntity item : burning) {
+            if (item.isRemoved() || !(item.level() instanceof ServerLevel level)) {
+               continue;
+            }
+            item.getItem().shrink(1);
+            if (item.getItem().isEmpty()) {
+               item.discard();
+               HEARTS.remove(item);
+            }
+            summon(level, item.blockPosition());
+         }
+         for (Iterator<Object[]> l = LATER.iterator(); l.hasNext();) {
+            Object[] task = l.next();
+            if (--((int[])task[0])[0] <= 0) {
+               ((Runnable)task[1]).run();
+               l.remove();
+            }
+         }
+      });
+      // Eli's Sword: bleeding on a clean hit.
+      ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
+         if (!blocked && source.getEntity() instanceof LivingEntity attacker && source.getDirectEntity() == attacker && attacker.getMainHandItem().is(ModItems.ELI_SWORD)) {
+            entity.addEffect(new MobEffectInstance(ModEffects.HEMORRHAGE, Tuning.HEMORRHAGE_TICKS, 0));
+         }
+      });
+      EnchantmentEvents.ALLOW_ENCHANTING.register((enchantment, target, context) -> target.is(ModItems.ELI_SWORD) ? TriState.FALSE : TriState.DEFAULT);
+      // Ancient city chests now and then hold a heart.
+      LootTableEvents.MODIFY.register((key, table, tableSource, registries) -> {
+         if (tableSource.isBuiltin() && (key.equals(BuiltInLootTables.ANCIENT_CITY) || key.equals(BuiltInLootTables.ANCIENT_CITY_ICE_BOX))) {
+            table.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+               .when(LootItemRandomChanceCondition.randomChance(Tuning.HEART_CHEST_CHANCE))
+               .add(LootItem.lootTableItem(ModItems.ROTTING_HEART)));
+         }
+      });
+   }
+
+   private static boolean inFire(ItemEntity item) {
+      ServerLevel level = (ServerLevel)item.level();
+      BlockPos pos = item.blockPosition();
+      BlockState state = level.getBlockState(pos);
+      return state.is(BlockTags.FIRE) || (state.is(BlockTags.CAMPFIRES) && state.hasProperty(CampfireBlock.LIT) && state.getValue(CampfireBlock.LIT))
+         || level.getFluidState(pos).is(FluidTags.LAVA) || item.isOnFire();
+   }
+
+   private static void later(int ticks, Runnable run) {
+      LATER.add(new Object[] {new int[] {ticks}, run});
+   }
+
+   /** The heart bursts at this spot: shriek, put out the fire, sculk splotch, and Elijah arrives. */
+   public static void summon(ServerLevel level, BlockPos pos) {
+      double x = pos.getX() + 0.5;
+      double y = pos.getY() + 0.3;
+      double z = pos.getZ() + 0.5;
+      level.playSound(null, x, y, z, ModSounds.HEART_DESTROYED, SoundSource.HOSTILE, 3.0F, 1.0F);
+      level.playSound(null, x, y, z, SoundEvents.SCULK_SHRIEKER_SHRIEK, SoundSource.HOSTILE, 2.0F, 0.7F);
+      for (int i = 0; i < 3; i++) {
+         final int delay = i * 6;
+         level.sendParticles(new ShriekParticleOption(delay), x, y + 0.2, z, 1, 0.0, 0.0, 0.0, 0.0);
+      }
+      level.sendParticles(ParticleTypes.SCULK_SOUL, x, y + 0.5, z, 50, 0.5, 0.7, 0.5, 0.05);
+      level.sendParticles(ParticleTypes.SCULK_CHARGE_POP, x, y + 0.2, z, 30, 0.8, 0.3, 0.8, 0.05);
+      // Fire out.
+      for (BlockPos near : BlockPos.betweenClosed(pos.offset(-1, -1, -1), pos.offset(1, 1, 1))) {
+         BlockState st = level.getBlockState(near);
+         if (st.is(BlockTags.FIRE)) {
+            level.setBlock(near, Blocks.AIR.defaultBlockState(), 3);
+         } else if (st.is(BlockTags.CAMPFIRES) && st.hasProperty(CampfireBlock.LIT) && st.getValue(CampfireBlock.LIT)) {
+            level.setBlock(near, st.setValue(CampfireBlock.LIT, false), 3);
+         }
+      }
+      // Sculk splotch.
+      int r = Tuning.HEART_SPLOTCH_RADIUS;
+      int surface = pos.getY();
+      for (int dx = -r; dx <= r; dx++) {
+         for (int dz = -r; dz <= r; dz++) {
+            double d = Math.sqrt(dx * dx + dz * dz);
+            if (d > r - level.getRandom().nextDouble() * 1.6) {
+               continue;
+            }
+            for (int dy = 2; dy >= -3; dy--) {
+               BlockPos p = pos.offset(dx, dy, dz);
+               BlockState below = level.getBlockState(p.below());
+               if (level.getBlockState(p).isAir() || level.getBlockState(p).canBeReplaced()) {
+                  if (below.isSolidRender() && !below.hasBlockEntity() && below.getDestroySpeed(level, p.below()) >= 0.0F && below.getDestroySpeed(level, p.below()) < 20.0F && !below.is(Blocks.SCULK)) {
+                     level.setBlock(p.below(), Blocks.SCULK.defaultBlockState(), 3);
+                     if (dx == 0 && dz == 0) {
+                        surface = p.getY();
+                     }
+                  }
+                  break;
+               }
+            }
+         }
+      }
+      // Elijah.
+      Stagnated eli = ModEntities.STAGNATED.create(level, EntitySpawnReason.EVENT);
+      if (eli == null) {
+         return;
+      }
+      eli.snapTo(x, surface, z, level.getRandom().nextFloat() * 360.0F, 0.0F);
+      eli.makeSweaty();
+      level.addFreshEntity(eli);
+      eli.startEmerging();
+      level.playSound(null, x, y, z, ModSounds.ETHAN_SUMMON, SoundSource.HOSTILE, 3.0F, 1.0F);
+      Component name = Component.literal("xX_5L0TH_Xx");
+      level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("multiplayer.player.joined", name).withStyle(ChatFormatting.YELLOW), false);
+      later(25, () -> level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", name, "You called?"), false));
+   }
+}

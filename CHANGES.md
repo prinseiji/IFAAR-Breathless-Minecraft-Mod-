@@ -324,3 +324,10 @@ Everything. See DEVELOPMENT.md.
 ## Batch 20d: heavy swing tweaks
 - Heavy third swing hits harder (1.4x to 1.9x damage, SWEATY_COMBO_DAMAGE) and uses the shield-disabled pose as its wind-up tell, with the red outline on from the start of the wind-up until the swing lands.
 - Sounds swapped: the stun slam now plays your alert sound (stun_alert); the heavy swing plays the flash sound that the stun slam used before (combo_warning).
+
+## Batch 21a: Rotting Heart, Eli's Sword, the summon
+- Rotting Heart (item): burn it (drop it into fire, soul fire, a lit campfire or lava) and it bursts with a shrieker soundwave, your heart-destroyed sound and sculk particles. The fire goes out, the ground around splotches with sculk and Elijah climbs out of it with the "You called?" voiceline. Chat shows "xX_5L0TH_Xx joined the game" in yellow, then his "You called?".
+- Where hearts come from: ancient city chests (12% per chest) and a 4% drop from any Stagnated other than Elijah killed by a player. Tuning: HEART_*.
+- Eli's Sword (diamond sword stats, your texture, your description) drops when you defeat him through phase two. It makes whoever it hits bleed (Hemorrhage: 1 armor-ignoring damage per second for 6 seconds, not stacking) and cannot be enchanted. Sword blocking and the parry come later with your sfx.
+- Elijah's final death plays your death sfx on top of his voiceline.
+- New: ModItems.ROTTING_HEART/ELI_SWORD, ModEffects.HEMORRHAGE, EliSummon.java; textures item/rotting_heart.png, item/eli_sword.png, mob_effect/hemorrhage.png (my placeholder icon, replace it any time).
