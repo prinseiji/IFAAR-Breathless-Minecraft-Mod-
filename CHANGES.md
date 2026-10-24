@@ -301,3 +301,9 @@ Everything. See DEVELOPMENT.md.
 ## Batch 20a: Elijah (new skin, own spot pose, rename)
 - Ethan is now Elijah (Eli): the dropped mace is "Elijah's Mace". Internal ids (ethan_* sounds and damage types) are unchanged so nothing breaks.
 - He has his own skin (textures/entity/elijah.png), without the Stagnated's body strips, and his own spot pose (1.42 s). Everything else animates as before.
+
+## Batch 20b: slam readability, shield hold (chain and lunge reverted)
+- The chained slams and the lunge feint are gone again. The netherite Fire Aspect sword, Protection II and Strength/Speed stay.
+- The red stun-slam ring now shows from the launch: on the way up it follows his target, then freezes at the top of the jump where he will land.
+- While he falls onto the ring, a pling sounds at the ring, rising in pitch and repeating faster the closer he gets, so you can hear it even when he is above you.
+- With his shield up he now keeps it raised for about 2.5 seconds (SWEATY_GUARD_HOLD_TICKS) before lowering it to swing, then raises it again, until an axe disables it.

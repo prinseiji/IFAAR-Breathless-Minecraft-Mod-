@@ -310,7 +310,7 @@ public final class Tuning {
    /** Shield: hits within the window that make him raise it, the window (ticks), how long it stays down for a swing, how long an axe disables it. */
    public static final int SWEATY_GUARD_HITS = 2;
    public static final int SWEATY_GUARD_WINDOW = 60;
-   public static final int SWEATY_GUARD_DROP_TICKS = 10;
+   public static final int SWEATY_GUARD_DROP_TICKS = 12;
    public static final int SWEATY_GUARD_DISABLE_TICKS = 100;
    /** The stun slam hits a wider area than the plain smash. */
    public static final double SWEATY_STUN_RADIUS = 3.0;
@@ -329,12 +329,6 @@ public final class Tuning {
    /** Phase two effect levels (0 = I, 1 = II). */
    public static final int SWEATY_STRENGTH = 0;
    public static final int SWEATY_SPEED = 0;
-   /** Phase two chain: extra slams right after a landing if the target is within this many blocks. */
-   public static final int SWEATY_CHAIN_MAX = 1;
-   public static final double SWEATY_CHAIN_RANGE = 6.0;
-   /** The lunge feint: chance in phase one (phase two is always), ticks of fall left when it happens, how far the landing spot moves, and how far past the ring the target may be for it to happen. */
-   public static final float SWEATY_LUNGE_CHANCE = 0.4F;
-   public static final int SWEATY_LUNGE_TICKS = 10;
-   public static final double SWEATY_LUNGE_SHIFT = 4.0;
-   public static final double SWEATY_LUNGE_REACH = 4.0;
+   /** Ticks his raised shield stays up before he lowers it to swing again. */
+   public static final int SWEATY_GUARD_HOLD_TICKS = 50;
 }

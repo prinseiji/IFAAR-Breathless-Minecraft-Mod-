@@ -119,9 +119,8 @@ public class Stagnated extends Monster {
    private int surfaceTicks;
    /** The wind charge hop is a retreat before eating (away from the target, no smash). */
    private boolean fleeing;
-   /** Phase two: how many more slams he may chain right after a landing, and whether this stun slam has already used its lunge. */
-   private int chainLeft;
-   private boolean lunged;
+   /** Shield: ticks it must stay up before he lowers it for the next swing. */
+   private int guardHold;
    /** Shield: engaged once he has been hit twice quickly, then held up (lowered only for each swing) until a player's axe disables it. */
    private boolean engaged;
    private boolean guardUp;
@@ -822,6 +821,9 @@ public class Stagnated extends Monster {
       if (this.hitWindow > 0 && --this.hitWindow == 0) {
          this.recentHits = 0;
       }
+      if (this.guardUp && this.guardHold > 0) {
+         this.guardHold--;
+      }
       boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving
          && this.windTicks <= 0 && this.eatTicks <= 0 && target != null && this.onGround();
       if (this.engaged && swordPhase) {
@@ -891,7 +893,6 @@ public class Stagnated extends Monster {
             this.swordTicks = 0;
             this.swordHits = 0;
             this.maceStuck = 0;
-            this.chainLeft = this.swapToMace ? Tuning.SWEATY_CHAIN_MAX : 0;
          }
       } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0) {
          if (!mace) {
@@ -980,29 +981,21 @@ public class Stagnated extends Monster {
          }
       }
       if (this.locked && !this.landed && !this.fleeing) {
-         // The feint (see lunge): once per stun slam, with about half a second of fall left, only on a target that dodged the ring but is still close.
-         if (this.stunPlan && !this.lunged && target != null && !Double.isNaN(this.markY) && this.getDeltaMovement().y < -0.2) {
-            double g = this.groundBelow();
-            if (g >= 0.0 && g <= -this.getDeltaMovement().y * Tuning.SWEATY_LUNGE_TICKS) {
-               this.lunged = true;
-               double fx = target.getX() - this.markX;
-               double fz = target.getZ() - this.markZ;
-               double off = Math.sqrt(fx * fx + fz * fz);
-               double ring = this.stunRadius();
-               if ((this.isEnraged() || this.random.nextFloat() < Tuning.SWEATY_LUNGE_CHANCE) && off > ring + 0.3 && off <= ring + Tuning.SWEATY_LUNGE_REACH) {
-                  this.lunge(target, g);
-               }
-            }
-         }
          this.setDeltaMovement(this.lockVx, this.getDeltaMovement().y, this.lockVz);
-         // The stun slam shows where it is coming down: a ring of red dust on the ground.
-         if (this.stunPlan && !Double.isNaN(this.markY) && this.airTicks % 2 == 0) {
-            for (int i = 0; i < 28; i++) {
-               double a = i * Math.PI * 2.0 / 28.0;
-               level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F),
-                  this.markX + Math.cos(a) * this.stunRadius(), this.markY, this.markZ + Math.sin(a) * this.stunRadius(), 1, 0.0, 0.0, 0.0, 0.0);
+         // The stun slam shows where it is coming down: a ring of red dust on the ground, and a warning tone that speeds up and rises as he falls.
+         if (this.stunPlan && !Double.isNaN(this.markY)) {
+            this.stunRing(level, this.markX, this.markY, this.markZ);
+            double g = this.groundBelow();
+            int gap = g > 14.0 ? 10 : (g > 8.0 ? 7 : (g > 4.0 ? 4 : 2));
+            if (g >= 0.0 && this.airTicks % gap == 0) {
+               float pitch = Math.min(2.0F, 0.7F + (float)(14.0 - Math.min(g, 14.0)) / 14.0F * 1.3F);
+               level.playSound(null, this.markX, this.markY, this.markZ, SoundEvents.NOTE_BLOCK_PLING.value(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, pitch);
             }
          }
+      } else if (this.stunPlan && !this.locked && !this.landed && !this.fleeing && target != null && this.airTicks % 2 == 0) {
+         // On the way up the ring already follows his target, so it never appears out of nowhere.
+         double rg = target.getY();
+         this.stunRing(level, target.getX(), rg + 0.1, target.getZ());
       }
       // On the way down: the smash swing, or (with no one to smash) the water bucket clutch.
       if (motion.y < -0.2 && this.airTicks > 8 && !this.landed) {
@@ -1076,9 +1069,16 @@ public class Stagnated extends Monster {
       return to.x * look.x + to.z * look.z > 0.0;
    }
 
+   /** While his shield is up it has to stay up for a while before he lowers it to swing. */
+   @Override
+   public boolean isWithinMeleeAttackRange(LivingEntity target) {
+      return !(this.sweaty && this.guardUp && this.guardHold > 0) && super.isWithinMeleeAttackRange(target);
+   }
+
    private void setGuard(boolean up) {
       this.guardUp = up;
       if (up) {
+         this.guardHold = Tuning.SWEATY_GUARD_HOLD_TICKS;
          this.holdTemp(Items.SHIELD);
          this.level().broadcastEntityEvent(this, (byte)82);
       } else if (this.getItemBySlot(EquipmentSlot.OFFHAND).is(Items.SHIELD)) {
@@ -1127,50 +1127,12 @@ public class Stagnated extends Monster {
       this.level().broadcastEntityEvent(this, (byte)76);
    }
 
-   /** The next slam of a chain: wind up again right away, maybe as a stun slam. */
-   private void startChain() {
-      this.stunPlan = this.random.nextFloat() < Tuning.SWEATY_ENRAGED_STUN_CHANCE;
-      this.setItemSlot(EquipmentSlot.MAINHAND, this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace());
-      this.windTicks = Tuning.SWEATY_WIND_TICKS;
-      this.getNavigation().stop();
-      this.holdTemp(Items.WIND_CHARGE);
-      this.level().broadcastEntityEvent(this, (byte)77);
-      if (this.stunPlan) {
-         this.level().broadcastEntityEvent(this, (byte)81);
+   private void stunRing(ServerLevel level, double x, double y, double z) {
+      double r = this.stunRadius();
+      for (int i = 0; i < 28; i++) {
+         double a = i * Math.PI * 2.0 / 28.0;
+         level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F), x + Math.cos(a) * r, y, z + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
       }
-   }
-
-   /**
-    * The feint: halfway down a stun slam, if the target has dodged the ring but is still close, he lunges mid-air toward it. The landing spot (and the ring) move
-    * a fixed distance toward where the target stands right then, with about half a second of fall left, so only a player who stopped moving gets caught.
-    */
-   private void lunge(LivingEntity target, double ground) {
-      double tx = target.getX() - this.markX;
-      double tz = target.getZ() - this.markZ;
-      double d = Math.sqrt(tx * tx + tz * tz);
-      double shift = Math.min(Tuning.SWEATY_LUNGE_SHIFT, d);
-      double newX = this.markX + tx / d * shift;
-      double newZ = this.markZ + tz / d * shift;
-      double vy = this.getDeltaMovement().y;
-      double y = ground;
-      int t = 0;
-      while (y > 0.0 && t < 100) {
-         vy = (vy - 0.08) * 0.98;
-         y += vy;
-         t++;
-      }
-      t = Math.max(t, 1);
-      this.lockVx = (newX - this.getX()) / t;
-      this.lockVz = (newZ - this.getZ()) / t;
-      double sp = Math.sqrt(this.lockVx * this.lockVx + this.lockVz * this.lockVz);
-      if (sp > 0.9) {
-         this.lockVx *= 0.9 / sp;
-         this.lockVz *= 0.9 / sp;
-      }
-      this.markX = newX;
-      this.markZ = newZ;
-      this.playSound(SoundEvents.WIND_CHARGE_BURST.value(), 1.6F, 1.5F);
-      ((ServerLevel)this.level()).sendParticles(ParticleTypes.GUST_EMITTER_SMALL, this.getX(), this.getY() + 0.5, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
    }
 
    private void launch(LivingEntity target) {
@@ -1178,7 +1140,6 @@ public class Stagnated extends Monster {
       this.diving = true;
       this.smashing = target != null && !this.fleeing;
       this.locked = false;
-      this.lunged = false;
       this.decided = false;
       this.smashAnim = false;
       this.landed = false;
@@ -1225,12 +1186,7 @@ public class Stagnated extends Monster {
          this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansMace());
       }
       this.fleeing = false;
-      LivingEntity next = this.getTarget();
-      if (this.isEnraged() && this.chainLeft > 0 && next != null && next.isAlive() && this.distanceTo(next) <= Tuning.SWEATY_CHAIN_RANGE && this.roomAbove(12)) {
-         // Chain: still close to his target, so straight into the next slam with no sword phase between.
-         this.chainLeft--;
-         this.startChain();
-      } else if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
+      if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
          this.startSwap(false);
       }
       if (smash && !this.smash(level, fall, stun)) {
