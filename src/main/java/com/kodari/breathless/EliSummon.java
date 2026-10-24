@@ -92,6 +92,16 @@ public final class EliSummon {
             entity.addEffect(new MobEffectInstance(ModEffects.HEMORRHAGE, Tuning.HEMORRHAGE_TICKS, 0));
          }
       });
+      // Parry: blocking with Eli's Sword right as the hit lands (first PARRY_TICKS of the block) cancels it, knocks the attacker back, flashes white and freezes time for half a second.
+      ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+         if (entity instanceof net.minecraft.server.level.ServerPlayer player && player.isBlocking() && player.getUseItem().is(ModItems.ELI_SWORD)
+            && player.getTicksUsingItem() <= Tuning.PARRY_TICKS && source.getEntity() != null && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
+            && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_SHIELD)) {
+            parry(player, source.getEntity());
+            return false;
+         }
+         return true;
+      });
       EnchantmentEvents.ALLOW_ENCHANTING.register((enchantment, target, context) -> target.is(ModItems.ELI_SWORD) ? TriState.FALSE : TriState.DEFAULT);
       // Ancient city chests now and then hold a heart.
       LootTableEvents.MODIFY.register((key, table, tableSource, registries) -> {
@@ -101,6 +111,26 @@ public final class EliSummon {
                .add(LootItem.lootTableItem(ModItems.ROTTING_HEART)));
          }
       });
+   }
+
+   private static void parry(net.minecraft.server.level.ServerPlayer player, net.minecraft.world.entity.Entity attacker) {
+      ServerLevel level = (ServerLevel)player.level();
+      level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.PARRY, SoundSource.PLAYERS, 1.6F, 1.0F);
+      level.sendParticles(ParticleTypes.CRIT, player.getX(), player.getEyeY(), player.getZ(), 20, 0.4, 0.3, 0.4, 0.3);
+      net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new ParryPayload());
+      if (attacker instanceof LivingEntity victim) {
+         double dx = victim.getX() - player.getX();
+         double dz = victim.getZ() - player.getZ();
+         double dl = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+         victim.setDeltaMovement(victim.getDeltaMovement().add(dx / dl * Tuning.PARRY_KNOCKBACK, 0.3, dz / dl * Tuning.PARRY_KNOCKBACK));
+         victim.hurtMarked = true;
+      }
+      player.invulnerableTime = Math.max(player.invulnerableTime, 10);
+      net.minecraft.server.ServerTickRateManager rate = level.getServer().tickRateManager();
+      if (!rate.isFrozen()) {
+         rate.setFrozen(true);
+         later(Tuning.PARRY_FREEZE_TICKS, () -> rate.setFrozen(false));
+      }
    }
 
    private static boolean inFire(ItemEntity item) {

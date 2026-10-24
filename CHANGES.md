@@ -339,3 +339,9 @@ Everything. See DEVELOPMENT.md.
 - Phase two theme (Tenebre Rosso Sangue): starts at its 22 second mark, then repeats from the beginning. Stops when he dies or leaves, or when you walk about 80 blocks away.
 - Boss bar: only in phase two, small (144x52), at the top centre, teal health fill in the rail. Constants RAIL_* in EliBoss.java if the fill is off.
 - New: EliPayload, EliBoss (client), music ids eli_phase_one / eli_tenebre / eli_tenebre_start.
+
+## Batch 21c: sword block and parry, boss bar look, no exposure from his axe
+- Eli's Sword can block (hold use): it takes half the damage from the front. A block in its first 7 ticks is a parry: the hit is cancelled, the attacker is thrown back, a white flash plays with your parry sound and time freezes for half a second (everything on the server stops, like a hit stop). Tuning: PARRY_*.
+- Boss bar: black fill and black outline (the white edge is gone), moved up.
+- Fixed: Elijah's axe hit (the shield clap) gave you spore exposure. His axe hit is now like his sword: no exposure.
+- Phase one now also pings the music/bar from the general tick, so it starts while he is still climbing out.

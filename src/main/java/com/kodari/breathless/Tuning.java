@@ -355,4 +355,8 @@ public final class Tuning {
    public static final float HEART_CHEST_CHANCE = 0.12F;
    /** Summon: radius of the sculk splotch. */
    public static final int HEART_SPLOTCH_RADIUS = 4;
+   /** Eli's Sword: a block in its first PARRY_TICKS ticks is a full parry; the world then freezes for FREEZE_TICKS (0.5 s). Blocking later takes half the damage. */
+   public static final int PARRY_TICKS = 7;
+   public static final int PARRY_FREEZE_TICKS = 10;
+   public static final double PARRY_KNOCKBACK = 1.2;
 }

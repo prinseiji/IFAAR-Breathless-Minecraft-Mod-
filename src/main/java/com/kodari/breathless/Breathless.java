@@ -42,6 +42,7 @@ public class Breathless implements ModInitializer {
       PayloadTypeRegistry.clientboundPlay().register(FiendPayload.TYPE, FiendPayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(SpotPayload.TYPE, SpotPayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(EliPayload.TYPE, EliPayload.CODEC);
+      PayloadTypeRegistry.clientboundPlay().register(ParryPayload.TYPE, ParryPayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(OpenLorePayload.TYPE, OpenLorePayload.CODEC);
       FilterClicks.init();
 

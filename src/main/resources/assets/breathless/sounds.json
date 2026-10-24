@@ -480,5 +480,14 @@
         "stream": true
       }
     ]
+  },
+  "parry": {
+    "sounds": [
+      {
+        "name": "breathless:parry",
+        "stream": false,
+        "attenuation_distance": 32
+      }
+    ]
   }
 }

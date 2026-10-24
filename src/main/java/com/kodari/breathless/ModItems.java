@@ -131,6 +131,9 @@ public final class ModItems {
       ResourceKey<Item> swordKey = key("eli_sword");
       ELI_SWORD = Registry.register(BuiltInRegistries.ITEM, swordKey, new Item(new Item.Properties().setId(swordKey).stacksTo(1)
          .sword(net.minecraft.world.item.ToolMaterial.DIAMOND, 3.0F, -2.4F).rarity(net.minecraft.world.item.Rarity.EPIC)
+         .component(DataComponents.BLOCKS_ATTACKS, new net.minecraft.world.item.component.BlocksAttacks(0.0F, 1.0F,
+            java.util.List.of(new net.minecraft.world.item.component.BlocksAttacks.DamageReduction(90.0F, java.util.Optional.empty(), 0.0F, 0.5F)),
+            net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT, java.util.Optional.empty(), java.util.Optional.empty(), java.util.Optional.empty()))
          .component(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
             net.minecraft.network.chat.Component.translatable("breathless.lore.eli_sword").withStyle(net.minecraft.ChatFormatting.DARK_RED))))));
       AMETHYST_DUST = registerPlain("amethyst_dust");

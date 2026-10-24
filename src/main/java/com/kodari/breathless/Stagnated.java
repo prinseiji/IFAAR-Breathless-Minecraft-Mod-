@@ -558,6 +558,9 @@ public class Stagnated extends Monster {
             }
          }
          this.trackChase();
+         if (this.sweaty && this.tickCount % 10 == 0) {
+            this.pingBoss((ServerLevel)this.level(), this.isEnraged() ? 2 : 1);
+         }
          if (this.shieldTicks > 0) {
             this.shieldTicks--;
             this.faceTarget();
@@ -836,9 +839,6 @@ public class Stagnated extends Monster {
          this.guardHold--;
       }
       this.tickMelee(level, target);
-      if (this.tickCount % 10 == 0) {
-         this.pingBoss(level, this.emergeTicks > 0 || this.isEnraged() ? (this.isEnraged() ? 2 : 1) : 1);
-      }
       boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving
          && this.windTicks <= 0 && this.eatTicks <= 0 && target != null && this.onGround();
       if (this.engaged && swordPhase) {
@@ -1924,7 +1924,14 @@ public class Stagnated extends Monster {
          return;
       }
       ItemStack shield = player.isBlocking() ? player.getUseItem().copy() : ItemStack.EMPTY;
-      this.strike(level, player);
+      if (this.sweaty) {
+         // Elijah is not infected: his axe hit carries no spore exposure.
+         if (player.hurtServer(level, ModDamage.ethanSword(level, this), (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
+            this.playSound(ModSounds.STAGNATED_HIT, 1.0F, 1.0F);
+         }
+      } else {
+         this.strike(level, player);
+      }
       if (!shield.isEmpty() && !player.getCooldowns().isOnCooldown(shield)) {
          player.getCooldowns().addCooldown(shield, Tuning.STAGNATED_SHIELD_DISABLE_TICKS);
          player.stopUsingItem();
