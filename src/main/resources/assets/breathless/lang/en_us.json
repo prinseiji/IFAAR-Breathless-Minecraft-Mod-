@@ -128,5 +128,6 @@
   "effect.breathless.hemorrhage": "Hemorrhage",
   "breathless.lore.eli_sword": "The jagged edges of the sword make terrible gashing wounds.",
   "breathless.lore.rotting_heart_1": "It pulsates in your hands, a terrible presence emanates within it.",
-  "breathless.lore.rotting_heart_2": "It's hideous, you wish to burn it."
+  "breathless.lore.rotting_heart_2": "It's hideous, you wish to burn it.",
+  "breathless.tooltip.hold_shift": "Hold [Shift] for description"
 }

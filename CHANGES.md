@@ -360,3 +360,9 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 21g: boss bar meter contrast
 - The empty part of the meter is now a lighter gray so the black health fill reads clearly against it.
+
+## Batch 21h: phase two screen effects, sharper bar, shift-only descriptions
+- When he pops his totem the screen flashes dark cyan (quick: up in 3 ticks, gone in about 0.8 s).
+- In phase two the screen edges pulse dark cyan with veins creeping in from the borders, fading out with the boss bar when the fight ends.
+- Boss bar uses the full-resolution picture shown at half size (117x37), so it is sharp instead of blurry.
+- The Rotting Heart and Eli's Sword descriptions are now the same dark cyan, and they only show while holding Shift ("Hold [Shift] for description" otherwise).

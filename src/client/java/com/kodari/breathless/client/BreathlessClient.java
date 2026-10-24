@@ -79,6 +79,20 @@ public class BreathlessClient implements ClientModInitializer {
 
    private static void addTooltip(ItemStack stack, List<Component> lines) {
       int at = Math.min(1, lines.size());
+      if (stack.is(ModItems.ROTTING_HEART) || stack.is(ModItems.ELI_SWORD)) {
+         // The description only shows while Shift is held.
+         if (net.minecraft.client.Minecraft.getInstance().hasShiftDown()) {
+            if (stack.is(ModItems.ROTTING_HEART)) {
+               lines.add(at++, Component.translatable("breathless.lore.rotting_heart_1").withStyle(ChatFormatting.DARK_AQUA));
+               lines.add(at, Component.translatable("breathless.lore.rotting_heart_2").withStyle(ChatFormatting.DARK_AQUA));
+            } else {
+               lines.add(at, Component.translatable("breathless.lore.eli_sword").withStyle(ChatFormatting.DARK_AQUA));
+            }
+         } else {
+            lines.add(at, Component.translatable("breathless.tooltip.hold_shift").withStyle(ChatFormatting.DARK_GRAY));
+         }
+         return;
+      }
       if (ModItems.isFilter(stack)) {
          int percent = Masks.percent(Tuning.FILTER_MAX - stack.getDamageValue());
          lines.add(at++, Component.translatable("breathless.tooltip.filter_life", percent).withStyle(colorFor(percent)));

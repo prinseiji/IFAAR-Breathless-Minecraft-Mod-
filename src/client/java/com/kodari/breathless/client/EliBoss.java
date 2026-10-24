@@ -22,13 +22,13 @@ final class EliBoss {
    }
 
    private static final Identifier BAR = Breathless.id("textures/gui/eli_bar.png");
-   private static final int BAR_W = 144;
-   private static final int BAR_H = 48;
+   private static final int BAR_W = 117;
+   private static final int BAR_H = 37;
    /** The hollow rail inside the picture that the health fills (pixels inside the texture). */
-   private static final int RAIL_X = 32;
-   private static final int RAIL_W = 78;
-   private static final int RAIL_Y = 27;
-   private static final int RAIL_H = 6;
+   private static final int RAIL_X = 25;
+   private static final int RAIL_W = 65;
+   private static final int RAIL_Y = 21;
+   private static final int RAIL_H = 5;
 
    private static int phase;
    private static float health = 1.0F;
@@ -73,6 +73,9 @@ final class EliBoss {
          return;
       }
       if (newPhase != phase) {
+         if (newPhase == 2 && phase == 1) {
+            popFlash = 16;
+         }
          stop(mc);
          phase = newPhase;
          intro = newPhase == 2;
@@ -108,6 +111,10 @@ final class EliBoss {
 
    static void tick(Minecraft mc) {
       ticks++;
+      if (popFlash > 0) {
+         popFlash--;
+      }
+      fxTicks++;
       barAlpha = Math.max(0.0F, Math.min(1.0F, barAlpha + (phase == 2 ? 0.05F : -0.04F)));
       if (flash > 0) {
          flash--;
@@ -127,6 +134,9 @@ final class EliBoss {
    }
 
    private static int flash;
+   /** The totem pop flash (dark cyan), ticks left. */
+   private static int popFlash;
+   private static int fxTicks;
    /** Boss bar fade: 0 hidden .. 1 fully shown. It rises while phase two is on and falls after. */
    private static float barAlpha;
 
@@ -137,6 +147,14 @@ final class EliBoss {
    static void render(GuiGraphicsExtractor g, DeltaTracker tracker) {
       if (flash > 0) {
          g.fill(0, 0, g.guiWidth(), g.guiHeight(), ((Math.min(255, flash * 30)) << 24) | 0xFFFFFF);
+      }
+      if (popFlash > 0) {
+         // Quick: up in 3 ticks, then fading out.
+         float t = popFlash > 13 ? (16 - popFlash) / 3.0F : popFlash / 13.0F;
+         g.fill(0, 0, g.guiWidth(), g.guiHeight(), (Math.round(t * 150.0F) << 24) | 0x0F7F7A);
+      }
+      if (barAlpha > 0.0F) {
+         edgeVeins(g);
       }
       if (barAlpha <= 0.0F) {
          return;
@@ -152,6 +170,51 @@ final class EliBoss {
          g.fill(fx, fy, fx + fill, fy + RAIL_H, al << 24);
          g.fill(fx, fy, fx + fill, fy + 1, (al << 24) | 0x2B2B2B);
       }
-      g.blit(RenderPipelines.GUI_TEXTURED, BAR, x, y, 0.0F, 0.0F, BAR_W, BAR_H, BAR_W, BAR_H, (al << 24) | 0xFFFFFF);
+      g.blit(RenderPipelines.GUI_TEXTURED, BAR, x, y, 0.0F, 0.0F, BAR_W, BAR_H, 233, 73, 233, 73, (al << 24) | 0xFFFFFF);
+   }
+
+   /** Phase two: a slow dark cyan pulse with veins creeping in from the edges of the screen. */
+   private static void edgeVeins(GuiGraphicsExtractor g) {
+      int w = g.guiWidth();
+      int h = g.guiHeight();
+      float pulse = 0.5F + 0.5F * (float)Math.sin(fxTicks * 0.16F);
+      float a = barAlpha * (0.35F + 0.65F * pulse);
+      // soft glow along the edges
+      for (int i = 0; i < 8; i++) {
+         int al = Math.round(a * (70 - i * 8));
+         int c = (al << 24) | 0x0F7F7A;
+         g.fill(0, i * 3, w, i * 3 + 3, c);
+         g.fill(0, h - i * 3 - 3, w, h - i * 3, c);
+         g.fill(i * 3, 0, i * 3 + 3, h, c);
+         g.fill(w - i * 3 - 3, 0, w - i * 3, h, c);
+      }
+      // veins: fixed random walks that start on an edge and creep inward, longer when the pulse is high
+      java.util.Random rnd = new java.util.Random(7L);
+      int vein = (Math.round(a * 230.0F) << 24) | 0x1FB5AC;
+      for (int n = 0; n < 26; n++) {
+         int side = n % 4;
+         double px = side == 0 ? rnd.nextInt(w) : (side == 1 ? w : (side == 2 ? rnd.nextInt(w) : 0));
+         double py = side == 0 ? 0 : (side == 1 ? rnd.nextInt(h) : (side == 2 ? h : rnd.nextInt(h)));
+         double ang = Math.atan2(h / 2.0 - py, w / 2.0 - px) + (rnd.nextDouble() - 0.5) * 0.8;
+         int len = 14 + rnd.nextInt(26) + Math.round(pulse * 10.0F);
+         for (int s = 0; s < len; s++) {
+            ang += (rnd.nextDouble() - 0.5) * 0.5;
+            px += Math.cos(ang) * 3.0;
+            py += Math.sin(ang) * 3.0;
+            int thick = s < len / 3 ? 2 : 1;
+            g.fill((int)px, (int)py, (int)px + thick, (int)py + thick, vein);
+            if (s % 9 == 8) {
+               // a short branch
+               double bx = px;
+               double by = py;
+               double ba = ang + (rnd.nextBoolean() ? 1.0 : -1.0);
+               for (int k = 0; k < 5; k++) {
+                  bx += Math.cos(ba) * 3.0;
+                  by += Math.sin(ba) * 3.0;
+                  g.fill((int)bx, (int)by, (int)bx + 1, (int)by + 1, vein);
+               }
+            }
+         }
+      }
    }
 }
