@@ -334,7 +334,7 @@ public final class Tuning {
    /** Sword fight: hits before the heavy swing, its wind-up ticks, damage multiplier, knockback, reach. */
    public static final int SWEATY_COMBO_HITS = 2;
    public static final int SWEATY_COMBO_WIND = 14;
-   public static final float SWEATY_COMBO_DAMAGE = 1.4F;
+   public static final float SWEATY_COMBO_DAMAGE = 1.9F;
    public static final double SWEATY_COMBO_KNOCKBACK = 1.1;
    public static final double SWEATY_COMBO_REACH = 3.6;
    /** Crit hop: chance per tick when in range, cooldown, damage multiplier. */

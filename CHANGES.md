@@ -320,3 +320,7 @@ Everything. See DEVELOPMENT.md.
 - Breaking your shield plays the shield break sound.
 - The sword phase is longer (220 ticks, 110 in phase two) because the shield hold makes his swings slower.
 - Tuning: SWEATY_COMBO_*, SWEATY_CRIT_*, SWEATY_STRAFE, SWEATY_AXE_*.
+
+## Batch 20d: heavy swing tweaks
+- Heavy third swing hits harder (1.4x to 1.9x damage, SWEATY_COMBO_DAMAGE) and uses the shield-disabled pose as its wind-up tell, with the red outline on from the start of the wind-up until the swing lands.
+- Sounds swapped: the stun slam now plays your alert sound (stun_alert); the heavy swing plays the flash sound that the stun slam used before (combo_warning).

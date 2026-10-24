@@ -304,10 +304,19 @@
       }
     ]
   },
-  "stun_warning": {
+  "combo_warning": {
     "sounds": [
       {
         "name": "breathless:stun_warning",
+        "stream": false,
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "stun_warning": {
+    "sounds": [
+      {
+        "name": "breathless:stun_alert",
         "stream": false,
         "attenuation_distance": 48
       }

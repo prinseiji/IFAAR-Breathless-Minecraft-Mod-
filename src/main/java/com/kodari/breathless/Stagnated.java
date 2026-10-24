@@ -1843,7 +1843,8 @@ public class Stagnated extends Monster {
          this.guardDown = Tuning.SWEATY_COMBO_WIND + Tuning.SWEATY_GUARD_DROP_TICKS;
          this.comboWind = Tuning.SWEATY_COMBO_WIND;
          this.getNavigation().stop();
-         this.playSound(SoundEvents.NETHERITE_BLOCK_HIT, 1.6F, 0.6F);
+         this.playSound(ModSounds.COMBO_WARNING, 2.5F, 1.0F);
+         level.broadcastEntityEvent(this, (byte)83);
          level.broadcastEntityEvent(this, (byte)81);
          return;
       }
