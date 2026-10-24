@@ -357,3 +357,6 @@ Everything. See DEVELOPMENT.md.
 - Boss bar uses your new transparent picture (scaled to 144x48, black, no edge). The fill rail is set in EliBoss.java (RAIL_*) if you want to nudge it.
 - All of Elijah's voicelines can be heard from 64 blocks (was 16).
 - When Elijah finally dies he bursts into sculk soul and sculk charge particles, with a sculk break sound.
+
+## Batch 21g: boss bar meter contrast
+- The empty part of the meter is now a lighter gray so the black health fill reads clearly against it.

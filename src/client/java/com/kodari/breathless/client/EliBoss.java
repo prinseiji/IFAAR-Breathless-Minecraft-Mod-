@@ -144,7 +144,7 @@ final class EliBoss {
       int al = Math.round(barAlpha * 255.0F);
       int x = (g.guiWidth() - BAR_W) / 2;
       int y = 1;
-      g.fill(x + RAIL_X, y + RAIL_Y, x + RAIL_X + RAIL_W, y + RAIL_Y + RAIL_H, (Math.round(barAlpha * 102.0F) << 24));
+      g.fill(x + RAIL_X, y + RAIL_Y, x + RAIL_X + RAIL_W, y + RAIL_Y + RAIL_H, (Math.round(barAlpha * 200.0F) << 24) | 0x6A6A6A);
       int fill = Math.round(RAIL_W * Math.max(0.0F, Math.min(1.0F, health)));
       if (fill > 0) {
          int fx = x + RAIL_X;
