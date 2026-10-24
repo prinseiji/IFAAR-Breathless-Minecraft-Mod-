@@ -349,3 +349,6 @@ Everything. See DEVELOPMENT.md.
 ## Batch 21d: music timing
 - Tenebre now starts the instant the totem pops (the phase change is announced immediately, not at the next update), and phase one music starts the moment he appears.
 - When Elijah dies the music fades out over about a second (the fade also happens if you walk away or he leaves). The phase one to phase two switch is still an abrupt cut.
+
+## Batch 21e: boss bar fade
+- The boss bar fades in (about 0.4 s) when phase two starts and fades out (about 0.6 s) when Elijah dies, leaves or you walk away. Boss bar health no longer vanishes instantly.

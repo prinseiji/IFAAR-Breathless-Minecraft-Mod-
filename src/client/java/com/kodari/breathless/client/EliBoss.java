@@ -108,6 +108,7 @@ final class EliBoss {
 
    static void tick(Minecraft mc) {
       ticks++;
+      barAlpha = Math.max(0.0F, Math.min(1.0F, barAlpha + (phase == 2 ? 0.05F : -0.04F)));
       if (flash > 0) {
          flash--;
       }
@@ -126,6 +127,8 @@ final class EliBoss {
    }
 
    private static int flash;
+   /** Boss bar fade: 0 hidden .. 1 fully shown. It rises while phase two is on and falls after. */
+   private static float barAlpha;
 
    static void parry() {
       flash = 8;
@@ -135,19 +138,20 @@ final class EliBoss {
       if (flash > 0) {
          g.fill(0, 0, g.guiWidth(), g.guiHeight(), ((Math.min(255, flash * 30)) << 24) | 0xFFFFFF);
       }
-      if (phase != 2) {
+      if (barAlpha <= 0.0F) {
          return;
       }
+      int al = Math.round(barAlpha * 255.0F);
       int x = (g.guiWidth() - BAR_W) / 2;
       int y = 1;
-      g.fill(x + RAIL_X, y + RAIL_Y, x + RAIL_X + RAIL_W, y + RAIL_Y + RAIL_H, 0x66000000);
+      g.fill(x + RAIL_X, y + RAIL_Y, x + RAIL_X + RAIL_W, y + RAIL_Y + RAIL_H, (Math.round(barAlpha * 102.0F) << 24));
       int fill = Math.round(RAIL_W * Math.max(0.0F, Math.min(1.0F, health)));
       if (fill > 0) {
          int fx = x + RAIL_X;
          int fy = y + RAIL_Y;
-         g.fill(fx, fy, fx + fill, fy + RAIL_H, 0xFF000000);
-         g.fill(fx, fy, fx + fill, fy + 1, 0xFF2B2B2B);
+         g.fill(fx, fy, fx + fill, fy + RAIL_H, al << 24);
+         g.fill(fx, fy, fx + fill, fy + 1, (al << 24) | 0x2B2B2B);
       }
-      g.blit(RenderPipelines.GUI_TEXTURED, BAR, x, y, 0.0F, 0.0F, BAR_W, BAR_H, BAR_W, BAR_H);
+      g.blit(RenderPipelines.GUI_TEXTURED, BAR, x, y, 0.0F, 0.0F, BAR_W, BAR_H, BAR_W, BAR_H, (al << 24) | 0xFFFFFF);
    }
 }
