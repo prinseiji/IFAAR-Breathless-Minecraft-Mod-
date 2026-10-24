@@ -109,7 +109,21 @@ final class EliBoss {
       phase = 0;
    }
 
+   /** Vanilla background music stays off while the boss theme plays (and for a few seconds after, so it does not cut in during the fade). */
+   private static int hush;
+
+   static void silenceVanilla(Minecraft mc) {
+      if (phase != 0) {
+         hush = 100;
+      }
+      if (hush > 0) {
+         hush--;
+         mc.getMusicManager().stopPlaying();
+      }
+   }
+
    static void tick(Minecraft mc) {
+      silenceVanilla(mc);
       ticks++;
       if (popFlash > 0) {
          popFlash--;
@@ -180,38 +194,38 @@ final class EliBoss {
       float pulse = 0.5F + 0.5F * (float)Math.sin(fxTicks * 0.16F);
       float a = barAlpha * (0.35F + 0.65F * pulse);
       // soft glow along the edges
-      for (int i = 0; i < 8; i++) {
-         int al = Math.round(a * (70 - i * 8));
+      for (int i = 0; i < 14; i++) {
+         int al = Math.round(Math.min(1.0F, a * (1.0F - i / 14.0F) * 1.25F) * 190.0F);
          int c = (al << 24) | 0x0F7F7A;
-         g.fill(0, i * 3, w, i * 3 + 3, c);
-         g.fill(0, h - i * 3 - 3, w, h - i * 3, c);
-         g.fill(i * 3, 0, i * 3 + 3, h, c);
-         g.fill(w - i * 3 - 3, 0, w - i * 3, h, c);
+         g.fill(0, i * 4, w, i * 4 + 4, c);
+         g.fill(0, h - i * 4 - 4, w, h - i * 4, c);
+         g.fill(i * 4, 0, i * 4 + 4, h, c);
+         g.fill(w - i * 4 - 4, 0, w - i * 4, h, c);
       }
       // veins: fixed random walks that start on an edge and creep inward, longer when the pulse is high
       java.util.Random rnd = new java.util.Random(7L);
       int vein = (Math.round(a * 230.0F) << 24) | 0x1FB5AC;
-      for (int n = 0; n < 26; n++) {
+      for (int n = 0; n < 32; n++) {
          int side = n % 4;
          double px = side == 0 ? rnd.nextInt(w) : (side == 1 ? w : (side == 2 ? rnd.nextInt(w) : 0));
          double py = side == 0 ? 0 : (side == 1 ? rnd.nextInt(h) : (side == 2 ? h : rnd.nextInt(h)));
          double ang = Math.atan2(h / 2.0 - py, w / 2.0 - px) + (rnd.nextDouble() - 0.5) * 0.8;
-         int len = 14 + rnd.nextInt(26) + Math.round(pulse * 10.0F);
+         int len = 5 + rnd.nextInt(8) + Math.round(pulse * 3.0F);
          for (int s = 0; s < len; s++) {
             ang += (rnd.nextDouble() - 0.5) * 0.5;
             px += Math.cos(ang) * 3.0;
             py += Math.sin(ang) * 3.0;
-            int thick = s < len / 3 ? 2 : 1;
+            int thick = s < len / 2 ? 4 : 3;
             g.fill((int)px, (int)py, (int)px + thick, (int)py + thick, vein);
-            if (s % 9 == 8) {
+            if (s % 5 == 4) {
                // a short branch
                double bx = px;
                double by = py;
                double ba = ang + (rnd.nextBoolean() ? 1.0 : -1.0);
-               for (int k = 0; k < 5; k++) {
+               for (int k = 0; k < 3; k++) {
                   bx += Math.cos(ba) * 3.0;
                   by += Math.sin(ba) * 3.0;
-                  g.fill((int)bx, (int)by, (int)bx + 1, (int)by + 1, vein);
+                  g.fill((int)bx, (int)by, (int)bx + 2, (int)by + 2, vein);
                }
             }
          }

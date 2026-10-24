@@ -366,3 +366,7 @@ Everything. See DEVELOPMENT.md.
 - In phase two the screen edges pulse dark cyan with veins creeping in from the borders, fading out with the boss bar when the fight ends.
 - Boss bar uses the full-resolution picture shown at half size (117x37), so it is sharp instead of blurry.
 - The Rotting Heart and Eli's Sword descriptions are now the same dark cyan, and they only show while holding Shift ("Hold [Shift] for description" otherwise).
+
+## Batch 21i: veins, vignette, vanilla music
+- Edge veins are now short and thick (they were long and thin); the edge glow is much stronger (14 bands, pulsing).
+- Vanilla background music is stopped while the boss theme plays and for 5 seconds after, so the two never overlap.

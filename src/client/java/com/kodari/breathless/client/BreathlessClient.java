@@ -44,6 +44,7 @@ public class BreathlessClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(SpotPayload.TYPE, (payload, context) -> SlothText.spotted());
       ClientPlayNetworking.registerGlobalReceiver(OpenLorePayload.TYPE, (payload, context) -> net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new LoreScreen(payload.doc())));
       ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
+      ClientTickEvents.START_CLIENT_TICK.register(EliBoss::silenceVanilla);
       ClientTickEvents.END_CLIENT_TICK.register(EliBoss::tick);
       HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("eli_bar"), EliBoss::render);
 
