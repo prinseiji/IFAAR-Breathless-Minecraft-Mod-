@@ -186,6 +186,8 @@ public final class Tuning {
    public static final double STAGNATED_DAMAGE = 3.0;
    public static final float STAGNATED_HIT_EXPOSURE = 15.0F;
    public static final int STAGNATED_SPOT_TICKS = 17;
+   /** Elijah's own spot pose (1.42 s). */
+   public static final int SWEATY_SPOT_TICKS = 29;
    public static final double STAGNATED_MAX_SIGHT = 128.0;
    public static final double STAGNATED_UNDEAD_SIGHT = 6.0;
    public static final double STAGNATED_OTHER_SIGHT = 12.0;
@@ -280,7 +282,7 @@ public final class Tuning {
    /** Chance that a launch is a stun slam (axe down, mace on landing, breaks a shield): normally, and when the target is holding its shield up. */
    public static final float SWEATY_STUN_CHANCE = 0.35F;
    public static final float SWEATY_STUN_CHANCE_SHIELD = 0.7F;
-   /** Ethan eats a golden apple (standing still) when his health drops to this fraction, at most this many times per fight, taking this many ticks. */
+   /** Elijah eats a golden apple (standing still) when his health drops to this fraction, at most this many times per fight, taking this many ticks. */
    public static final float SWEATY_EAT_BELOW = 0.4F;
    public static final int SWEATY_APPLES = 2;
    public static final int SWEATY_EAT_TICKS = 32;
@@ -292,7 +294,7 @@ public final class Tuning {
    public static final int SWEATY_SURFACE_COOLDOWN_SECONDS = 600;
    /** Breach II on his mace: the smash counts the victim's armor as this much weaker (0.3 = 30%). */
    public static final double SWEATY_BREACH = 0.3;
-   /** Boss balance: Ethan's own max health (the other Stagnated stay at STAGNATED_HEALTH). */
+   /** Boss balance: Elijah's own max health (the other Stagnated stay at STAGNATED_HEALTH). */
    public static final double SWEATY_HEALTH = 80.0;
    /** Stun slam: launches higher (more time to get out of the way) and may hit harder (cap 16 = 8 hearts). */
    public static final double SWEATY_STUN_LAUNCH_UP = 1.5;

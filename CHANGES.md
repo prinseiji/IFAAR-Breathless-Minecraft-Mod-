@@ -228,7 +228,7 @@ Everything. See DEVELOPMENT.md.
 ## Batch 17e: Ethan on the surface, Stagnated wither above Y=0
 - The sweaty one now also turns up above ground: each second a player is on the surface, 1 in 1800 (about once per half hour of surface time), then a 10 minute cooldown, only one near a player (96 blocks), 20-30 blocks away, no emerge animation. Tuning: SWEATY_SURFACE_ODDS, SWEATY_SURFACE_COOLDOWN_SECONDS.
 - Every other Stagnated now withers when it is at Y=0 or above (overworld): 3 seconds grace, then 1 heart per second with sculk souls. Ethan is exempt. A Stagnated Head used on the surface will wither too. Tuning: STAGNATED_SURFACE_GRACE_TICKS, STAGNATED_SURFACE_DAMAGE.
-- The dropped mace is named "Ethan's Mace".
+- The dropped mace is named "Elijah's Mace".
 
 ## Batch 17f: Ethan behavior
 - Golden apple: at 40% health or less he stops and eats for 32 ticks (standing still), then gets Regeneration II (5 s) and Absorption. At most 2 per fight (refills after 10 s without a target). Tuning: SWEATY_EAT_BELOW, SWEATY_APPLES, SWEATY_EAT_TICKS.
@@ -242,7 +242,7 @@ Everything. See DEVELOPMENT.md.
 - To swap or add a line: drop a mono .ogg in the sounds folder and add it to that event in sounds.json (weight sets how often).
 
 ## Batch 17h: the mace he holds is the enchanted one
-- Ethan's held mace now has Breach II, Unbreaking III and the name "Ethan's Mace" (so it glints in his hand), and the drop is a copy of it at about half durability.
+- Ethan's held mace now has Breach II, Unbreaking III and the name "Elijah's Mace" (so it glints in his hand), and the drop is a copy of it at about half durability.
 
 ## Batch 17i: Breach for real
 - The smash now counts the victim's armor as 30% weaker (Breach II), so it hits armored players harder. Tuning: SWEATY_BREACH.
@@ -297,3 +297,7 @@ Everything. See DEVELOPMENT.md.
 - Phase two: after a slam lands, if his target is within 6 blocks he winds up again right away (no sword phase between), once per heavy phase. The second slam can be a stun slam too. Tuning: SWEATY_CHAIN_MAX, SWEATY_CHAIN_RANGE.
 - Lunge feint (stun slams): with about half a second of fall left, if the target has dodged the red ring but is still within 4 blocks of it, he lunges mid-air: the ring jumps up to 4 blocks toward where the target is standing right then, and he comes down on the new ring. Always in phase two, 40% in phase one; at most once per slam. A whoosh and a gust mark the lunge. If you keep moving or run far, he misses (or clutches). Tuning: SWEATY_LUNGE_*.
 - The lunge reuses his airborne pose; there is no separate arm thrust animation.
+
+## Batch 20a: Elijah (new skin, own spot pose, rename)
+- Ethan is now Elijah (Eli): the dropped mace is "Elijah's Mace". Internal ids (ethan_* sounds and damage types) are unchanged so nothing breaks.
+- He has his own skin (textures/entity/elijah.png), without the Stagnated's body strips, and his own spot pose (1.42 s). Everything else animates as before.

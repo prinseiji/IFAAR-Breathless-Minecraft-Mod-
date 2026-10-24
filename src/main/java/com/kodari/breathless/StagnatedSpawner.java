@@ -20,7 +20,7 @@ public final class StagnatedSpawner {
    }
 
    /** The sweaty one is the only Stagnated that lives on the surface: rarely, he comes for a player walking above ground. */
-   private static void surfaceEthan(ServerPlayer player) {
+   private static void surfaceElijah(ServerPlayer player) {
       if (!Masks.isHazardLevel(player.level()) || player.getRandom().nextInt(Tuning.SWEATY_SURFACE_ODDS) != 0) {
          return;
       }
@@ -69,7 +69,7 @@ public final class StagnatedSpawner {
          return;
       }
       if (!Masks.isUnderground(player)) {
-         surfaceEthan(player);
+         surfaceElijah(player);
          return;
       }
       if (sculkTier < Tuning.STAGNATED_MIN_TIER && exposure < 100.0F) {

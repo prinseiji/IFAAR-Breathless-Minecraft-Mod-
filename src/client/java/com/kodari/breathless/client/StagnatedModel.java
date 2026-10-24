@@ -65,11 +65,12 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
       Bones b = bones(mesh.getRoot());
       b.head().addOrReplaceChild("c1", CubeListBuilder.create().texOffs(0, 0).addBox(-4F, -32F, -4F, 8F, 8F, 8F, new CubeDeformation(0F)), PartPose.offsetAndRotation(0F, 24F, 0F, 0F, 0F, 0F));
       b.head().addOrReplaceChild("c2", CubeListBuilder.create().texOffs(32, 0).addBox(-4F, -4F, -4F, 8F, 8F, 8F, new CubeDeformation(0.5F)), PartPose.offsetAndRotation(0F, -4F, 0F, -0.04363F, 0F, 0F));
-      b.body().addOrReplaceChild("c3", CubeListBuilder.create().texOffs(1, 1).addBox(-0.89685F, -1F, -1.17014F, 3F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(1F, 6F, -2F, 0F, -0.5236F, 0F));
-      b.body().addOrReplaceChild("c4", CubeListBuilder.create().texOffs(1, 1).addBox(-0.89685F, -1F, -1.17014F, 3F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-3F, 6F, -1F, 0F, 0.43633F, 0F));
-      b.body().addOrReplaceChild("c5", CubeListBuilder.create().texOffs(1, 1).addBox(-0.89685F, -1F, -1.17014F, 3F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-2F, 8F, -1F, 0F, 0.7854F, 0F));
-      b.body().addOrReplaceChild("c6", CubeListBuilder.create().texOffs(3, 1).addBox(1.10315F, -1F, -1.17014F, 1F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-3F, 10F, 0F, 0F, 0.7854F, 0F));
-      b.body().addOrReplaceChild("c7", CubeListBuilder.create().texOffs(2, 1).addBox(0.10315F, -1F, -1.17014F, 2F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(3F, 8F, -2F, 0F, 2.61799F, 0F));
+      PartDefinition strips = b.body().addOrReplaceChild("strips", CubeListBuilder.create(), PartPose.ZERO);
+      strips.addOrReplaceChild("c3", CubeListBuilder.create().texOffs(1, 1).addBox(-0.89685F, -1F, -1.17014F, 3F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(1F, 6F, -2F, 0F, -0.5236F, 0F));
+      strips.addOrReplaceChild("c4", CubeListBuilder.create().texOffs(1, 1).addBox(-0.89685F, -1F, -1.17014F, 3F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-3F, 6F, -1F, 0F, 0.43633F, 0F));
+      strips.addOrReplaceChild("c5", CubeListBuilder.create().texOffs(1, 1).addBox(-0.89685F, -1F, -1.17014F, 3F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-2F, 8F, -1F, 0F, 0.7854F, 0F));
+      strips.addOrReplaceChild("c6", CubeListBuilder.create().texOffs(3, 1).addBox(1.10315F, -1F, -1.17014F, 1F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-3F, 10F, 0F, 0F, 0.7854F, 0F));
+      strips.addOrReplaceChild("c7", CubeListBuilder.create().texOffs(2, 1).addBox(0.10315F, -1F, -1.17014F, 2F, 1F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(3F, 8F, -2F, 0F, 2.61799F, 0F));
       b.body().addOrReplaceChild("c8", CubeListBuilder.create().texOffs(16, 16).addBox(-4F, -6F, -2F, 8F, 12F, 4F, new CubeDeformation(0F)), PartPose.offsetAndRotation(0F, 6F, 0F, 0F, 0F, 0F));
       b.body().addOrReplaceChild("c9", CubeListBuilder.create().texOffs(16, 32).addBox(-4F, -24F, -2F, 8F, 12F, 4F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(0F, 24F, 0F, 0F, 0F, 0F));
       b.rightArm().addOrReplaceChild("c10", CubeListBuilder.create().texOffs(40, 16).addBox(-8F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0F)), PartPose.offsetAndRotation(5F, 22F, 0F, 0F, 0F, 0F));
@@ -178,6 +179,9 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
    public void setupAnim(StagnatedRenderState state) {
       super.setupAnim(state);
       this.resetPose();
+      if (this.body.hasChild("strips")) {
+         this.body.getChild("strips").visible = !state.elijah;
+      }
       float time = state.ageInTicks / 20.0F;
       if (state.emerge >= 0.0F) {
          this.apply(StagnatedAnims.SPAWN, state.emerge);
@@ -210,7 +214,7 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
       } else if (state.spotArmed >= 0.0F) {
          this.apply(StagnatedAnims.SPOT_ARMED, state.spotArmed);
       } else if (state.spot >= 0.0F) {
-         this.apply(StagnatedAnims.SPOT, state.spot);
+         this.apply(state.elijah ? StagnatedAnims.ELIJAH_SPOT : StagnatedAnims.SPOT, state.spot);
       } else if (state.aggressive) {
          this.apply(StagnatedAnims.CHASE, time);
       } else if (state.walkAnimationSpeed > 0.04F) {

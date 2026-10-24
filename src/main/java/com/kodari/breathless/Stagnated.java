@@ -55,6 +55,8 @@ import net.minecraft.network.chat.Component;
 public class Stagnated extends Monster {
    /** Phase two: synced to every client (teal outline, no more voicelines, netherite). */
    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ENRAGED = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+   /** Synced so clients draw Elijah's own skin and spot pose. */
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ELIJAH = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    /** Server-side: ticks left of the enrage intro (invulnerable and busy until then). Client-side clock for the animation, -1 when not playing. */
    private int enrageTicks;
    public int enrageClock = -1;
@@ -212,6 +214,11 @@ public class Stagnated extends Monster {
    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(ENRAGED, false);
+      builder.define(ELIJAH, false);
+   }
+
+   public boolean isElijah() {
+      return this.entityData.get(ELIJAH);
    }
 
    public boolean isEnraged() {
@@ -268,7 +275,7 @@ public class Stagnated extends Monster {
          // A soldier with a weapon uses the longer spot pose and draws the weapon in the middle of it.
          boolean drawing = this.role == 1 && this.weapon != 0 && this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
          this.drawPending = drawing;
-         this.spotTicks = drawing ? Tuning.STAGNATED_SPOT_ARMED_TICKS : Tuning.STAGNATED_SPOT_TICKS;
+         this.spotTicks = drawing ? Tuning.STAGNATED_SPOT_ARMED_TICKS : (this.sweaty ? Tuning.SWEATY_SPOT_TICKS : Tuning.STAGNATED_SPOT_TICKS);
          this.level().broadcastEntityEvent(this, drawing ? (byte)75 : (byte)61);
          this.playSound(ModSounds.STAGNATED_SPOT, 1.2F, 1.0F);
          this.say(ModSounds.ETHAN_SPOT);
@@ -445,6 +452,7 @@ public class Stagnated extends Monster {
       this.role = saved == 3 ? 2 : saved;
       this.weapon = input.getIntOr("StagnatedWeapon", 0);
       this.sweaty = input.getBooleanOr("Sweaty", false);
+      this.entityData.set(ELIJAH, this.sweaty);
       this.geared = input.getBooleanOr("SweatyGeared", false);
       this.entityData.set(ENRAGED, input.getBooleanOr("SweatyEnraged", false));
       this.refreshStats();
@@ -474,7 +482,7 @@ public class Stagnated extends Monster {
          if (this.placeClock >= 0) {
             this.placeClock++;
          }
-         if (this.spotClock >= 0 && ++this.spotClock > Tuning.STAGNATED_SPOT_TICKS) {
+         if (this.spotClock >= 0 && ++this.spotClock > (this.isElijah() ? Tuning.SWEATY_SPOT_TICKS : Tuning.STAGNATED_SPOT_TICKS)) {
             this.spotClock = -1;
          }
          if (this.shieldClock >= 0 && ++this.shieldClock > Tuning.STAGNATED_SHIELD_TICKS) {
@@ -516,7 +524,7 @@ public class Stagnated extends Monster {
          if (this.sweaty) {
             this.tickSweaty((ServerLevel)this.level());
          } else if (Masks.isHazardLevel(this.level()) && this.getY() >= Tuning.HAZARD_Y) {
-            // Every Stagnated except Ethan withers away once it is out of the spore layer.
+            // Every Stagnated except Elijah withers away once it is out of the spore layer.
             if (++this.surfaceTicks > Tuning.STAGNATED_SURFACE_GRACE_TICKS && this.tickCount % 20 == 0) {
                ((ServerLevel)this.level()).sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 6, 0.3, 0.6, 0.3, 0.02);
                this.hurtServer((ServerLevel)this.level(), this.damageSources().magic(), Tuning.STAGNATED_SURFACE_DAMAGE);
@@ -594,6 +602,7 @@ public class Stagnated extends Monster {
       this.role = 1;
       this.weapon = 0;
       this.sweaty = true;
+      this.entityData.set(ELIJAH, true);
       this.geared = false;
    }
 
@@ -666,13 +675,13 @@ public class Stagnated extends Monster {
       return sword;
    }
 
-   /** The mace he carries and drops: Breach II, Unbreaking III, named Ethan's Mace. */
+   /** The mace he carries and drops: Breach II, Unbreaking III, named Elijah's Mace. */
    private ItemStack ethansMace() {
       ItemStack mace = new ItemStack(Items.MACE);
       var enchants = this.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
       mace.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BREACH), 2);
       mace.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 3);
-      mace.set(net.minecraft.core.component.DataComponents.ITEM_NAME, Component.literal("Ethan's Mace"));
+      mace.set(net.minecraft.core.component.DataComponents.ITEM_NAME, Component.literal("Elijah's Mace"));
       return mace;
    }
 
@@ -1784,7 +1793,7 @@ public class Stagnated extends Monster {
             this.setGuard(false);
             this.guardDown = Tuning.SWEATY_GUARD_DROP_TICKS;
          }
-         // Ethan's own hit: his own death message, and no spore exposure (he is not infected).
+         // Elijah's own hit: his own death message, and no spore exposure (he is not infected).
          float swing = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
          boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), swing);
          if (hit) {

@@ -223,4 +223,12 @@ public final class StagnatedAnims {
          new Track("right_leg", 1, new float[]{0F, 0.16667F, 0.375F, 0.45833F, 0.91667F, 3.95833F, 4.20833F, 4.45833F, 4.875F}, new float[]{0F, 0F, 0F, 0F, 0F, -3F, 0F, 0F, 0F, 0F, 3F, 5F, 0F, 2F, 0F, 0F, 2F, 3F, 0F, 0F, 3F, 0F, -1F, 0F, 0F, -1F, 4F}),
          new Track("left_leg", 0, new float[]{0F, 0.16667F, 0.375F}, new float[]{0F, 0F, 0F, -0.34907F, 0F, 0F, -0.17453F, 0F, 0F}),
          new Track("left_leg", 1, new float[]{0F, 0.16667F, 0.375F, 4.45833F, 4.875F}, new float[]{0F, 0F, 0F, 0F, 0F, -3F, 0F, 0F, 0F, 0F, -1F, -5F, 0F, -1F, 0F}));
+
+public static final Clip ELIJAH_SPOT = new Clip(1.41667F, false,
+         new Track("head", 0, new float[]{0F, 0.79167F, 0.95833F}, new float[]{-0.14326F, 0.01094F, -0.26754F, -1.01592F, 0.01094F, -0.26754F, -0.97165F, -0.0182F, -0.04685F}),
+         new Track("right_arm", 0, new float[]{0.5F, 1.25F}, new float[]{0F, 0F, 0F, 0F, 0F, 0.08046F}),
+         new Track("left_arm", 0, new float[]{0.70833F, 0.91667F, 1F, 1.20833F}, new float[]{0F, 0F, 0F, 0F, 0F, -1.5708F, 0F, 0F, -0.17453F, 0F, 0F, -1.309F}),
+         new Track("right_leg", 0, new float[]{0F}, new float[]{-0.08727F, 0F, 0F}),
+         new Track("left_leg", 0, new float[]{0F}, new float[]{-0.1309F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F, 0.70833F}, new float[]{0F, 0F, 0F, 0F, 0F, -1F}));
 }
