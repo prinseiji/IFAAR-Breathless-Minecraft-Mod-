@@ -119,6 +119,17 @@ public class Stagnated extends Monster {
    private int surfaceTicks;
    /** The wind charge hop is a retreat before eating (away from the target, no smash). */
    private boolean fleeing;
+   /** Sword fight: hits since the last heavy swing, ticks left of the heavy swing's wind-up, crit hop cooldown, strafe direction/ticks. */
+   private int combo;
+   private int comboWind;
+   private int critCool;
+   private int strafeDir = 1;
+   private int strafeTicks;
+   /** Axe against a long-held shield: ticks the target has kept blocking, whether he is carrying the axe for it, idle ticks with the axe out, cooldown. */
+   private int blockTicks;
+   private boolean axeSwap;
+   private int axeIdle;
+   private int axeCool;
    /** Shield: ticks it must stay up before he lowers it for the next swing. */
    private int guardHold;
    /** Shield: engaged once he has been hit twice quickly, then held up (lowered only for each swing) until a player's axe disables it. */
@@ -459,7 +470,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0;
    }
 
    @Override
@@ -824,6 +835,7 @@ public class Stagnated extends Monster {
       if (this.guardUp && this.guardHold > 0) {
          this.guardHold--;
       }
+      this.tickMelee(level, target);
       boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving
          && this.windTicks <= 0 && this.eatTicks <= 0 && target != null && this.onGround();
       if (this.engaged && swordPhase) {
@@ -886,7 +898,7 @@ public class Stagnated extends Monster {
          if (Tuning.STAGNATED_UNARM_TICKS - this.swapTicks == Tuning.STAGNATED_UNARM_AT) {
             // Going for the heavy hit: sometimes it is a stun slam (axe on the way down), more often against a raised shield.
             this.stunPlan = this.swapToMace && this.random.nextFloat() < (this.isEnraged() ? Tuning.SWEATY_ENRAGED_STUN_CHANCE : (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE));
-            this.setItemSlot(EquipmentSlot.MAINHAND, this.swapToMace ? (this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace()) : this.ethansSword());
+            this.setItemSlot(EquipmentSlot.MAINHAND, this.swapToMace ? (this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace()) : (this.axeSwap ? new ItemStack(Items.DIAMOND_AXE) : this.ethansSword()));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.0F);
             this.refreshStats();
@@ -894,7 +906,7 @@ public class Stagnated extends Monster {
             this.swordHits = 0;
             this.maceStuck = 0;
          }
-      } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0) {
+      } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0 && !this.axeSwap) {
          if (!mace) {
             // Sword phase: fight for a while, then go for the mace.
             if (++this.swordTicks >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_TICKS : Tuning.SWEATY_SWORD_TICKS) || this.swordHits >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_HITS : Tuning.SWEATY_SWORD_HITS)) {
@@ -1067,7 +1079,7 @@ public class Stagnated extends Monster {
    /** While his shield is up it has to stay up for a while before he lowers it to swing. */
    @Override
    public boolean isWithinMeleeAttackRange(LivingEntity target) {
-      return !(this.sweaty && this.guardUp && this.guardHold > 0) && super.isWithinMeleeAttackRange(target);
+      return !(this.sweaty && ((this.guardUp && this.guardHold > 0) || this.comboWind > 0)) && super.isWithinMeleeAttackRange(target);
    }
 
    private void setGuard(boolean up) {
@@ -1736,30 +1748,25 @@ public class Stagnated extends Monster {
          return false;
       }
       if (this.sweaty) {
+         // The axe he swaps to against a shield that has been held up too long: the same clap as the other Stagnated's axe, then back to the sword.
+         if (this.axeSwap && this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE) && this.swapTicks <= 0 && !this.diving) {
+            if (target instanceof Player player && player.isBlocking() && !player.getCooldowns().isOnCooldown(player.getUseItem())) {
+               this.shieldTicks = Tuning.STAGNATED_SHIELD_TICKS;
+               this.getNavigation().stop();
+               this.level().broadcastEntityEvent(this, (byte)74);
+            }
+            return false;
+         }
          // The mace is only used for the smash; on the ground and in the swaps it never melees.
-         if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) || this.swapTicks > 0 || this.diving) {
+         if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) || this.swapTicks > 0 || this.diving || this.comboWind > 0) {
             return false;
          }
          if (this.guardUp) {
             this.setGuard(false);
             this.guardDown = Tuning.SWEATY_GUARD_DROP_TICKS;
          }
-         // Elijah's own hit: his own death message, and no spore exposure (he is not infected).
-         float swing = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
-         boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), swing);
-         if (hit) {
-            this.swordHits++;
-            this.playSound(ModSounds.STAGNATED_HIT, 1.0F, 1.0F);
-            if (target instanceof LivingEntity victim) {
-               double kx = victim.getX() - this.getX();
-               double kz = victim.getZ() - this.getZ();
-               double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
-               victim.setDeltaMovement(victim.getDeltaMovement().add(kx / kl * 0.45, 0.25, kz / kl * 0.45));
-               victim.hurtMarked = true;
-               victim.igniteForSeconds(Tuning.SWEATY_FIRE_SECONDS);
-            }
-         }
-         return hit;
+         this.combo++;
+         return this.swordHit(level, target, false);
       }
       // With the axe in hand, a raised shield gets the clap: wind up, then break it (see shieldStrike).
       if (this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.STONE_AXE) && target instanceof Player player && player.isBlocking()
@@ -1770,6 +1777,121 @@ public class Stagnated extends Monster {
          return false;
       }
       return this.strike(level, target);
+   }
+
+   /** One sword hit: his own death message, no spore exposure, Fire Aspect. A hit while falling is a crit; the heavy swing is the third of the combo. */
+   private boolean swordHit(ServerLevel level, Entity target, boolean heavy) {
+      float damage = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+      boolean crit = !heavy && !this.onGround() && this.fallDistance > 0.0F && this.getDeltaMovement().y < 0.0;
+      if (heavy) {
+         damage *= Tuning.SWEATY_COMBO_DAMAGE;
+      } else if (crit) {
+         damage *= Tuning.SWEATY_CRIT_MULT;
+      }
+      boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), damage);
+      if (hit) {
+         this.swordHits++;
+         this.playSound(ModSounds.STAGNATED_HIT, 1.0F, 1.0F);
+         if (crit) {
+            this.playSound(SoundEvents.PLAYER_ATTACK_CRIT, 1.0F, 1.0F);
+            level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 14, 0.3, 0.3, 0.3, 0.2);
+         }
+         if (target instanceof LivingEntity victim) {
+            double kx = victim.getX() - this.getX();
+            double kz = victim.getZ() - this.getZ();
+            double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
+            double kb = heavy ? Tuning.SWEATY_COMBO_KNOCKBACK : 0.45;
+            victim.setDeltaMovement(victim.getDeltaMovement().add(kx / kl * kb, heavy ? 0.4 : 0.25, kz / kl * kb));
+            victim.hurtMarked = true;
+            victim.igniteForSeconds(Tuning.SWEATY_FIRE_SECONDS);
+         }
+      }
+      return hit;
+   }
+
+   /** Sword-fight behavior each tick: the heavy third swing and its tell, crit hops, strafing behind the shield, the axe against a held-up shield. */
+   private void tickMelee(ServerLevel level, LivingEntity target) {
+      boolean sword = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && this.eatTicks <= 0;
+      if (this.critCool > 0) {
+         this.critCool--;
+      }
+      if (this.axeCool > 0) {
+         this.axeCool--;
+      }
+      // The heavy swing: the tell is a red outline, a ringing hit sound and sparks at his sword, then the swing lands (a bigger knockback).
+      if (this.comboWind > 0) {
+         this.faceTarget();
+         if (this.comboWind % 2 == 0) {
+            level.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY() + 1.6, this.getZ(), 4, 0.4, 0.3, 0.4, 0.1);
+         }
+         if (--this.comboWind == 0) {
+            level.broadcastEntityEvent(this, (byte)80);
+            this.combo = 0;
+            if (target != null && target.isAlive() && this.distanceTo(target) <= Tuning.SWEATY_COMBO_REACH) {
+               this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+               this.swordHit(level, target, true);
+               this.playSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.2F, 0.8F);
+            }
+            this.guardDown = Tuning.SWEATY_GUARD_DROP_TICKS;
+         }
+         return;
+      }
+      if (sword && target != null && this.combo >= Tuning.SWEATY_COMBO_HITS && this.distanceTo(target) < 3.0F && (!this.guardUp || this.guardHold <= 0)) {
+         if (this.guardUp) {
+            this.setGuard(false);
+         }
+         this.guardDown = Tuning.SWEATY_COMBO_WIND + Tuning.SWEATY_GUARD_DROP_TICKS;
+         this.comboWind = Tuning.SWEATY_COMBO_WIND;
+         this.getNavigation().stop();
+         this.playSound(SoundEvents.NETHERITE_BLOCK_HIT, 1.6F, 0.6F);
+         level.broadcastEntityEvent(this, (byte)81);
+         return;
+      }
+      // Crit hop: a jump toward the target, so the swing on the way down is a crit.
+      if (sword && !this.guardUp && target != null && this.onGround() && this.critCool <= 0 && this.distanceTo(target) > 2.0F && this.distanceTo(target) < 4.0F
+         && this.random.nextFloat() < Tuning.SWEATY_CRIT_CHANCE) {
+         double dx = target.getX() - this.getX();
+         double dz = target.getZ() - this.getZ();
+         double dl = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+         this.setDeltaMovement(dx / dl * 0.2, 0.46, dz / dl * 0.2);
+         this.critCool = Tuning.SWEATY_CRIT_COOLDOWN;
+      }
+      // Strafing: circling the target while the shield is up.
+      if (this.guardUp && target != null && this.onGround() && this.distanceTo(target) < 6.0F) {
+         if (--this.strafeTicks <= 0) {
+            this.strafeDir = -this.strafeDir;
+            this.strafeTicks = 30 + this.random.nextInt(30);
+         }
+         double dx = target.getX() - this.getX();
+         double dz = target.getZ() - this.getZ();
+         double dl = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+         Vec3 m = this.getDeltaMovement();
+         this.setDeltaMovement(m.x - dz / dl * this.strafeDir * Tuning.SWEATY_STRAFE, m.y, m.z + dx / dl * this.strafeDir * Tuning.SWEATY_STRAFE);
+      }
+      // A player who keeps the shield up for a few seconds gets the axe.
+      if (sword && this.axeCool <= 0 && target instanceof Player p && this.distanceTo(p) < 5.0F) {
+         if (p.isBlocking() && !p.getCooldowns().isOnCooldown(p.getUseItem())) {
+            if (++this.blockTicks >= Tuning.SWEATY_AXE_AFTER) {
+               this.blockTicks = 0;
+               this.axeSwap = true;
+               this.axeIdle = 0;
+               this.setGuard(false);
+               this.startSwap(false);
+            }
+         } else if (this.blockTicks > 0) {
+            this.blockTicks--;
+         }
+      }
+      // With the axe out: back to the sword once the shield is down or the player stopped blocking.
+      if (this.axeSwap && this.swapTicks <= 0 && this.shieldTicks <= 0 && this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE)) {
+         if (target instanceof Player p && p.isBlocking() && !p.getCooldowns().isOnCooldown(p.getUseItem()) && this.distanceTo(p) < 6.0F) {
+            this.axeIdle = 0;
+         } else if (++this.axeIdle >= 24) {
+            this.axeSwap = false;
+            this.axeCool = Tuning.SWEATY_AXE_COOLDOWN;
+            this.startSwap(false);
+         }
+      }
    }
 
    /** The clap lands: the hit goes in, and a shield that is still up is knocked down for a few seconds. */
@@ -1783,6 +1905,7 @@ public class Stagnated extends Monster {
          player.getCooldowns().addCooldown(shield, Tuning.STAGNATED_SHIELD_DISABLE_TICKS);
          player.stopUsingItem();
          level.broadcastEntityEvent(player, (byte)30);
+         this.playSound(SoundEvents.SHIELD_BREAK.value(), 1.0F, 1.0F);
       }
    }
 

@@ -273,7 +273,7 @@ public final class Tuning {
    public static final float SWEATY_SMASH_PER_BLOCK = 1.6F;
    public static final float SWEATY_SMASH_MAX = 12.0F;
    /** The cycle: fights with the diamond sword for this many ticks or hits (whichever first), then swaps to the mace for a launch + smash, then swaps back. */
-   public static final int SWEATY_SWORD_TICKS = 120;
+   public static final int SWEATY_SWORD_TICKS = 220;
    public static final int SWEATY_SWORD_HITS = 4;
    /** At the end of the fall he smashes only if the target is within this many blocks (horizontally), otherwise he does the water clutch. */
    public static final double SWEATY_SMASH_REACH = 3.5;
@@ -320,7 +320,7 @@ public final class Tuning {
    public static final int SWEATY_ENRAGE_EAT_DONE = 45;
    public static final int SWEATY_ENRAGE_ARMOR_AT = 70;
    /** Phase two attack rhythm: shorter sword phases and more stun slams. */
-   public static final int SWEATY_ENRAGED_SWORD_TICKS = 60;
+   public static final int SWEATY_ENRAGED_SWORD_TICKS = 110;
    public static final int SWEATY_ENRAGED_SWORD_HITS = 2;
    public static final float SWEATY_ENRAGED_STUN_CHANCE = 0.6F;
    /** Gear: Protection level on his armor (diamond and netherite), seconds a player burns after his Fire Aspect sword hit. */
@@ -331,4 +331,19 @@ public final class Tuning {
    public static final int SWEATY_SPEED = 0;
    /** Ticks his raised shield stays up before he lowers it to swing again. */
    public static final int SWEATY_GUARD_HOLD_TICKS = 50;
+   /** Sword fight: hits before the heavy swing, its wind-up ticks, damage multiplier, knockback, reach. */
+   public static final int SWEATY_COMBO_HITS = 2;
+   public static final int SWEATY_COMBO_WIND = 14;
+   public static final float SWEATY_COMBO_DAMAGE = 1.4F;
+   public static final double SWEATY_COMBO_KNOCKBACK = 1.1;
+   public static final double SWEATY_COMBO_REACH = 3.6;
+   /** Crit hop: chance per tick when in range, cooldown, damage multiplier. */
+   public static final float SWEATY_CRIT_CHANCE = 0.03F;
+   public static final int SWEATY_CRIT_COOLDOWN = 60;
+   public static final float SWEATY_CRIT_MULT = 1.5F;
+   /** Strafe speed while shielded. */
+   public static final double SWEATY_STRAFE = 0.04;
+   /** Axe: ticks a target must keep blocking before he swaps to it, and the cooldown after. */
+   public static final int SWEATY_AXE_AFTER = 60;
+   public static final int SWEATY_AXE_COOLDOWN = 300;
 }

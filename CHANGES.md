@@ -311,3 +311,12 @@ Everything. See DEVELOPMENT.md.
 ## Batch 20b2: stun warning sound, Breach III
 - The repeating pling is replaced by your flash sound (stun_warning), played once as he winds up a stun slam.
 - His mace is now Breach III (the drop too). His pseudo-breach (armor reduction on his slam) went from 30% to 38%, between II and III. Tuning: SWEATY_BREACH.
+
+## Batch 20c: Elijah's melee
+- Three-swing combo: every third sword swing is a heavy one. He stops, his outline flashes red, sparks fly off his sword and a heavy clang plays (14 ticks), then the swing lands for 1.4x damage and a big knockback. Back away or block it.
+- Sword crits: now and then he hops toward you and swings on the way down for a crit (1.5x damage, crit sparks and sound).
+- Strafing: with his shield up he circles you, switching direction every 1.5-3 seconds.
+- Axe vs shields: if you keep your shield up for about 3 seconds close to him, he swaps to a diamond axe, claps your shield down (it goes on cooldown) and swaps back to the sword. 15 s cooldown before he does it again.
+- Breaking your shield plays the shield break sound.
+- The sword phase is longer (220 ticks, 110 in phase two) because the shield hold makes his swings slower.
+- Tuning: SWEATY_COMBO_*, SWEATY_CRIT_*, SWEATY_STRAFE, SWEATY_AXE_*.
