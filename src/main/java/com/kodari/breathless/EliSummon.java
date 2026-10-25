@@ -133,6 +133,34 @@ public final class EliSummon {
       }
    }
 
+   /** Natural ground only: the sculk never eats a player's builds. */
+   public static boolean natural(BlockState state) {
+      return state.is(BlockTags.BASE_STONE_OVERWORLD) || state.is(BlockTags.DIRT) || state.is(BlockTags.SAND) || state.is(Blocks.GRAVEL) || state.is(Blocks.CLAY)
+         || state.is(Blocks.TUFF) || state.is(Blocks.DEEPSLATE) || state.is(Blocks.MUD) || state.is(Blocks.GRASS_BLOCK);
+   }
+
+   /** A splotch of this many sculk blocks on the natural ground around a spot, nearest first. */
+   public static void splotch(ServerLevel level, BlockPos center, int count) {
+      java.util.List<BlockPos> spots = new ArrayList<>();
+      int r = 5;
+      for (int dx = -r; dx <= r; dx++) {
+         for (int dz = -r; dz <= r; dz++) {
+            for (int dy = 2; dy >= -3; dy--) {
+               BlockPos p = center.offset(dx, dy, dz);
+               BlockState here = level.getBlockState(p);
+               if ((here.isAir() || here.canBeReplaced()) && natural(level.getBlockState(p.below()))) {
+                  spots.add(p.below());
+                  break;
+               }
+            }
+         }
+      }
+      spots.sort(java.util.Comparator.comparingDouble(p -> p.distSqr(center) + level.getRandom().nextDouble() * 3.0));
+      for (int i = 0; i < Math.min(count, spots.size()); i++) {
+         level.setBlock(spots.get(i), Blocks.SCULK.defaultBlockState(), 3);
+      }
+   }
+
    private static boolean inFire(ItemEntity item) {
       ServerLevel level = (ServerLevel)item.level();
       BlockPos pos = item.blockPosition();
@@ -180,8 +208,7 @@ public final class EliSummon {
                BlockPos p = pos.offset(dx, dy, dz);
                BlockState here = level.getBlockState(p);
                BlockState below = level.getBlockState(p.below());
-               if ((here.isAir() || here.canBeReplaced()) && !below.isAir() && !below.canBeReplaced() && !below.hasBlockEntity()
-                  && below.getDestroySpeed(level, p.below()) >= 0.0F && below.getDestroySpeed(level, p.below()) < 20.0F && !below.is(Blocks.SCULK)) {
+               if ((here.isAir() || here.canBeReplaced()) && natural(below)) {
                   level.setBlock(p.below(), Blocks.SCULK.defaultBlockState(), 3);
                   if (dx == 0 && dz == 0) {
                      surface = p.getY();

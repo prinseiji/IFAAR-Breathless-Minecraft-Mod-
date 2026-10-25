@@ -77,6 +77,7 @@ public final class MobRules {
          }
          return true;
       });
+      ServerLivingEntityEvents.AFTER_DEATH.register(MobRules::sporeDeath);
       ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
          if (source.getEntity() == null || !(entity instanceof Mob mob) || !Masks.typeId(mob).equals("minecraft:zombie")) {
             return;
@@ -98,6 +99,41 @@ public final class MobRules {
       });
    }
 
+   // ---- everything else breathes the spores too ----
+
+   /** Every other mob in the overworld: hurt by the spores below Y=0 (skeleton kinds, the Stagnated, the Warden and bosses are immune). */
+   private static final java.util.Set<Mob> BREATHERS = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+   /** Mobs the spores hurt in the last two seconds (a death then leaves a sculk splotch). */
+   private static final java.util.Map<Mob, Integer> SPORE_HURT = new java.util.WeakHashMap<>();
+
+   private static boolean immune(String type, Entity entity) {
+      return entity instanceof Stagnated || type.equals("minecraft:skeleton") || type.equals("minecraft:stray") || type.equals("minecraft:wither_skeleton")
+         || type.equals("minecraft:bogged") || type.equals("minecraft:skeleton_horse") || type.equals("minecraft:warden") || type.equals("minecraft:ender_dragon")
+         || type.equals("minecraft:wither") || type.equals("minecraft:creaking");
+   }
+
+   /** One tick-second of spores for a mob without a mask: damage scaled to its health so big mobs do not shrug it off. */
+   private static void sporeDamage(MinecraftServer server, Mob mob, ServerLevel level) {
+      float damage = Math.max(Tuning.ZOMBIE_SPORE_DAMAGE, mob.getMaxHealth() / 20.0F);
+      SPORE_HURT.put(mob, server.getTickCount());
+      mob.hurtServer(level, level.damageSources().drown(), damage);
+   }
+
+   /** A mob that died of the spores becomes sculk: a splotch with as many blocks as it was worth in XP, and a burst of sculk particles. */
+   private static void sporeDeath(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.damagesource.DamageSource source) {
+      if (!(entity instanceof Mob mob) || !(mob.level() instanceof ServerLevel level) || !source.is(net.minecraft.world.damagesource.DamageTypes.DROWN)) {
+         return;
+      }
+      Integer when = SPORE_HURT.remove(mob);
+      if (when == null || level.getServer().getTickCount() - when > 40) {
+         return;
+      }
+      int xp = Math.max(1, Math.min(40, mob.getExperienceReward(level, null)));
+      level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, net.minecraft.world.level.block.Blocks.SCULK.defaultBlockState()),
+         mob.getX(), mob.getY() + mob.getBbHeight() * 0.5, mob.getZ(), 30 + xp * 3, mob.getBbWidth() * 0.5, mob.getBbHeight() * 0.4, mob.getBbWidth() * 0.5, 0.1);
+      EliSummon.splotch(level, mob.blockPosition(), xp);
+   }
+
    // ---- loading ----
 
    private static void onLoad(Entity entity, ServerLevel level) {
@@ -105,6 +141,9 @@ public final class MobRules {
          return;
       }
       String type = Masks.typeId(entity);
+      if (entity instanceof Mob other && !type.equals("minecraft:zombie") && !immune(type, entity)) {
+         BREATHERS.add(other);
+      }
       if (type.equals("minecraft:zombie") && entity instanceof Mob zombie) {
          ZOMBIES.add(zombie);
          if (!entity.isLoadedFromDisk() && entity.getY() < Tuning.HAZARD_Y && zombie.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
@@ -190,7 +229,16 @@ public final class MobRules {
             continue;
          }
          if (zombie.isAlive() && Masks.isUnderground(zombie) && !Masks.hasWorkingMask(zombie)) {
-            zombie.hurtServer(level, level.damageSources().drown(), Tuning.ZOMBIE_SPORE_DAMAGE);
+            sporeDamage(server, zombie, level);
+         }
+      }
+      // Every other mob without a mask.
+      for (Mob mob : new java.util.ArrayList<>(BREATHERS)) {
+         if (mob.isRemoved() || !mob.isAlive() || !(mob.level() instanceof ServerLevel level)) {
+            continue;
+         }
+         if (Masks.isUnderground(mob) && !Masks.hasWorkingMask(mob)) {
+            sporeDamage(server, mob, level);
          }
       }
 

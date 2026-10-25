@@ -374,3 +374,9 @@ Everything. See DEVELOPMENT.md.
 ## Batch 22a: golden apples cleanse gradually, healing without a mask above Y=0
 - Golden apple: cleanses 65% of the meter over 14 seconds. Enchanted golden apple: the whole meter over 20 seconds. The cleansing only runs while you are safe (a working mask, or above Y=0); otherwise it waits (for up to 30 more seconds). Tuning: GAP_*, EGAP_*.
 - Tonics, Instant Health and the apples now work without a mask when you are above Y=0 (below it, a working mask is still needed).
+
+## Batch 22b: every mob breathes the spores, sculk deaths, natural blocks only
+- Below Y=0 every mob without a working mask is hurt by the spores once a second, like zombies. Damage scales with max health (max health / 20, at least 1) so big mobs die about as fast. Pets, villagers and golems included.
+- Immune: all skeleton kinds (skeleton, stray, wither skeleton, bogged, skeleton horse), the Stagnated and Elijah, the Warden, the Creaking, the Ender Dragon and the Wither.
+- A mob that dies of the spores leaves a sculk splotch with as many blocks as its XP (at least 1, at most 40) and bursts into particles of the sculk block itself.
+- Both this splotch and the Rotting Heart splotch now only replace natural ground (stone types, deepslate, tuff, dirt, grass, mud, sand, gravel, clay), never placed blocks.
