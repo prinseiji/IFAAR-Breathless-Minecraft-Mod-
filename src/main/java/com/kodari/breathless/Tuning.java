@@ -295,7 +295,7 @@ public final class Tuning {
    /** Breach II on his mace: the smash counts the victim's armor as this much weaker (0.3 = 30%). */
    public static final double SWEATY_BREACH = 0.38;
    /** Boss balance: Elijah's own max health (the other Stagnated stay at STAGNATED_HEALTH). */
-   public static final double SWEATY_HEALTH = 80.0;
+   public static final double SWEATY_HEALTH = 100.0;
    /** Stun slam: launches higher (more time to get out of the way) and may hit harder (cap 16 = 8 hearts). */
    public static final double SWEATY_STUN_LAUNCH_UP = 1.5;
    public static final float SWEATY_STUN_MAX = 16.0F;
@@ -316,7 +316,7 @@ public final class Tuning {
    public static final double SWEATY_STUN_RADIUS = 3.0;
    /** Phase two (the "enrage", after the first lethal hit): intro length in ticks (the 5.5 s animation), the health he comes back with (fraction), when the apple is finished and when the netherite goes on. */
    public static final int SWEATY_ENRAGE_TICKS = 110;
-   public static final float SWEATY_ENRAGE_HEALTH = 0.5F;
+   public static final float SWEATY_ENRAGE_HEALTH = 0.7F;
    public static final int SWEATY_ENRAGE_EAT_DONE = 45;
    public static final int SWEATY_ENRAGE_ARMOR_AT = 70;
    /** Phase two attack rhythm: shorter sword phases and more stun slams. */
@@ -364,4 +364,10 @@ public final class Tuning {
    public static final float GAP_SECONDS = 14.0F;
    public static final float EGAP_PURGE = 100.0F;
    public static final float EGAP_SECONDS = 20.0F;
+   /** Parry rage: melee parries (his sword hits) and mace parries that enrage him, quiet ticks that reset the count, how long the rage lasts, and its axe damage multiplier. */
+   public static final int RAGE_MELEE_PARRIES = 4;
+   public static final int RAGE_MACE_PARRIES = 2;
+   public static final int RAGE_RESET_TICKS = 200;
+   public static final int RAGE_TICKS = 300;
+   public static final float RAGE_DAMAGE = 2.6F;
 }

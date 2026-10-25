@@ -94,8 +94,17 @@ public final class EliSummon {
       });
       // Parry: blocking with Eli's Sword right as the hit lands (first PARRY_TICKS of the block) cancels it, knocks the attacker back, flashes white and freezes time for half a second.
       ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+         // Parries and perfect shield blocks count toward his rage (never against the stun slam).
+         if (entity instanceof net.minecraft.server.level.ServerPlayer blocker && source.getEntity() instanceof Stagnated eli && eli.isSweaty() && !eli.isStunSmash() && blocker.isBlocking()) {
+            int held = blocker.getTicksUsingItem();
+            boolean swordBlock = blocker.getUseItem().is(ModItems.ELI_SWORD) && held <= Tuning.PARRY_TICKS;
+            boolean shieldBlock = blocker.getUseItem().is(net.minecraft.world.item.Items.SHIELD) && held >= 5 && held <= 10;
+            if (swordBlock || shieldBlock) {
+               eli.onParried(eli.getMainHandItem().is(net.minecraft.world.item.Items.MACE));
+            }
+         }
          if (entity instanceof net.minecraft.server.level.ServerPlayer player && player.isBlocking() && player.getUseItem().is(ModItems.ELI_SWORD)
-            && player.getTicksUsingItem() <= Tuning.PARRY_TICKS && source.getEntity() != null && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
+            && player.getTicksUsingItem() <= Tuning.PARRY_TICKS && source.getEntity() != null && !(source.getEntity() instanceof Stagnated st && st.isStunSmash()) && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
             && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_SHIELD)) {
             parry(player, source.getEntity());
             return false;

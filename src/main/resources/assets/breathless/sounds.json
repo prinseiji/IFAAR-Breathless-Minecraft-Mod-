@@ -670,5 +670,14 @@
         "attenuation_distance": 64
       }
     ]
+  },
+  "frustrated": {
+    "sounds": [
+      {
+        "name": "breathless:frustrated",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
   }
 }

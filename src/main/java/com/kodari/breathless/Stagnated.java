@@ -844,7 +844,7 @@ public class Stagnated extends Monster {
       this.tickMelee(level, target);
       boolean swordPhase = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving
          && this.windTicks <= 0 && this.eatTicks <= 0 && target != null && this.onGround();
-      if (this.engaged && swordPhase) {
+      if (this.engaged && swordPhase && this.rageTicks <= 0) {
          if (this.guardDown > 0) {
             this.guardDown--;
          }
@@ -912,7 +912,7 @@ public class Stagnated extends Monster {
             this.swordHits = 0;
             this.maceStuck = 0;
          }
-      } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0 && !this.axeSwap) {
+      } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0 && !this.axeSwap && this.rageTicks <= 0) {
          if (!mace) {
             // Sword phase: fight for a while, then go for the mace.
             if (++this.swordTicks >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_TICKS : Tuning.SWEATY_SWORD_TICKS) || this.swordHits >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_HITS : Tuning.SWEATY_SWORD_HITS)) {
@@ -1251,7 +1251,9 @@ public class Stagnated extends Monster {
          // A shield is the only thing that counts as a block: resistance, absorption and armor still mean the smash landed.
          boolean shielded = e instanceof Player guard && guard.isBlocking();
          float before = e.getHealth() + e.getAbsorptionAmount();
+         this.inStunSmash = stun;
          boolean hurt = e.hurtServer(level, ModDamage.ethanMace(level, this), amount);
+         this.inStunSmash = false;
          boolean lostHealth = e.getHealth() + e.getAbsorptionAmount() < before - 0.01F || !e.isAlive();
          if (lostHealth || (hurt && !shielded)) {
             connected = true;
@@ -1283,7 +1285,11 @@ public class Stagnated extends Monster {
       }
       this.dropHalf(level, this.ethansMace(), 1.0F);
       if (this.isEnraged()) {
-         this.spawnAtLocation(level, new ItemStack(ModItems.ELI_SWORD));
+         {
+            ItemStack drop = new ItemStack(ModItems.ELI_SWORD);
+            drop.set(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+            this.spawnAtLocation(level, drop);
+         }
       }
       if (this.isEnraged()) {
          // Only the netherite set drops; the diamond one is swapped out in the enrage.
@@ -1814,7 +1820,7 @@ public class Stagnated extends Monster {
       float damage = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
       boolean crit = !heavy && !this.onGround() && this.fallDistance > 0.0F && this.getDeltaMovement().y < 0.0;
       if (heavy) {
-         damage *= Tuning.SWEATY_COMBO_DAMAGE;
+         damage *= this.rageTicks > 0 ? Tuning.RAGE_DAMAGE : Tuning.SWEATY_COMBO_DAMAGE;
       } else if (crit) {
          damage *= Tuning.SWEATY_CRIT_MULT;
       }
@@ -1849,6 +1855,55 @@ public class Stagnated extends Monster {
       }
    }
 
+   /** Parry rage: parries counted since the last 10 quiet seconds, ticks of rage left. */
+   private int parryMelee;
+   private int parryMace;
+   private int parryClock;
+   private int rageTicks;
+   private boolean inStunSmash;
+
+   public boolean isStunSmash() {
+      return this.inStunSmash;
+   }
+
+   /** A player parried (or perfectly blocked) one of his hits. Enough of them and he flies into a rage for a while. */
+   public void onParried(boolean mace) {
+      if (this.rageTicks > 0 || !(this.level() instanceof ServerLevel level)) {
+         return;
+      }
+      this.parryClock = Tuning.RAGE_RESET_TICKS;
+      if (mace) {
+         this.parryMace++;
+      } else {
+         this.parryMelee++;
+      }
+      if (this.parryMelee >= Tuning.RAGE_MELEE_PARRIES || this.parryMace >= Tuning.RAGE_MACE_PARRIES) {
+         this.parryMelee = 0;
+         this.parryMace = 0;
+         this.rageTicks = Tuning.RAGE_TICKS;
+         this.setGuard(false);
+         this.engaged = false;
+         this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, Tuning.RAGE_TICKS, 1));
+         level.broadcastEntityEvent(this, (byte)81);
+         if (this.isEnraged()) {
+            this.slothCooldown = 0;
+            this.sloth(new int[] {6});
+         } else {
+            this.playSound(ModSounds.FRUSTRATED, 2.5F, 1.0F);
+         }
+      }
+   }
+
+   private void endRage(ServerLevel level) {
+      this.rageTicks = 0;
+      this.combo = 0;
+      if (this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE) && !this.axeSwap) {
+         this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansSword());
+         this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+      }
+      level.broadcastEntityEvent(this, (byte)80);
+   }
+
    private int slothCooldown;
    private int lastSloth = -1;
    private int tauntTimer = 200;
@@ -1877,7 +1932,28 @@ public class Stagnated extends Monster {
 
    /** Sword-fight behavior each tick: the heavy third swing and its tell, crit hops, strafing behind the shield, the axe against a held-up shield. */
    private void tickMelee(ServerLevel level, LivingEntity target) {
-      boolean sword = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && this.eatTicks <= 0;
+      // Parry rage: too many parries and he picks up the axe for a while, swinging only its heavy wind-up strike.
+      if (this.parryClock > 0 && --this.parryClock == 0) {
+         this.parryMelee = 0;
+         this.parryMace = 0;
+      }
+      boolean raging = this.rageTicks > 0;
+      if (raging) {
+         this.combo = Math.max(this.combo, Tuning.SWEATY_COMBO_HITS);
+         if (this.tickCount % 2 == 0) {
+            level.sendParticles(ModParticles.RAGE_RING, this.getX(), this.getY() + 1.0, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         }
+         if (this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && !this.axeSwap && !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE)) {
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_AXE));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+         }
+         if (--this.rageTicks <= 0) {
+            this.endRage(level);
+            raging = false;
+         }
+      }
+      boolean sword = (this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) || (raging && this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE)))
+         && this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && this.eatTicks <= 0;
       if (this.critCool > 0) {
          this.critCool--;
       }
@@ -1903,6 +1979,12 @@ public class Stagnated extends Monster {
             if (target != null && target.isAlive() && this.distanceTo(target) <= Tuning.SWEATY_COMBO_REACH) {
                this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                this.swordHit(level, target, true);
+               if (this.rageTicks > 0 && target instanceof Player blocker && blocker.isBlocking()) {
+                  // The axe breaks a shield that is still up.
+                  blocker.getCooldowns().addCooldown(blocker.getUseItem().copy(), Tuning.STAGNATED_SHIELD_DISABLE_TICKS);
+                  blocker.stopUsingItem();
+                  this.playSound(SoundEvents.SHIELD_BREAK.value(), 1.0F, 1.0F);
+               }
                this.playSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.2F, 0.8F);
             }
             this.guardDown = Tuning.SWEATY_GUARD_DROP_TICKS;
@@ -1922,7 +2004,7 @@ public class Stagnated extends Monster {
          return;
       }
       // Crit hop: a jump toward the target, so the swing on the way down is a crit.
-      if (sword && !this.guardUp && target != null && this.onGround() && this.critCool <= 0 && this.distanceTo(target) > 2.0F && this.distanceTo(target) < 4.0F
+      if (sword && !raging && !this.guardUp && target != null && this.onGround() && this.critCool <= 0 && this.distanceTo(target) > 2.0F && this.distanceTo(target) < 4.0F
          && this.random.nextFloat() < Tuning.SWEATY_CRIT_CHANCE) {
          double dx = target.getX() - this.getX();
          double dz = target.getZ() - this.getZ();
@@ -1943,7 +2025,7 @@ public class Stagnated extends Monster {
          this.setDeltaMovement(m.x - dz / dl * this.strafeDir * Tuning.SWEATY_STRAFE, m.y, m.z + dx / dl * this.strafeDir * Tuning.SWEATY_STRAFE);
       }
       // A player who keeps the shield up for a few seconds gets the axe.
-      if (sword && this.axeCool <= 0 && target instanceof Player p && this.distanceTo(p) < 5.0F) {
+      if (sword && !raging && this.axeCool <= 0 && target instanceof Player p && this.distanceTo(p) < 5.0F) {
          if (p.isBlocking() && !p.getCooldowns().isOnCooldown(p.getUseItem())) {
             if (++this.blockTicks >= Tuning.SWEATY_AXE_AFTER) {
                this.blockTicks = 0;

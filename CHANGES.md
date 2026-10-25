@@ -394,3 +394,9 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 23b: caption colour change
 - The caption colour now changes when phase two begins: dark cyan at the totem pop, draining to black and white over the following 10 seconds (it used to follow his health).
+
+## Batch 24a: parry rage, more HP
+- HP: Elijah has 100 max health (was 80, existing ones keep their old value) and comes back from the totem pop at 70% (was 50%).
+- Parry rage: parrying him enrages him for 15 seconds. 4 parries of his sword hits, or 2 of his mace slam, within a 10 second window (the count resets after 10 quiet seconds). A parry is a sword parry with Eli's Sword, or a shield block timed in the first moments of the raise (ticks 5-10). Neither counts against the stun slam, which can never be parried.
+- In the rage: he drops his shield, takes the diamond axe and Speed II, and every swing is the heavy wind-up strike (the red outline and the disabled pose tell it) for 2.6x damage that also breaks your shield if it is up. Back away to dodge it. A ring of thorns (your picture, always facing you) circles him while it lasts. In phase one he plays frustrated.mp3; in phase two it is CHEAP TRICKS with its caption.
+- Eli's Sword drops with an enchantment glint. (A red glint is not possible per item: the game has one glint colour for all items.)

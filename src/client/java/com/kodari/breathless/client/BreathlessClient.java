@@ -64,6 +64,7 @@ public class BreathlessClient implements ClientModInitializer {
       // The teal eyes (hanging in the air, and the ones that rush at your face).
       ParticleProviderRegistry.getInstance().register(ModParticles.SPORE_EYE, EyeParticle.SuspendProvider::new);
       ParticleProviderRegistry.getInstance().register(ModParticles.SPORE_EYE_SURGE, EyeParticle.SurgeProvider::new);
+      ParticleProviderRegistry.getInstance().register(ModParticles.RAGE_RING, RingParticle.Provider::new);
 
       // The flat, see-through sheet of gas at Y=0.
       LevelRenderEvents.BEFORE_GIZMOS.register(LevelSheet::render);
