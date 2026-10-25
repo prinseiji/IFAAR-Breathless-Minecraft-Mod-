@@ -380,3 +380,6 @@ Everything. See DEVELOPMENT.md.
 - Immune: all skeleton kinds (skeleton, stray, wither skeleton, bogged, skeleton horse), the Stagnated and Elijah, the Warden, the Creaking, the Ender Dragon and the Wither.
 - A mob that dies of the spores leaves a sculk splotch with as many blocks as its XP (at least 1, at most 40) and bursts into particles of the sculk block itself.
 - Both this splotch and the Rotting Heart splotch now only replace natural ground (stone types, deepslate, tuff, dirt, grass, mud, sand, gravel, clay), never placed blocks.
+
+## Batch 22c: phase two edges
+- The cyan veins are replaced by short black tendrils that taper in from the screen edges, always in the same place, plus a black shadow along the edges. Only their strength pulses (slowly); nothing moves.
