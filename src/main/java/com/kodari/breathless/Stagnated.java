@@ -476,6 +476,10 @@ public class Stagnated extends Monster {
    @Override
    public void aiStep() {
       super.aiStep();
+      if (this.sweaty && !this.level().isClientSide() && this.tickCount % 10 == 0) {
+         // Always, even while he climbs out: the client stops the music if the updates stop for 3 seconds.
+         this.pingBoss((ServerLevel)this.level(), this.isEnraged() ? 2 : 1);
+      }
       if (this.level().isClientSide()) {
          if (this.emergeClock >= 0) {
             this.emergeParticles();
@@ -558,9 +562,6 @@ public class Stagnated extends Monster {
             }
          }
          this.trackChase();
-         if (this.sweaty && this.tickCount % 10 == 0) {
-            this.pingBoss((ServerLevel)this.level(), this.isEnraged() ? 2 : 1);
-         }
          if (this.shieldTicks > 0) {
             this.shieldTicks--;
             this.faceTarget();
@@ -1889,7 +1890,7 @@ public class Stagnated extends Monster {
             this.slothCooldown = 0;
             this.sloth(new int[] {6});
          } else {
-            this.playSound(ModSounds.FRUSTRATED, 2.5F, 1.0F);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.FRUSTRATED, net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 1.0F);
          }
       }
    }
@@ -1940,9 +1941,8 @@ public class Stagnated extends Monster {
       boolean raging = this.rageTicks > 0;
       if (raging) {
          this.combo = Math.max(this.combo, Tuning.SWEATY_COMBO_HITS);
-         if (this.tickCount % 2 == 0) {
-            level.sendParticles(ModParticles.RAGE_RING, this.getX(), this.getY() + 1.0, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
-         }
+         // The ring follows him: the particle is told whose it is (the id travels as the particle's velocity).
+         level.sendParticles(ModParticles.RAGE_RING, this.getX(), this.getY() + 0.95, this.getZ(), 0, this.getId(), 0.0, 0.0, 1.0);
          if (this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && !this.axeSwap && !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE)) {
             this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_AXE));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);

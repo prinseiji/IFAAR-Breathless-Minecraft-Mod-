@@ -400,3 +400,10 @@ Everything. See DEVELOPMENT.md.
 - Parry rage: parrying him enrages him for 15 seconds. 4 parries of his sword hits, or 2 of his mace slam, within a 10 second window (the count resets after 10 quiet seconds). A parry is a sword parry with Eli's Sword, or a shield block timed in the first moments of the raise (ticks 5-10). Neither counts against the stun slam, which can never be parried.
 - In the rage: he drops his shield, takes the diamond axe and Speed II, and every swing is the heavy wind-up strike (the red outline and the disabled pose tell it) for 2.6x damage that also breaks your shield if it is up. Back away to dodge it. A ring of thorns (your picture, always facing you) circles him while it lasts. In phase one he plays frustrated.mp3; in phase two it is CHEAP TRICKS with its caption.
 - Eli's Sword drops with an enchantment glint. (A red glint is not possible per item: the game has one glint colour for all items.)
+
+## Batch 24b: ring fix, music fix, shield rule
+- The thorn ring now follows him (it is told whose it is, so it stops trailing copies behind him), is bigger so it circles his body, and is red.
+- The frustrated voiceline is now played at his position with the world sound call (it was not heard); report if it is still silent.
+- Phase one music is now The Cyber Grind (meganeko), replacing the old one.
+- Fixed the phase one song fading in, out and in again when he emerges: the "fight is on" updates stopped while he climbed out, so the client faded the song out and back in. They now go out the whole time.
+- Only a parry with Eli's Sword counts toward the parry rage now. Blocking with a shield never does.
