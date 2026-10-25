@@ -391,3 +391,6 @@ Everything. See DEVELOPMENT.md.
 - On-screen captions for these lines: dark cyan, each letter shaking, a quick glitch flicker at the start, fading out. As his phase two health runs down (50% to 0) the text drains to white with the black outline, so black and white at the end. No caption for the laugh.
 - He no longer says "gg ez" when he wins in phase two (phase one still does).
 - No line at his true death.
+
+## Batch 23b: caption colour change
+- The caption colour now changes when phase two begins: dark cyan at the totem pop, draining to black and white over the following 10 seconds (it used to follow his health).

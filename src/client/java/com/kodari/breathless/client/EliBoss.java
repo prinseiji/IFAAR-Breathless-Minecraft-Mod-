@@ -125,6 +125,7 @@ final class EliBoss {
    static void tick(Minecraft mc) {
       silenceVanilla(mc);
       ticks++;
+      p2ticks = phase == 2 ? p2ticks + 1 : 0;
       if (captionLeft > 0) {
          captionLeft--;
       }
@@ -150,6 +151,8 @@ final class EliBoss {
       }
    }
 
+   /** Ticks since phase two began (the caption colour drains to black and white over the first 10 seconds). */
+   private static int p2ticks;
    private static String caption;
    private static int captionLeft;
    private static int captionTotal;
@@ -178,7 +181,7 @@ final class EliBoss {
          return;
       }
       float fade = Math.min(1.0F, captionLeft / 10.0F);
-      float progress = Math.max(0.0F, Math.min(1.0F, (0.5F - health) / 0.5F));
+      float progress = Math.min(1.0F, p2ticks / 200.0F);
       int rgb = lerpColor(0x0F9F98, 0xFFFFFF, progress);
       int al = Math.round(fade * 255.0F);
       int color = (al << 24) | rgb;
