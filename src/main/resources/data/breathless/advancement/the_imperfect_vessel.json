@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:rematch",
+  "display": {
+    "icon": {
+      "id": "minecraft:diamond_chestplate"
+    },
+    "title": {
+      "translate": "advancements.breathless.the_imperfect_vessel.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.the_imperfect_vessel.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

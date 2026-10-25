@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:stop_hitting_yourself",
+  "display": {
+    "icon": {
+      "id": "minecraft:netherite_axe"
+    },
+    "title": {
+      "translate": "advancements.breathless.u_mad_bro.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.u_mad_bro.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -89,7 +89,8 @@ public class BreathlessClient implements ClientModInitializer {
                lines.add(at++, Component.translatable("breathless.lore.rotting_heart_1").withStyle(ChatFormatting.DARK_AQUA));
                lines.add(at, Component.translatable("breathless.lore.rotting_heart_2").withStyle(ChatFormatting.DARK_AQUA));
             } else {
-               lines.add(at, Component.translatable("breathless.lore.eli_sword").withStyle(ChatFormatting.DARK_AQUA));
+               lines.add(at++, Component.translatable("breathless.lore.eli_sword").withStyle(ChatFormatting.DARK_AQUA));
+               lines.add(at, Component.translatable("breathless.lore.eli_sword_2").withStyle(ChatFormatting.DARK_AQUA));
             }
          } else {
             lines.add(at, Component.translatable("breathless.tooltip.hold_shift").withStyle(ChatFormatting.DARK_GRAY));

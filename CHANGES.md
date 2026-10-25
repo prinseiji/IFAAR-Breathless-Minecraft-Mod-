@@ -413,3 +413,8 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 24d
 - Boss bar meter is now a white fill (dark backing), slot slightly taller so it sits under the black lines. Only EliBoss.java.
+
+## Batch 25a
+- 17 new hidden advancements: an Eli branch (Here Lies/Burns The Wicked, Organic Encounter, Rematch, Stop Hitting Yourself., +PARRY, U Mad Bro?, The Imperfect Vessel., Anachronism., Bled Dry, Skill Issue., Unstoppable Object Vs Immovable Object.), Classified./Archivist., and Wrong Air Wrong Time / Cooling Down / No Flesh, No Lungs.
+- Eli name tag is xX_ELIJ4H_Xx, becomes xX_5L0TH_Xx at phase two. He fights back against a Warden that hits him. Tracks whether he was summoned (Organic Encounter = natural spawn).
+- Eli's Sword tooltip: extra line about enchanting.

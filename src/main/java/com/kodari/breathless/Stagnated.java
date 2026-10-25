@@ -113,6 +113,13 @@ public class Stagnated extends Monster {
    public int unarmClock = -1;
    /** The rare diamond-armored mace variant ("sweaty"): wind-charge launch, mace smash, water-bucket clutch. */
    private boolean sweaty;
+   /** True when a Rotting Heart brought him (false = he spawned on his own). */
+   private boolean summoned;
+   /** A Warden that hit him: the one thing he will fight back against. */
+   private LivingEntity wardenGrudge;
+   public void setSummoned() {
+      this.summoned = true;
+   }
    private boolean geared;
    private int windTicks;
    /** Sweaty attack cycle: sword fight, swap to the mace, launch + smash/clutch, swap back. */
@@ -250,6 +257,9 @@ public class Stagnated extends Monster {
 
    /** How close a target must be before the Stagnated notices it. */
    private boolean canSense(LivingEntity target) {
+      if (target == this.wardenGrudge && target.isAlive()) {
+         return true;
+      }
       if (target instanceof Stagnated || target instanceof Warden || !target.isAlive()) {
          return false;
       }
@@ -300,6 +310,9 @@ public class Stagnated extends Monster {
          if (target instanceof ServerPlayer player) {
             ServerPlayNetworking.send(player, new SpotPayload(0.0F));
             Achievements.award(player, "not_alone");
+            if (this.sweaty && !this.summoned) {
+               Achievements.award(player, "organic_encounter");
+            }
          }
       }
    }
@@ -335,6 +348,12 @@ public class Stagnated extends Monster {
          return false;
       }
       boolean hurt = super.hurtServer(level, source, amount);
+      if (this.sweaty && hurt && source.getEntity() instanceof Warden warden) {
+         // Ego: he hits back at a Warden, and anyone close gets to watch.
+         this.wardenGrudge = warden;
+         this.setTarget(warden);
+         Achievements.awardNear(this, 32.0, "unstoppable_object");
+      }
       if (this.sweaty && hurt && source.getEntity() instanceof Player) {
          this.hitWindow = Tuning.SWEATY_GUARD_WINDOW;
          if (++this.recentHits >= Tuning.SWEATY_GUARD_HITS && this.guardCooldown <= 0 && !this.engaged) {
@@ -452,6 +471,7 @@ public class Stagnated extends Monster {
       output.putBoolean("Sweaty", this.sweaty);
       output.putBoolean("SweatyGeared", this.geared);
       output.putBoolean("SweatyEnraged", this.isEnraged());
+      output.putBoolean("SweatySummoned", this.summoned);
    }
 
    @Override
@@ -465,6 +485,7 @@ public class Stagnated extends Monster {
       this.entityData.set(ELIJAH, this.sweaty);
       this.geared = input.getBooleanOr("SweatyGeared", false);
       this.entityData.set(ENRAGED, input.getBooleanOr("SweatyEnraged", false));
+      this.summoned = input.getBooleanOr("SweatySummoned", false);
       this.refreshStats();
    }
 
@@ -631,7 +652,7 @@ public class Stagnated extends Monster {
       for (EquipmentSlot slot : EquipmentSlot.values()) {
          this.setDropChance(slot, 0.0F);
       }
-      this.setCustomName(Component.literal("xX_5L0TH_Xx"));
+      this.setCustomName(Component.literal("xX_ELIJ4H_Xx"));
       this.setCustomNameVisible(true);
       AttributeInstance health = this.getAttribute(Attributes.MAX_HEALTH);
       if (health != null) {
@@ -716,6 +737,9 @@ public class Stagnated extends Monster {
    /** Phase two. Called when his health would reach zero for the first time (or by /breathless enrage). */
    private void startEnrage(ServerLevel level) {
       this.entityData.set(ENRAGED, true);
+      // Phase two: 5L0TH has taken over, and the name tag says so.
+      this.setCustomName(Component.literal("xX_5L0TH_Xx"));
+      Achievements.awardNear(this, 48.0, "rematch");
       this.pingBoss(level, 2);
       this.setHealth(this.getMaxHealth() * Tuning.SWEATY_ENRAGE_HEALTH);
       this.removeAllEffects();
@@ -1882,6 +1906,7 @@ public class Stagnated extends Monster {
          this.parryMelee = 0;
          this.parryMace = 0;
          this.rageTicks = Tuning.RAGE_TICKS;
+         Achievements.awardNear(this, 32.0, "u_mad_bro");
          this.setGuard(false);
          this.engaged = false;
          this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, Tuning.RAGE_TICKS, 1));

@@ -1,6 +1,7 @@
 package com.kodari.breathless;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +23,14 @@ public final class Achievements {
       ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
          Entity killer = source.getEntity();
          if (entity instanceof Stagnated stagnated) {
+            if (stagnated.isSweaty() && stagnated.isEnraged() && killer instanceof ServerPlayer) {
+               for (Player other : stagnated.level().players()) {
+                  if (other instanceof ServerPlayer near && near.distanceToSqr(stagnated) <= 32.0 * 32.0) {
+                     award(near, "the_imperfect_vessel");
+                     awardNext(near, "skill_issue");
+                  }
+               }
+            }
             if (killer instanceof ServerPlayer player) {
                award(player, "at_peace_at_last");
                awardNext(player, "finally_still");
@@ -35,7 +44,28 @@ public final class Achievements {
             awardNear(entity, 32.0, "malignant_flesh");
          }
       });
+      // No Flesh, No Lungs: five seconds next to a skeleton below Y=0.
+      ServerTickEvents.END_SERVER_TICK.register(server -> {
+         if (server.getTickCount() % 20 != 0) {
+            return;
+         }
+         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            boolean near = false;
+            if (player.getY() < 0.0 && Masks.isHazardLevel(player.level()) && !player.isSpectator()) {
+               near = !player.level().getEntitiesOfClass(AbstractSkeleton.class, player.getBoundingBox().inflate(5.0)).isEmpty();
+            }
+            if (near) {
+               if (SKELETON_TIME.merge(player.getUUID(), 1, Integer::sum) >= 5) {
+                  award(player, "no_flesh_no_lungs");
+               }
+            } else {
+               SKELETON_TIME.remove(player.getUUID());
+            }
+         }
+      });
    }
+
+   private static final java.util.Map<java.util.UUID, Integer> SKELETON_TIME = new java.util.HashMap<>();
 
    private static AdvancementHolder holder(ServerPlayer player, String id) {
       return player.level().getServer().getAdvancements().get(Breathless.id(id));

@@ -132,6 +132,7 @@ public final class MobRules {
       level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, net.minecraft.world.level.block.Blocks.SCULK.defaultBlockState()),
          mob.getX(), mob.getY() + mob.getBbHeight() * 0.5, mob.getZ(), 30 + xp * 3, mob.getBbWidth() * 0.5, mob.getBbHeight() * 0.4, mob.getBbWidth() * 0.5, 0.1);
       EliSummon.splotch(level, mob.blockPosition(), xp);
+      Achievements.awardNear(mob, 32.0, "wrong_air_wrong_time");
    }
 
    // ---- loading ----

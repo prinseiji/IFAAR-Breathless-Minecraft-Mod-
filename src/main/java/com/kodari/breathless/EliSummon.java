@@ -90,6 +90,9 @@ public final class EliSummon {
       ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
          if (!blocked && source.getEntity() instanceof LivingEntity attacker && source.getDirectEntity() == attacker && attacker.getMainHandItem().is(ModItems.ELI_SWORD)) {
             entity.addEffect(new MobEffectInstance(ModEffects.HEMORRHAGE, Tuning.HEMORRHAGE_TICKS, 0));
+            if (attacker instanceof net.minecraft.server.level.ServerPlayer bleeder) {
+               Achievements.award(bleeder, "bled_dry");
+            }
          }
       });
       // Parry: blocking with Eli's Sword right as the hit lands (first PARRY_TICKS of the block) cancels it, knocks the attacker back, flashes white and freezes time for half a second.
@@ -105,6 +108,13 @@ public final class EliSummon {
          if (entity instanceof net.minecraft.server.level.ServerPlayer player && player.isBlocking() && player.getUseItem().is(ModItems.ELI_SWORD)
             && player.getTicksUsingItem() <= Tuning.PARRY_TICKS && source.getEntity() != null && !(source.getEntity() instanceof Stagnated st && st.isStunSmash()) && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
             && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_SHIELD)) {
+            if (source.getEntity() instanceof Stagnated st && st.isSweaty()) {
+               Achievements.award(player, "stop_hitting_yourself");
+            }
+            float after = amount * (1.0F - Math.min(20.0F, (float)player.getArmorValue()) / 25.0F);
+            if (after >= player.getHealth() + player.getAbsorptionAmount()) {
+               Achievements.award(player, "plus_parry");
+            }
             parry(player, source.getEntity());
             return false;
          }
@@ -233,11 +243,13 @@ public final class EliSummon {
       }
       eli.snapTo(x, surface, z, level.getRandom().nextFloat() * 360.0F, 0.0F);
       eli.makeSweaty();
+      eli.setSummoned();
       level.addFreshEntity(eli);
+      Achievements.awardNear(eli, 32.0, "here_burns_the_wicked");
       eli.startEmerging();
       eli.pingBoss(level, 1);
       level.playSound(null, x, y, z, ModSounds.ETHAN_SUMMON, SoundSource.HOSTILE, 3.0F, 1.0F);
-      Component name = Component.literal("xX_5L0TH_Xx");
+      Component name = Component.literal("xX_ELIJ4H_Xx");
       level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("multiplayer.player.joined", name).withStyle(ChatFormatting.YELLOW), false);
       later(25, () -> level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", name, "You called?"), false));
    }

@@ -1,0 +1,34 @@
+{
+  "parent": "breathless:the_imperfect_vessel",
+  "display": {
+    "icon": {
+      "id": "minecraft:wither_rose"
+    },
+    "title": {
+      "translate": "advancements.breathless.skill_issue.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.skill_issue.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "k1": {
+      "trigger": "minecraft:impossible"
+    },
+    "k2": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "k1"
+    ],
+    [
+      "k2"
+    ]
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:stop_hitting_yourself",
+  "display": {
+    "icon": {
+      "id": "minecraft:shield"
+    },
+    "title": {
+      "translate": "advancements.breathless.plus_parry.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.plus_parry.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "breathless:here_lies_the_wicked",
+  "display": {
+    "icon": {
+      "id": "minecraft:soul_campfire"
+    },
+    "title": {
+      "translate": "advancements.breathless.here_burns_the_wicked.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.here_burns_the_wicked.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

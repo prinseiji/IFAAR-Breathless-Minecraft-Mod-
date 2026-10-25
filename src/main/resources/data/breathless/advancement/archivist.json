@@ -1,0 +1,74 @@
+{
+  "parent": "breathless:classified",
+  "display": {
+    "icon": {
+      "id": "minecraft:lectern"
+    },
+    "title": {
+      "translate": "advancements.breathless.archivist.title"
+    },
+    "description": {
+      "translate": "advancements.breathless.archivist.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "d0": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "breathless:lore_mandel"
+          }
+        ]
+      }
+    },
+    "d1": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "breathless:lore_mcnally"
+          }
+        ]
+      }
+    },
+    "d2": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "breathless:lore_howard"
+          }
+        ]
+      }
+    },
+    "d3": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "breathless:lore_vincent"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "d0"
+    ],
+    [
+      "d1"
+    ],
+    [
+      "d2"
+    ],
+    [
+      "d3"
+    ]
+  ]
+}

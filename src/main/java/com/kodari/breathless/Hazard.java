@@ -202,6 +202,7 @@ public final class Hazard {
             rt.drainTimeout = Math.round(seconds * 20.0F) + 600;
             if (exposure > 0.0F) {
                player.sendOverlayMessage(Component.literal("The spores begin to loosen their grip."));
+               Achievements.award(player, "cooling_down");
             }
          }
          rt.appleKind = 0;
