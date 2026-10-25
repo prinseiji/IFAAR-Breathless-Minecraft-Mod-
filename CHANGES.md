@@ -407,3 +407,6 @@ Everything. See DEVELOPMENT.md.
 - Phase one music is now The Cyber Grind (meganeko), replacing the old one.
 - Fixed the phase one song fading in, out and in again when he emerges: the "fight is on" updates stopped while he climbed out, so the client faded the song out and back in. They now go out the whole time.
 - Only a parry with Eli's Sword counts toward the parry rage now. Blocking with a shield never does.
+
+## Batch 24c: your thorn ring picture
+- The ring particle uses your own transparent picture (black, not recoloured).
