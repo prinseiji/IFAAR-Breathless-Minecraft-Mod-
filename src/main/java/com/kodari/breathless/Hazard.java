@@ -46,6 +46,12 @@ public final class Hazard {
       float lastHealth = -1.0F;
       float lastSent = -1.0F;
       int drinkLevel = -1;
+      // golden apples: which one is being eaten (0 none, 1 golden, 2 enchanted), and the gradual cleansing that follows
+      int appleKind;
+      int appleRemaining;
+      float drainLeft;
+      float drainStep;
+      int drainTimeout;
       int pendingLevel = -1;
       int drinkRemaining;
       float antidotePurge;
@@ -183,16 +189,43 @@ public final class Hazard {
          }
          rt.drinkLevel = -1;
       }
+      if (player.isUsingItem()) {
+         var used = player.getUseItem();
+         rt.appleKind = used.is(net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE) ? 2 : (used.is(net.minecraft.world.item.Items.GOLDEN_APPLE) ? 1 : 0);
+         rt.appleRemaining = player.getUseItemRemainingTicks();
+      } else {
+         if (rt.appleKind > 0 && rt.appleRemaining <= 2) {
+            float total = rt.appleKind == 2 ? Tuning.EGAP_PURGE : Tuning.GAP_PURGE;
+            float seconds = rt.appleKind == 2 ? Tuning.EGAP_SECONDS : Tuning.GAP_SECONDS;
+            rt.drainLeft = total;
+            rt.drainStep = total / (seconds * 20.0F);
+            rt.drainTimeout = Math.round(seconds * 20.0F) + 600;
+            if (exposure > 0.0F) {
+               player.sendOverlayMessage(Component.literal("The spores begin to loosen their grip."));
+            }
+         }
+         rt.appleKind = 0;
+      }
       if (rt.pendingLevel >= 0) {
          healLevel = Math.max(healLevel, rt.pendingLevel);
          rt.pendingLevel = -1;
       }
       if (healLevel >= 0 && rt.healCooldown <= 0) {
          rt.healCooldown = 10;
-         exposure = onHealed(player, rt, exposure, maskOk, purgeFor(healLevel));
+         exposure = onHealed(player, rt, exposure, maskOk || !underground, purgeFor(healLevel));
       }
       if (rt.antidoteTicks > 0) {
          rt.antidoteTicks--;
+      }
+      // Golden apples cleanse slowly. It only works while the lungs are safe (a working mask, or above Y=0); otherwise it waits.
+      if (rt.drainLeft > 0.0F) {
+         if (--rt.drainTimeout <= 0 || exposure <= 0.0F) {
+            rt.drainLeft = 0.0F;
+         } else if (maskOk || !underground) {
+            float step = Math.min(rt.drainStep, rt.drainLeft);
+            exposure = Math.max(0.0F, exposure - step);
+            rt.drainLeft -= step;
+         }
       }
 
       // 1b) How much sculk the spores can reach around the player (about once a second)
@@ -420,7 +453,7 @@ public final class Hazard {
    public static void applyTonic(ServerPlayer player, float purge) {
       Rt rt = RUNTIME.computeIfAbsent(player.getUUID(), k -> new Rt());
       float exposure = getExposure(player);
-      boolean maskOk = Masks.hasWorkingMask(player);
+      boolean maskOk = Masks.hasWorkingMask(player) || !Masks.isUnderground(player);
       if (!maskOk && exposure < 100.0F - 0.001F) {
          player.sendOverlayMessage(Component.literal("The tonic does nothing without a gas mask on."));
       }

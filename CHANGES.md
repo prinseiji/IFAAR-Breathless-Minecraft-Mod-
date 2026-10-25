@@ -370,3 +370,7 @@ Everything. See DEVELOPMENT.md.
 ## Batch 21i: veins, vignette, vanilla music
 - Edge veins are now short and thick (they were long and thin); the edge glow is much stronger (14 bands, pulsing).
 - Vanilla background music is stopped while the boss theme plays and for 5 seconds after, so the two never overlap.
+
+## Batch 22a: golden apples cleanse gradually, healing without a mask above Y=0
+- Golden apple: cleanses 65% of the meter over 14 seconds. Enchanted golden apple: the whole meter over 20 seconds. The cleansing only runs while you are safe (a working mask, or above Y=0); otherwise it waits (for up to 30 more seconds). Tuning: GAP_*, EGAP_*.
+- Tonics, Instant Health and the apples now work without a mask when you are above Y=0 (below it, a working mask is still needed).

@@ -359,4 +359,9 @@ public final class Tuning {
    public static final int PARRY_TICKS = 7;
    public static final int PARRY_FREEZE_TICKS = 10;
    public static final double PARRY_KNOCKBACK = 1.2;
+   /** Golden apples cleanse the meter gradually: how much and over how many seconds (only while safe: working mask, or above Y=0). */
+   public static final float GAP_PURGE = 65.0F;
+   public static final float GAP_SECONDS = 14.0F;
+   public static final float EGAP_PURGE = 100.0F;
+   public static final float EGAP_SECONDS = 20.0F;
 }
