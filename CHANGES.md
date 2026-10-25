@@ -410,3 +410,6 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 24c: your thorn ring picture
 - The ring particle uses your own transparent picture (black, not recoloured).
+
+## Batch 24d
+- Boss bar meter is now a white fill (dark backing), slot slightly taller so it sits under the black lines. Only EliBoss.java.

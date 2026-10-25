@@ -27,8 +27,8 @@ final class EliBoss {
    /** The hollow rail inside the picture that the health fills (pixels inside the texture). */
    private static final int RAIL_X = 25;
    private static final int RAIL_W = 65;
-   private static final int RAIL_Y = 21;
-   private static final int RAIL_H = 5;
+   private static final int RAIL_Y = 20;
+   private static final int RAIL_H = 6;
 
    private static int phase;
    private static float health = 1.0F;
@@ -236,13 +236,12 @@ final class EliBoss {
       int al = Math.round(barAlpha * 255.0F);
       int x = (g.guiWidth() - BAR_W) / 2;
       int y = 1;
-      g.fill(x + RAIL_X, y + RAIL_Y, x + RAIL_X + RAIL_W, y + RAIL_Y + RAIL_H, (Math.round(barAlpha * 200.0F) << 24) | 0x6A6A6A);
+      g.fill(x + RAIL_X, y + RAIL_Y, x + RAIL_X + RAIL_W, y + RAIL_Y + RAIL_H, (Math.round(barAlpha * 200.0F) << 24) | 0x303030);
       int fill = Math.round(RAIL_W * Math.max(0.0F, Math.min(1.0F, health)));
       if (fill > 0) {
          int fx = x + RAIL_X;
          int fy = y + RAIL_Y;
-         g.fill(fx, fy, fx + fill, fy + RAIL_H, al << 24);
-         g.fill(fx, fy, fx + fill, fy + 1, (al << 24) | 0x2B2B2B);
+         g.fill(fx, fy, fx + fill, fy + RAIL_H, (al << 24) | 0xFFFFFF);
       }
       g.blit(RenderPipelines.GUI_TEXTURED, BAR, x, y, 0.0F, 0.0F, BAR_W, BAR_H, 233, 73, 233, 73, (al << 24) | 0xFFFFFF);
    }
