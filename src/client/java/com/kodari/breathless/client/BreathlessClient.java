@@ -41,6 +41,7 @@ public class BreathlessClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
       ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.EliPayload.TYPE, (payload, context) -> EliBoss.ping(payload.phase(), payload.health()));
       ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.ParryPayload.TYPE, (payload, context) -> EliBoss.parry());
+      ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.CaptionPayload.TYPE, (payload, context) -> EliBoss.caption(payload.text(), payload.ticks()));
       ClientPlayNetworking.registerGlobalReceiver(SpotPayload.TYPE, (payload, context) -> SlothText.spotted());
       ClientPlayNetworking.registerGlobalReceiver(OpenLorePayload.TYPE, (payload, context) -> net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new LoreScreen(payload.doc())));
       ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);

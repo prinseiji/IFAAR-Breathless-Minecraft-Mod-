@@ -125,6 +125,9 @@ final class EliBoss {
    static void tick(Minecraft mc) {
       silenceVanilla(mc);
       ticks++;
+      if (captionLeft > 0) {
+         captionLeft--;
+      }
       if (popFlash > 0) {
          popFlash--;
       }
@@ -147,6 +150,59 @@ final class EliBoss {
       }
    }
 
+   private static String caption;
+   private static int captionLeft;
+   private static int captionTotal;
+
+   static void caption(String text, int ticks) {
+      caption = text;
+      captionLeft = ticks;
+      captionTotal = ticks;
+   }
+
+   private static int lerpColor(int from, int to, float t) {
+      int r = Math.round(((from >> 16) & 255) + (((to >> 16) & 255) - ((from >> 16) & 255)) * t);
+      int gr = Math.round(((from >> 8) & 255) + (((to >> 8) & 255) - ((from >> 8) & 255)) * t);
+      int b = Math.round((from & 255) + ((to & 255) - (from & 255)) * t);
+      return (r << 16) | (gr << 8) | b;
+   }
+
+   /** Elijah's lines as on-screen text: dark cyan and shaking with rage, draining to black and white as his phase two health runs down. */
+   private static void renderCaption(GuiGraphicsExtractor g) {
+      if (caption == null || captionLeft <= 0) {
+         return;
+      }
+      Minecraft mc = Minecraft.getInstance();
+      int age = captionTotal - captionLeft;
+      if (age < 4 && age % 2 == 1) {
+         return;
+      }
+      float fade = Math.min(1.0F, captionLeft / 10.0F);
+      float progress = Math.max(0.0F, Math.min(1.0F, (0.5F - health) / 0.5F));
+      int rgb = lerpColor(0x0F9F98, 0xFFFFFF, progress);
+      int al = Math.round(fade * 255.0F);
+      int color = (al << 24) | rgb;
+      int outline = al << 24;
+      int jitter = 1 + Math.round(progress);
+      int total = mc.font.width(caption);
+      int x = (g.guiWidth() - total) / 2;
+      int y = g.guiHeight() - 78;
+      int cx = x;
+      for (int i = 0; i < caption.length(); i++) {
+         String ch = String.valueOf(caption.charAt(i));
+         int jx = Math.floorMod(ticks * 7 + i * 13, 2 * jitter + 1) - jitter;
+         int jy = Math.floorMod(ticks * 11 + i * 5, 2 * jitter + 1) - jitter;
+         int px = cx + jx;
+         int py = y + jy;
+         g.text(mc.font, ch, px - 1, py, outline);
+         g.text(mc.font, ch, px + 1, py, outline);
+         g.text(mc.font, ch, px, py - 1, outline);
+         g.text(mc.font, ch, px, py + 1, outline);
+         g.text(mc.font, ch, px, py, color);
+         cx += mc.font.width(ch);
+      }
+   }
+
    private static int flash;
    /** The totem pop flash (dark cyan), ticks left. */
    private static int popFlash;
@@ -159,6 +215,7 @@ final class EliBoss {
    }
 
    static void render(GuiGraphicsExtractor g, DeltaTracker tracker) {
+      renderCaption(g);
       if (flash > 0) {
          g.fill(0, 0, g.guiWidth(), g.guiHeight(), ((Math.min(255, flash * 30)) << 24) | 0xFFFFFF);
       }

@@ -383,3 +383,11 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 22c: phase two edges
 - The cyan veins are replaced by short black tendrils that taper in from the screen edges, always in the same place, plus a black shadow along the edges. Only their strength pulses (slowly); nothing moves.
+
+## Batch 23a: phase two voicelines and on-screen captions
+- 17 phase two lines (sloth_*.ogg, loudness-matched). Mace slam: JUST DIE / STAY STILL. Axe clap on your shield: FACE ME / STOP HIDING / Clever. / You think you're safe? / CHEAP TRICKS. Stun slam: I WANT YOU DEAD / CATCH THIS / KEEP RUNNING / YOU'RE A JOKE / (laugh, no caption). Taunts (every 12-24 seconds while fighting nearby): RUSTY, KEEP SWINGING, OUTCLASSED, IS THIS WHAT HE LOST TO?, IS THIS ALL YOU'VE GOT? (the last one was in your files but not your list, I put it with the taunts).
+- Lines never overlap (1.5 s gap) and never repeat twice in a row. Heard from 64 blocks.
+- Missing: I'LL MAKE THIS HURT was in your list but I got no file for it.
+- On-screen captions for these lines: dark cyan, each letter shaking, a quick glitch flicker at the start, fading out. As his phase two health runs down (50% to 0) the text drains to white with the black outline, so black and white at the end. No caption for the laugh.
+- He no longer says "gg ez" when he wins in phase two (phase one still does).
+- No line at his true death.

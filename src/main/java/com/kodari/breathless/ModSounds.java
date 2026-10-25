@@ -37,6 +37,9 @@ public final class ModSounds {
    public static SoundEvent ETHAN_SMASH;
    public static SoundEvent ETHAN_STUN;
    public static SoundEvent ETHAN_SUMMON;
+   /** Phase two voicelines, in the order of SlothLines. */
+   public static final String[] SLOTH_FILES = {"justdie", "staystill", "faceme", "stophiding", "clever", "youthinkyouresafe", "cheaptricks", "iwantyoudead", "catchthis", "keeprunning", "youreajoke", "laugh", "youregettingrustyplayer", "keepswinging", "youreoutclassed", "isthiswhathelostto", "isthisallyouvegot"};
+   public static final SoundEvent[] SLOTH = new SoundEvent[SLOTH_FILES.length];
    public static SoundEvent PARRY;
    public static SoundEvent ELI_PHASE_ONE;
    public static SoundEvent ELI_TENEBRE;
@@ -83,6 +86,9 @@ public final class ModSounds {
       ETHAN_SMASH = reg("ethan_smash");
       ETHAN_STUN = reg("ethan_stun");
       ETHAN_SUMMON = reg("ethan_summon");
+      for (int i = 0; i < SLOTH_FILES.length; i++) {
+         SLOTH[i] = reg("sloth_" + SLOTH_FILES[i]);
+      }
       PARRY = reg("parry");
       ELI_PHASE_ONE = reg("eli_phase_one");
       ELI_TENEBRE = reg("eli_tenebre");

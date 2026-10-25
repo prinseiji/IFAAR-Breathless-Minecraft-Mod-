@@ -517,5 +517,158 @@
         "attenuation_distance": 32
       }
     ]
+  },
+  "sloth_justdie": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_justdie",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_staystill": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_staystill",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_faceme": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_faceme",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_stophiding": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_stophiding",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_clever": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_clever",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_youthinkyouresafe": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_youthinkyouresafe",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_cheaptricks": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_cheaptricks",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_iwantyoudead": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_iwantyoudead",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_catchthis": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_catchthis",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_keeprunning": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_keeprunning",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_youreajoke": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_youreajoke",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_laugh": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_laugh",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_youregettingrustyplayer": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_youregettingrustyplayer",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_keepswinging": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_keepswinging",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_youreoutclassed": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_youreoutclassed",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_isthiswhathelostto": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_isthiswhathelostto",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_isthisallyouvegot": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_isthisallyouvegot",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
   }
 }

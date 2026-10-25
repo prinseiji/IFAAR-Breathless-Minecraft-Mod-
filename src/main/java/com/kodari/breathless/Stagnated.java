@@ -823,7 +823,9 @@ public class Stagnated extends Monster {
       if (this.lastPlayer != null && (this.lastPlayer.isDeadOrDying() || !this.lastPlayer.isAlive())) {
          // He leaves after a win, right away: nothing ticks near a dead player, so a countdown would never finish.
          this.lastPlayer = null;
-         level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", this.getDisplayName(), "gg ez"), false);
+         if (!this.isEnraged()) {
+            level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", this.getDisplayName(), "gg ez"), false);
+         }
          this.announceLeave(level);
          level.sendParticles(ParticleTypes.POOF, this.getX(), this.getY() + 1.0, this.getZ(), 20, 0.3, 0.6, 0.3, 0.02);
          this.discard();
@@ -930,7 +932,11 @@ public class Stagnated extends Monster {
                   this.level().broadcastEntityEvent(this, (byte)81);
                   this.playSound(ModSounds.STUN_WARNING, 3.0F, 1.0F);
                }
-               this.say(this.stunPlan ? ModSounds.ETHAN_STUN : ModSounds.ETHAN_WIND);
+               if (this.isEnraged()) {
+                  this.sloth(this.stunPlan ? SlothLines.STUN : SlothLines.MACE);
+               } else {
+                  this.say(this.stunPlan ? ModSounds.ETHAN_STUN : ModSounds.ETHAN_WIND);
+               }
             } else if (++this.maceStuck >= 40) {
                this.startSwap(false);
             }
@@ -1775,6 +1781,9 @@ public class Stagnated extends Monster {
                this.shieldTicks = Tuning.STAGNATED_SHIELD_TICKS;
                this.getNavigation().stop();
                this.level().broadcastEntityEvent(this, (byte)74);
+               if (this.isEnraged()) {
+                  this.sloth(SlothLines.AXE);
+               }
             }
             return false;
          }
@@ -1840,11 +1849,44 @@ public class Stagnated extends Monster {
       }
    }
 
+   private int slothCooldown;
+   private int lastSloth = -1;
+   private int tauntTimer = 200;
+
+   /** Phase two: one of 5L0TH's lines from this group, with its on-screen caption. */
+   private void sloth(int[] group) {
+      if (this.slothCooldown > 0 || !(this.level() instanceof ServerLevel level)) {
+         return;
+      }
+      int pick = group[this.random.nextInt(group.length)];
+      if (pick == this.lastSloth) {
+         pick = group[(java.util.Arrays.binarySearch(group, pick) + 1) % group.length];
+      }
+      this.lastSloth = pick;
+      this.slothCooldown = 60;
+      this.playSound(ModSounds.SLOTH[pick], 2.0F, 1.0F);
+      String text = SlothLines.text(pick);
+      if (text != null) {
+         for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(this) < 48.0 * 48.0) {
+               ServerPlayNetworking.send(player, new CaptionPayload(text, SlothLines.ticks(pick)));
+            }
+         }
+      }
+   }
+
    /** Sword-fight behavior each tick: the heavy third swing and its tell, crit hops, strafing behind the shield, the axe against a held-up shield. */
    private void tickMelee(ServerLevel level, LivingEntity target) {
       boolean sword = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD) && this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && this.eatTicks <= 0;
       if (this.critCool > 0) {
          this.critCool--;
+      }
+      if (this.slothCooldown > 0) {
+         this.slothCooldown--;
+      }
+      if (this.isEnraged() && sword && target != null && this.distanceTo(target) < 10.0F && --this.tauntTimer <= 0) {
+         this.tauntTimer = 240 + this.random.nextInt(240);
+         this.sloth(SlothLines.TAUNT);
       }
       if (this.axeCool > 0) {
          this.axeCool--;
