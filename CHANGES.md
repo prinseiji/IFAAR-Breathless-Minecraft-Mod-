@@ -422,3 +422,6 @@ Everything. See DEVELOPMENT.md.
 ## Batch 25b
 - Rage (parry rage only): he raises a guard window now and then; a hit into it bounces off (parry sound, sparks, attacker thrown back) and leaves him open ~0.9s; an axe still breaks it. Speed II -> Speed I. Every axe swing is a crit (RAGE_DAMAGE 2.6 -> 2.0 x1.5 crit).
 - Left eye turns red (elijah_rage.png) with red particles during rage only.
+
+## Batch 25c
+- The exposure gauge and the filter meters now fade in and out (0.7 s) when you cross Y=0 or put the mask on/off, instead of popping. SporeHud.java only.

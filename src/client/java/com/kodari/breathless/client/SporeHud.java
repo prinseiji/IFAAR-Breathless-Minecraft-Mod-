@@ -68,6 +68,23 @@ public final class SporeHud {
       return (Math.max(0, Math.min(255, alpha)) << 24) | (rgb & 0xFFFFFF);
    }
 
+   /** Fade for the gauge and the filter meters: they ease in and out instead of popping when you cross Y=0 or the mask comes on or off. */
+   private static float meterFade;
+   private static float filterFade;
+   private static long lastMeterNanos;
+   private static long lastFadeNanos;
+   private static final float FADE_SECONDS = 0.7F;
+
+   private static float stepFade(float fade, boolean show, float dt) {
+      return Math.max(0.0F, Math.min(1.0F, fade + (show ? dt : -dt) / FADE_SECONDS));
+   }
+
+   /** Multiplies the alpha of an ARGB colour. */
+   private static int fa(int color, float f) {
+      int a = Math.round((color >>> 24) * f);
+      return (a << 24) | (color & 0xFFFFFF);
+   }
+
    private static float smooth(float t) {
       return t * t * (3.0F - 2.0F * t);
    }
@@ -160,12 +177,15 @@ public final class SporeHud {
          return;
       }
       ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-      if (!Masks.isMask(head) || !(Masks.isUnderground(player) || ClientState.filterShow > 0)) {
+      long now = System.nanoTime();
+      float dt = lastFadeNanos == 0L ? 0.0F : Math.min(0.25F, (now - lastFadeNanos) / 1.0E9F);
+      lastFadeNanos = now;
+      boolean showFilters = Masks.isMask(head) && (Masks.isUnderground(player) || ClientState.filterShow > 0) && ClientState.fiendTick < 0;
+      filterFade = stepFade(filterFade, showFilters, dt);
+      if (filterFade <= 0.0F || !Masks.isMask(head)) {
          return;
       }
-      if (ClientState.fiendTick >= 0) {
-         return;
-      }
+      float ff = filterFade;
       MaskFilters filters = Masks.getFilters(head);
       // In the bottom-left corner of the screen.
       int x0 = 6;
@@ -174,10 +194,10 @@ public final class SporeHud {
          int life = slot == 0 ? filters.first() : filters.second();
          int iy = y0 + slot * FILTER_ROW;
          if (life > 0) {
-            g.blit(RenderPipelines.GUI_TEXTURED, filters.reinforced(slot) ? FILTER_ICONS_REINFORCED : FILTER_ICONS, x0, iy, slot * 16.0F, 5.0F, 15, 15, 32, 32);
+            g.blit(RenderPipelines.GUI_TEXTURED, filters.reinforced(slot) ? FILTER_ICONS_REINFORCED : FILTER_ICONS, x0, iy, slot * 16.0F, 5.0F, 15, 15, 15, 15, 32, 32, fa(0xFFFFFFFF, ff));
          } else {
             // an empty slot: just a faint outline
-            int o = 0x50A8C8D0;
+            int o = fa(0x50A8C8D0, ff);
             g.fill(x0 + 2, iy + 2, x0 + FILTER_ICON - 2, iy + 3, o);
             g.fill(x0 + 2, iy + FILTER_ICON - 3, x0 + FILTER_ICON - 2, iy + FILTER_ICON - 2, o);
             g.fill(x0 + 2, iy + 2, x0 + 3, iy + FILTER_ICON - 2, o);
@@ -185,8 +205,8 @@ public final class SporeHud {
          }
          int bx = x0 + FILTER_ICON + 3;
          int by = iy + 5;
-         g.fill(bx - 1, by - 1, bx + BAR_W + 1, by + BAR_H + 1, 0xFF000000);
-         g.fill(bx, by, bx + BAR_W, by + BAR_H, 0xFF272740);
+         g.fill(bx - 1, by - 1, bx + BAR_W + 1, by + BAR_H + 1, fa(0xFF000000, ff));
+         g.fill(bx, by, bx + BAR_W, by + BAR_H, fa(0xFF272740, ff));
          float fr = life > 0 ? filters.fraction(slot) : 0.0F;
          int fw = Math.round(BAR_W * fr);
          if (life > 0 && fw < 1) {
@@ -197,10 +217,10 @@ public final class SporeHud {
             color = 0xFFFF7070;
          }
          if (fw > 0) {
-            g.fill(bx, by, bx + fw, by + BAR_H, color);
-            g.fill(bx, by, bx + fw, by + 1, 0x55FFFFFF);
+            g.fill(bx, by, bx + fw, by + BAR_H, fa(color, ff));
+            g.fill(bx, by, bx + fw, by + 1, fa(0x55FFFFFF, ff));
          }
-         g.text(mc.font, Masks.percent(life) + "%", bx + BAR_W + 4, iy + 4, life > 0 ? color : 0xFF6A7A80);
+         g.text(mc.font, Masks.percent(life) + "%", bx + BAR_W + 4, iy + 4, fa(life > 0 ? color : 0xFF6A7A80, ff));
       }
    }
 
@@ -214,15 +234,21 @@ public final class SporeHud {
       }
       float exposure = ClientState.shownExposure();
       boolean fiend = ClientState.fiendTick >= 0;
-      if (!fiend && exposure < 0.5F && !Masks.isUnderground(player)) {
+      long now = System.nanoTime();
+      float dt = lastMeterNanos == 0L ? 0.0F : Math.min(0.25F, (now - lastMeterNanos) / 1.0E9F);
+      lastMeterNanos = now;
+      boolean showMeter = fiend || exposure >= 0.5F || Masks.isUnderground(player);
+      meterFade = fiend ? 1.0F : stepFade(meterFade, showMeter, dt);
+      if (meterFade <= 0.0F) {
          return;
       }
+      float mf = meterFade;
       int gw = Math.round(GAUGE_W * GAUGE_SCALE);
       int gh = Math.round(GAUGE_H * GAUGE_SCALE);
       int x = 6;
       int y = g.guiHeight() / 2 - gh / 2;
 
-      g.blit(RenderPipelines.GUI_TEXTURED, GAUGE, x, y, 0.0F, 0.0F, gw, gh, gw, gh);
+      g.blit(RenderPipelines.GUI_TEXTURED, GAUGE, x, y, 0.0F, 0.0F, gw, gh, gw, gh, gw, gh, fa(0xFFFFFFFF, mf));
 
       int tx = x + Math.round(TUBE_X * GAUGE_SCALE);
       int ty = y + Math.round(TUBE_Y * GAUGE_SCALE);
@@ -235,9 +261,9 @@ public final class SporeHud {
          int r = (int)(0x3F + (0x14 - 0x3F) * f);
          int gr = (int)(0xD0 + (0x48 - 0xD0) * f);
          int b = (int)(0xD8 + (0x7A - 0xD8) * f);
-         int color = 0xE6000000 | (r << 16) | (gr << 8) | b;
+         int color = fa(0xE6000000 | (r << 16) | (gr << 8) | b, mf);
          if (exposure >= 99.99F && (mc.player.tickCount / 5) % 2 == 0) {
-            color = 0xE6E8FFFF;
+            color = fa(0xE6E8FFFF, mf);
          }
          g.fill(tx, ty + th - filled, tx + tw, ty + th, color);
       }
@@ -249,7 +275,7 @@ public final class SporeHud {
          pct = Math.max(0, Math.min(100, pct + warble.nextInt(2 * Tuning.WARBLE_PERCENT + 1) - Tuning.WARBLE_PERCENT));
       }
       String label = pct + "%";
-      g.text(mc.font, label, x + gw / 2 - mc.font.width(label) / 2, y + gh + 3, 0xFF9FD9DD);
+      g.text(mc.font, label, x + gw / 2 - mc.font.width(label) / 2, y + gh + 3, fa(0xFF9FD9DD, mf));
 
       if (fiend) {
          // The cover area includes the percentage label under the gauge, so nothing peeks out.
