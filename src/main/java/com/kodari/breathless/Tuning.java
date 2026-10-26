@@ -369,5 +369,10 @@ public final class Tuning {
    public static final int RAGE_MACE_PARRIES = 2;
    public static final int RAGE_RESET_TICKS = 200;
    public static final int RAGE_TICKS = 300;
-   public static final float RAGE_DAMAGE = 2.6F;
+   public static final float RAGE_DAMAGE = 2.0F;
+   /** Rage parry: how long his guard is up, the pause between, and how long he is open after a bounced hit. */
+   public static final int RAGE_PARRY_WINDOW = 14;
+   public static final int RAGE_PARRY_GAP = 45;
+   public static final int RAGE_PARRY_GAP_RANGE = 30;
+   public static final int RAGE_PARRY_STAGGER = 18;
 }

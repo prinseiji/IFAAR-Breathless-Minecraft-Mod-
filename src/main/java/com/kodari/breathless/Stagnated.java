@@ -56,6 +56,7 @@ public class Stagnated extends Monster {
    /** Phase two: synced to every client (teal outline, no more voicelines, netherite). */
    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ENRAGED = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    /** Synced so clients draw Elijah's own skin and spot pose. */
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> RAGING = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ELIJAH = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    /** Server-side: ticks left of the enrage intro (invulnerable and busy until then). Client-side clock for the animation, -1 when not playing. */
    private int enrageTicks;
@@ -232,10 +233,16 @@ public class Stagnated extends Monster {
       super.defineSynchedData(builder);
       builder.define(ENRAGED, false);
       builder.define(ELIJAH, false);
+      builder.define(RAGING, false);
    }
 
    public boolean isElijah() {
       return this.entityData.get(ELIJAH);
+   }
+
+   /** True while the parry rage is on (the left eye glows red). */
+   public boolean isRaging() {
+      return this.entityData.get(RAGING);
    }
 
    public boolean isEnraged() {
@@ -340,6 +347,8 @@ public class Stagnated extends Monster {
             this.playSound(SoundEvents.SHIELD_BREAK.value(), 1.3F, 1.0F);
             this.playSound(SoundEvents.ITEM_BREAK.value(), 1.0F, 0.9F);
             level.broadcastEntityEvent(this, (byte)83);
+         } else if (this.rageTicks > 0 && this.parryWin > 0) {
+            this.rageParry(level, source);
          } else {
             // The thunk of a blocked hit.
             this.playSound(SoundEvents.SHIELD_BLOCK.value(), 1.2F, 0.8F + this.random.nextFloat() * 0.4F);
@@ -491,7 +500,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0 || this.parryStagger > 0;
    }
 
    @Override
@@ -877,7 +886,7 @@ public class Stagnated extends Monster {
          if (want != this.guardUp) {
             this.setGuard(want);
          }
-      } else if (this.guardUp) {
+      } else if (this.guardUp && this.parryWin <= 0) {
          this.setGuard(false);
       }
       // Golden apple when low: stands still for the whole bite. The apples refill once the fight has been over for 10 seconds.
@@ -1843,10 +1852,13 @@ public class Stagnated extends Monster {
    /** One sword hit: his own death message, no spore exposure, Fire Aspect. A hit while falling is a crit; the heavy swing is the third of the combo. */
    private boolean swordHit(ServerLevel level, Entity target, boolean heavy) {
       float damage = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
-      boolean crit = !heavy && !this.onGround() && this.fallDistance > 0.0F && this.getDeltaMovement().y < 0.0;
+      boolean raging = this.rageTicks > 0;
+      // In the rage every axe swing is a crit.
+      boolean crit = raging || (!heavy && !this.onGround() && this.fallDistance > 0.0F && this.getDeltaMovement().y < 0.0);
       if (heavy) {
-         damage *= this.rageTicks > 0 ? Tuning.RAGE_DAMAGE : Tuning.SWEATY_COMBO_DAMAGE;
-      } else if (crit) {
+         damage *= raging ? Tuning.RAGE_DAMAGE : Tuning.SWEATY_COMBO_DAMAGE;
+      }
+      if (crit && (raging || !heavy)) {
          damage *= Tuning.SWEATY_CRIT_MULT;
       }
       boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), damage);
@@ -1906,10 +1918,14 @@ public class Stagnated extends Monster {
          this.parryMelee = 0;
          this.parryMace = 0;
          this.rageTicks = Tuning.RAGE_TICKS;
+         this.entityData.set(RAGING, true);
+         this.parryWin = 0;
+         this.parryStagger = 0;
+         this.parryGap = 40;
          Achievements.awardNear(this, 32.0, "u_mad_bro");
          this.setGuard(false);
          this.engaged = false;
-         this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, Tuning.RAGE_TICKS, 1));
+         this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, Tuning.RAGE_TICKS, 0));
          level.broadcastEntityEvent(this, (byte)81);
          if (this.isEnraged()) {
             this.slothCooldown = 0;
@@ -1920,8 +1936,34 @@ public class Stagnated extends Monster {
       }
    }
 
+   private int parryWin;
+   private int parryGap;
+   private int parryStagger;
+
+   /** A hit on him while the rage parry is up: it bounces off, the attacker is thrown back and he is left open for a moment. */
+   private void rageParry(ServerLevel level, DamageSource source) {
+      this.playSound(ModSounds.PARRY, 1.6F, 1.0F);
+      level.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY() + 1.2, this.getZ(), 20, 0.4, 0.3, 0.4, 0.3);
+      level.broadcastEntityEvent(this, (byte)84);
+      if (source.getEntity() instanceof LivingEntity attacker) {
+         double dx = attacker.getX() - this.getX();
+         double dz = attacker.getZ() - this.getZ();
+         double dl = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+         attacker.setDeltaMovement(attacker.getDeltaMovement().add(dx / dl * 0.7, 0.25, dz / dl * 0.7));
+         attacker.hurtMarked = true;
+      }
+      this.parryWin = 0;
+      this.parryStagger = Tuning.RAGE_PARRY_STAGGER;
+      this.parryGap = Tuning.RAGE_PARRY_GAP + this.random.nextInt(Tuning.RAGE_PARRY_GAP_RANGE);
+      this.setGuard(false);
+   }
+
    private void endRage(ServerLevel level) {
       this.rageTicks = 0;
+      this.entityData.set(RAGING, false);
+      this.parryWin = 0;
+      this.parryStagger = 0;
+      this.setGuard(false);
       this.combo = 0;
       if (this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE) && !this.axeSwap) {
          this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansSword());
@@ -1971,6 +2013,24 @@ public class Stagnated extends Monster {
          if (this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && !this.axeSwap && !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE)) {
             this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_AXE));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+         }
+         // The left eye burns red.
+         double hr = Math.toRadians(this.getYHeadRot());
+         double ex = this.getX() + Math.cos(hr) * 0.125 - Math.sin(hr) * 0.28;
+         double ez = this.getZ() + Math.sin(hr) * 0.125 + Math.cos(hr) * 0.28;
+         level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF1010, 0.7F), ex, this.getY() + 1.73, ez, 2, 0.02, 0.02, 0.02, 0.0);
+         // The sword parry: now and then he raises his guard for a moment. A hit into it bounces off and leaves him open.
+         if (this.parryStagger > 0) {
+            this.parryStagger--;
+         } else if (this.parryWin > 0) {
+            if (--this.parryWin == 0) {
+               this.setGuard(false);
+            }
+         } else if (this.comboWind <= 0 && target != null && this.distanceTo(target) < 6.0F && this.onGround() && --this.parryGap <= 0) {
+            this.parryWin = Tuning.RAGE_PARRY_WINDOW;
+            this.parryGap = Tuning.RAGE_PARRY_GAP + this.random.nextInt(Tuning.RAGE_PARRY_GAP_RANGE);
+            this.getNavigation().stop();
+            this.setGuard(true);
          }
          if (--this.rageTicks <= 0) {
             this.endRage(level);

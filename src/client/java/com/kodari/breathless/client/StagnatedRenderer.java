@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderState, StagnatedModel> {
    private static final Identifier TEXTURE = Breathless.id("textures/entity/stagnated.png");
    private static final Identifier ELIJAH = Breathless.id("textures/entity/elijah.png");
+   private static final Identifier ELIJAH_RAGE = Breathless.id("textures/entity/elijah_rage.png");
 
    public StagnatedRenderer(EntityRendererProvider.Context context) {
       super(context, new StagnatedModel(context.bakeLayer(StagnatedModel.LAYER)), 0.5F);
@@ -72,11 +73,12 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       state.shieldHit = entity.shieldHitClock >= 0 ? (entity.shieldHitClock + partialTick) / 20.0F : -1.0F;
       state.guard = entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD);
       state.elijah = entity.isElijah();
+      state.raging = entity.isRaging();
       state.spot = entity.spotClock >= 0 ? (entity.spotClock + partialTick) / 20.0F : -1.0F;
    }
 
    @Override
    public Identifier getTextureLocation(StagnatedRenderState state) {
-      return state.elijah ? ELIJAH : TEXTURE;
+      return state.elijah ? (state.raging ? ELIJAH_RAGE : ELIJAH) : TEXTURE;
    }
 }
