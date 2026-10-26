@@ -223,7 +223,9 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
          this.apply(StagnatedAnims.IDLE, time);
       }
       // Shield up: the upper body takes the shield pose on top of the movement.
-      if (state.shieldHit >= 0.0F) {
+      if (state.swordBlock) {
+         this.overlay(StagnatedAnims.SWORD_BLOCK, 0.0F);
+      } else if (state.shieldHit >= 0.0F) {
          this.overlay(StagnatedAnims.SHIELD_HIT, state.shieldHit);
       } else if (state.shieldUp >= 0.0F) {
          this.overlay(StagnatedAnims.SHIELD_UP, state.shieldUp);

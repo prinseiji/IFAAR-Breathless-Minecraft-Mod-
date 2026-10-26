@@ -65,6 +65,7 @@ public class BreathlessClient implements ClientModInitializer {
       ParticleProviderRegistry.getInstance().register(ModParticles.SPORE_EYE, EyeParticle.SuspendProvider::new);
       ParticleProviderRegistry.getInstance().register(ModParticles.SPORE_EYE_SURGE, EyeParticle.SurgeProvider::new);
       ParticleProviderRegistry.getInstance().register(ModParticles.RAGE_RING, RingParticle.Provider::new);
+      ParticleProviderRegistry.getInstance().register(ModParticles.STUN_MARK, StunMarkParticle.Provider::new);
 
       // The flat, see-through sheet of gas at Y=0.
       LevelRenderEvents.BEFORE_GIZMOS.register(LevelSheet::render);

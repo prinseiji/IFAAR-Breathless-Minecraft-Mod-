@@ -57,6 +57,7 @@ public class Stagnated extends Monster {
    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ENRAGED = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    /** Synced so clients draw Elijah's own skin and spot pose. */
    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> RAGING = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> PARRYING = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ELIJAH = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    /** Server-side: ticks left of the enrage intro (invulnerable and busy until then). Client-side clock for the animation, -1 when not playing. */
    private int enrageTicks;
@@ -234,10 +235,16 @@ public class Stagnated extends Monster {
       builder.define(ENRAGED, false);
       builder.define(ELIJAH, false);
       builder.define(RAGING, false);
+      builder.define(PARRYING, false);
    }
 
    public boolean isElijah() {
       return this.entityData.get(ELIJAH);
+   }
+
+   /** True while he holds the sword up in the rage parry (client: block pose). */
+   public boolean isParrying() {
+      return this.entityData.get(PARRYING);
    }
 
    /** True while the parry rage is on (the left eye glows red). */
@@ -1135,7 +1142,33 @@ public class Stagnated extends Monster {
       return !(this.sweaty && ((this.guardUp && this.guardHold > 0) || this.comboWind > 0)) && super.isWithinMeleeAttackRange(target);
    }
 
+   /** The rage parry: he swaps the axe for his sword and holds it up in the blocking pose. */
+   private void startSwordGuard() {
+      this.guardUp = true;
+      this.guardHold = Tuning.SWEATY_GUARD_HOLD_TICKS;
+      this.entityData.set(PARRYING, true);
+      this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansSword());
+      this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+      this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.3F);
+   }
+
+   private void endSwordGuard() {
+      this.parryWin = 0;
+      this.guardUp = false;
+      this.guardHold = 0;
+      if (this.entityData.get(PARRYING)) {
+         this.entityData.set(PARRYING, false);
+         if (this.rageTicks > 0 && !this.axeSwap) {
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_AXE));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+         }
+      }
+   }
+
    private void setGuard(boolean up) {
+      if (!up && this.entityData.get(PARRYING)) {
+         this.endSwordGuard();
+      }
       this.guardUp = up;
       if (up) {
          this.guardHold = Tuning.SWEATY_GUARD_HOLD_TICKS;
@@ -1191,6 +1224,9 @@ public class Stagnated extends Monster {
 
    private void stunRing(ServerLevel level, double x, double y, double z) {
       double r = this.stunRadius();
+      // The rotating target on the ground (its size travels as the particle's velocity), with red dust drifting up from it.
+      level.sendParticles(ModParticles.STUN_MARK, x, y, z, 0, r * 1.7, 0.0, 0.0, 1.0);
+      level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 1.2F), x, y + 0.3, z, 8, r * 0.7, 0.35, r * 0.7, 0.0);
       for (int i = 0; i < 28; i++) {
          double a = i * Math.PI * 2.0 / 28.0;
          level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F), x + Math.cos(a) * r, y, z + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
@@ -2010,7 +2046,7 @@ public class Stagnated extends Monster {
          this.combo = Math.max(this.combo, Tuning.SWEATY_COMBO_HITS);
          // The ring follows him: the particle is told whose it is (the id travels as the particle's velocity).
          level.sendParticles(ModParticles.RAGE_RING, this.getX(), this.getY() + 0.95, this.getZ(), 0, this.getId(), 0.0, 0.0, 1.0);
-         if (this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && !this.axeSwap && !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE)) {
+         if (this.swapTicks <= 0 && !this.diving && this.windTicks <= 0 && !this.axeSwap && this.parryWin <= 0 && !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE)) {
             this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_AXE));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
          }
@@ -2024,13 +2060,13 @@ public class Stagnated extends Monster {
             this.parryStagger--;
          } else if (this.parryWin > 0) {
             if (--this.parryWin == 0) {
-               this.setGuard(false);
+               this.endSwordGuard();
             }
          } else if (this.comboWind <= 0 && target != null && this.distanceTo(target) < 6.0F && this.onGround() && --this.parryGap <= 0) {
             this.parryWin = Tuning.RAGE_PARRY_WINDOW;
             this.parryGap = Tuning.RAGE_PARRY_GAP + this.random.nextInt(Tuning.RAGE_PARRY_GAP_RANGE);
             this.getNavigation().stop();
-            this.setGuard(true);
+            this.startSwordGuard();
          }
          if (--this.rageTicks <= 0) {
             this.endRage(level);

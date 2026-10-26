@@ -425,3 +425,10 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 25c
 - The exposure gauge and the filter meters now fade in and out (0.7 s) when you cross Y=0 or put the mask on/off, instead of popping. SporeHud.java only.
+
+## Batch 25d
+- Stun slam: your target picture (stun_mark.png) lies flat on the ground where he will land, turning slowly, with red dust drifting up from it. The dust ring stays.
+- Eli's Sword can no longer be enchanted at the anvil (new AnvilMixin: no result with an enchanted book/item on the right). Any enchant that already got on is stripped from inventories every second.
+
+## Batch 25e (combined 25a-25e)
+- Rage parry now uses his sword: the axe is swapped for his sword and he holds it up in a mirrored blocking pose (no shield). New clip SWORD_BLOCK, synced PARRYING flag.

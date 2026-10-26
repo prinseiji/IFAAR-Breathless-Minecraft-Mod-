@@ -36,6 +36,7 @@ public class StagnatedRenderState extends ArmedEntityRenderState {
    /** Elijah: own skin, no body strips, own spot pose. */
    public boolean elijah;
    public boolean raging;
+   public boolean swordBlock;
    /** Seconds into the enrage intro, -1 when not playing. */
    public float enrage = -1.0F;
    /** Worn armor: helmet, chestplate, leggings, boots. */

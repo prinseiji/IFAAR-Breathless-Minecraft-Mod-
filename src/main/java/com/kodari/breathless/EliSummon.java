@@ -120,6 +120,20 @@ public final class EliSummon {
          }
          return true;
       });
+      // Whatever got onto the sword anyway (an older anvil enchant, a command) is taken off again.
+      net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+         if (server.getTickCount() % 20 != 0) {
+            return;
+         }
+         for (net.minecraft.server.level.ServerPlayer player : server.getPlayerList().getPlayers()) {
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+               net.minecraft.world.item.ItemStack stack = player.getInventory().getItem(i);
+               if (stack.is(ModItems.ELI_SWORD) && stack.isEnchanted()) {
+                  stack.remove(net.minecraft.core.component.DataComponents.ENCHANTMENTS);
+               }
+            }
+         }
+      });
       EnchantmentEvents.ALLOW_ENCHANTING.register((enchantment, target, context) -> target.is(ModItems.ELI_SWORD) ? TriState.FALSE : TriState.DEFAULT);
       // Ancient city chests now and then hold a heart.
       LootTableEvents.MODIFY.register((key, table, tableSource, registries) -> {

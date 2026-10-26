@@ -17,9 +17,13 @@ public final class ModParticles {
    /** The ring of thorns that circles Elijah while he is enraged by parries (billboard, always faces you). */
    public static SimpleParticleType RAGE_RING;
 
+   /** The target on the ground for the stun slam (flat, turns slowly). */
+   public static SimpleParticleType STUN_MARK;
+
    public static void register() {
       SPORE_EYE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye"), FabricParticleTypes.simple());
       SPORE_EYE_SURGE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye_surge"), FabricParticleTypes.simple());
+      STUN_MARK = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("stun_mark"), FabricParticleTypes.simple());
       RAGE_RING = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("rage_ring"), FabricParticleTypes.simple());
    }
 }

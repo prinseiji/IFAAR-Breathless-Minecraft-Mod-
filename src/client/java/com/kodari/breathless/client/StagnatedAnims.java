@@ -192,6 +192,14 @@ public final class StagnatedAnims {
          new Track("right_leg", 1, new float[]{0F}, new float[]{0F, 0F, 1F}),
          new Track("left_leg", 0, new float[]{0F}, new float[]{-0.2618F, 0F, 0F}),
          new Track("left_leg", 1, new float[]{0F}, new float[]{0F, 0F, -2F}));
+   /** The rage parry: the sword (left hand) held up in the same blocking pose as the shield, mirrored. */
+   public static final Clip SWORD_BLOCK = new Clip(0.25F, false,
+         new Track("head", 0, new float[]{0.125F}, new float[]{-0.74189F, 0.10938F, -0.07043F}),
+         new Track("left_arm", 0, new float[]{0F}, new float[]{-1.22104F, 0.91284F, 0.35405F}),
+         new Track("left_arm", 1, new float[]{0F}, new float[]{1F, 0F, 0F}),
+         new Track("right_leg", 0, new float[]{0F}, new float[]{-0.2618F, 0F, 0F}),
+         new Track("right_leg", 1, new float[]{0F}, new float[]{0F, 0F, 2F}),
+         new Track("left_leg", 1, new float[]{0F}, new float[]{0F, 0F, -1F}));
    public static final Clip SHIELD_DISABLED = new Clip(0.5F, false,
          new Track("head", 0, new float[]{0.08333F, 0.16667F, 0.375F}, new float[]{-0.74189F, -0.10938F, 0.07043F, -1.70182F, -0.10938F, 0.07043F, -0.21829F, -0.10938F, 0.07043F}),
          new Track("body", 0, new float[]{0F, 0.16667F, 0.375F}, new float[]{0F, 0F, 0F, -0.21817F, 0F, 0F, 0.17453F, 0F, 0F}),
