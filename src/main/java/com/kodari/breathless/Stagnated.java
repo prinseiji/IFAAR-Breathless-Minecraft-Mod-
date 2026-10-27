@@ -2141,16 +2141,6 @@ public class Stagnated extends Monster {
          this.xbFirstDone = true;
          this.xbAway = 0;
          this.xbFast = low || (this.isEnraged() && this.random.nextFloat() < 0.4F);
-         // Voice: aerial and fast-reload lines always (they cut in over the cooldown), ground banter in phase two only (Tuning.XB_TALK_PHASE_ONE).
-         if (this.xbAir) {
-            this.slothCooldown = 0;
-            this.sloth(SlothLines.AIR);
-         } else if (this.xbFast) {
-            this.slothCooldown = 0;
-            this.sloth(SlothLines.RELOAD);
-         } else if (this.isEnraged() || Tuning.XB_TALK_PHASE_ONE) {
-            this.sloth(this.xbClose >= 30 || crowd >= 3 ? SlothLines.CLOSE : (far ? SlothLines.FAR : SlothLines.SHOT));
-         }
          this.xbFeinted = false;
          this.xbHold = 0;
          this.xbTicks = 0;
@@ -2240,9 +2230,9 @@ public class Stagnated extends Monster {
             }
             if (this.xbTicks >= 5) {
                // The feint: you raise your shield, he keeps aiming for a moment as if waiting, then fires anyway (at once if you lower it).
-               if (!this.xbAir && !this.xbFeinted && target instanceof Player blocker && blocker.isBlocking() && this.random.nextFloat() < 0.33F) {
+               if (!this.xbAir && !this.xbFeinted && target instanceof Player blocker && blocker.isBlocking() && this.random.nextFloat() < Tuning.XB_STALL_CHANCE) {
                   this.xbFeinted = true;
-                  this.xbHold = 6 + this.random.nextInt(15);
+                  this.xbHold = Tuning.XB_STALL_MIN + this.random.nextInt(Tuning.XB_STALL_RANGE);
                }
                if (this.xbHold > 0) {
                   this.xbHold--;
@@ -2301,6 +2291,17 @@ public class Stagnated extends Monster {
          targets.add(target);
       }
       boolean multi = targets.size() > 1;
+      // Voice (see SlothLines): said the moment he fires. Aerial snipe, several foes (multishot), fast reload, then the normal shot of his phase. Cuts in over the voice cooldown.
+      this.slothCooldown = 0;
+      if (this.xbAir) {
+         this.sloth(this.isEnraged() ? SlothLines.AIR : SlothLines.P1_FAST);
+      } else if (multi) {
+         this.sloth(SlothLines.MULTI);
+      } else if (this.xbFast) {
+         this.sloth(this.isEnraged() ? SlothLines.RELOAD : SlothLines.P1_FAST);
+      } else {
+         this.sloth(this.isEnraged() ? SlothLines.P2_SHOT : SlothLines.P1_SHOT);
+      }
       for (LivingEntity t : targets) {
          double dist = this.distanceTo(t);
          float dmg = this.xbAir ? Tuning.XB_AIR_DAMAGE : EliRockets.damageAt(dist);

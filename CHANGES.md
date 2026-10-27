@@ -435,11 +435,13 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 26a (firework crossbow)
 - Eli fires firework rockets with a crossbow: ground (backs off if you are close, loads with a red outline + warning sound, tracks you, fires; 1/3 of the time against a raised shield he holds the aim a beat first), and aerial (rises ~13 blocks, loads, fires a fixed-damage rocket, dives into a guaranteed water clutch). Multishot at 3+ foes. Phase/low-HP ramp: cooldown 160/100/70 ticks, fast reload in phase two and under 35
-## Batch 7 (untested): Elijah voicelines and balance
-- 21 new crossbow voicelines (mono OGG, matched to the loudness of the existing sloth lines). Groups live in SlothLines: RELOAD (fast reloads), AIR (aerial snipe), FAR (you are running off), SHOT (normal shot), CLOSE (crowded or in his face). Move numbers between groups to change which line plays when.
-- Aerial and reload lines always play (they cut in over the 60-tick voice cooldown). Ground banter only in phase two (`Tuning.XB_TALK_PHASE_ONE`).
+## Batch 27 (untested): Elijah crossbow voicelines, balance, shield stall
+- 21 new crossbow voicelines (mono OGG, matched to the loudness of the existing sloth lines). Groups live in SlothLines: P1_SHOT, P1_FAST, MULTI (several foes), P2_SHOT, RELOAD (phase two fast reloads), AIR (phase two aerial snipe; phase one aerial snipes use P1_FAST). Phase one lines have no caption.
+- Crossbow voicelines are said the moment he fires (after the shield stall), cutting in over the 60-tick voice cooldown.
 - His sword, mace and slams now ignore Protection enchantments (bypasses_enchantments tag), like the rocket. Armor still counts.
 - Rockets about 1.4x to 1.5x stronger (24 / 19 / 14 / 9 before armor at 2.5 / 4.5 / 8 / 12 blocks). Rage axe multiplier 2.0 to 1.6.
 - Crossbow cooldowns 160/100/70 to 100/70/50. Aerial snipe chance 15%/35% to 30%/50%, and his first shot of a fight is a snipe when there is room.
 - New: he shoots when you stay 9+ blocks away for 1.25 s (running off, getting further).
-- Glint 0.5 block further forward (`XB_GLINT_FORWARD`) and 60% bigger.
+- Glint 0.5 block further forward (`XB_GLINT_FORWARD`) and much bigger (0.2 to 0.55).
+- Shield stall: when your shield is up as he finishes aiming he now always holds the aim for 2 to 3.5 seconds (was 0.3 to 1 s, and only 1 time in 3), then fires anyway. Lower the shield and he fires at once. `XB_STALL_*` in Tuning.
+- Aerial snipe damage 8 to 16 before armor (about 2 hearts through full diamond or netherite, up from 1).

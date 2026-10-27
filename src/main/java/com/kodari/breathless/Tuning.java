@@ -382,7 +382,7 @@ public final class Tuning {
    public static final double XB_BLAST_RADIUS = 2.2;
    public static final float XB_BURN_SECONDS = 4.0F;
    /** Aerial snipe: fixed damage, how high he goes, and the cooldown (in ticks) after each sequence by situation. */
-   public static final float XB_AIR_DAMAGE = 8.0F;
+   public static final float XB_AIR_DAMAGE = 16.0F;
    public static final double XB_AIR_HEIGHT = 13.0;
    public static final int XB_COOLDOWN_P1 = 100;
    public static final int XB_COOLDOWN_P2 = 70;
@@ -394,9 +394,11 @@ public final class Tuning {
    public static final double XB_FAR_DIST = 9.0;
    public static final int XB_FAR_TICKS = 25;
    /** How far in front of the crossbow the glint shows (blocks) and its size. */
+   /** Shield stall: when your shield is up as he finishes aiming he keeps aiming (the glint stays) for this many ticks, then fires anyway. Lowering the shield makes him fire at once. */
+   public static final float XB_STALL_CHANCE = 1.0F;
+   public static final int XB_STALL_MIN = 40;
+   public static final int XB_STALL_RANGE = 31;
    public static final double XB_GLINT_FORWARD = 1.35;
-   /** Crossbow voicelines in phase one too? (false: only phase two talks while shooting, except the aerial and reload lines) */
-   public static final boolean XB_TALK_PHASE_ONE = false;
    /** Normal / fast reload and the shot, in ticks (the clips are 1.04 s, 0.63 s and 0.63 s). */
    public static final int XB_LOAD_TICKS = 21;
    public static final int XB_FAST_LOAD_TICKS = 13;

@@ -22,15 +22,15 @@ public final class SlothLines {
       "DON'T MOVE",
       "DODGE THIS",
       "BANG",
-      "THINK FAST",
-      "NO SCOPE",
-      "EAT LEAD",
-      "SAY CHEESE",
-      "LET'S LIGHT THIS CANDLE, HUH?",
-      "PLAY FAIR",
-      "RESPECT THE 1V1",
-      "I'M BEING SUBJECTED TO PEER PRESSURE. GET BACK.",
-      "JUST MORE KILLS FOR ME"
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
    };
    private static final float[] SECONDS = {
       1.14F, 1.02F, 0.74F, 1.35F, 0.74F, 1.25F, 1.11F, 1.30F, 0.98F, 1.25F, 1.28F, 1.97F, 1.95F, 1.04F, 1.25F, 2.86F, 1.44F, 1.58F, 1.58F, 1.56F, 1.9F, 2.28F, 1.49F, 1.05F, 1.74F, 1.44F, 1.51F, 1.42F, 1.02F, 1.49F, 1.44F, 2.21F, 2.14F, 2.81F, 1.25F, 2.21F, 2.48F, 1.83F
@@ -40,12 +40,16 @@ public final class SlothLines {
    public static final int[] AXE = {2, 3, 4, 5, 6};
    public static final int[] STUN = {7, 8, 9, 10, 11};
    public static final int[] TAUNT = {12, 13, 14, 15, 16};
-   /** Crossbow lines. Which line goes with which moment is just this table, so move numbers between groups freely (keep each group in ascending order). */
+   /**
+    * Crossbow lines (keep each group in ascending order). Phase one lines have no caption (null text); phase two and aerial lines do.
+    * P1_SHOT / MULTI: phase one (MULTI any phase). P1_FAST: phase one aerial snipe (and phase one fast reloads, if he ever has them). P2_SHOT / RELOAD / AIR: phase two.
+    */
    public static final int[] RELOAD = {17, 18, 19, 20};
    public static final int[] AIR = {21, 22, 23, 24, 25};
-   public static final int[] FAR = {26, 27, 29, 30};
-   public static final int[] SHOT = {28, 31, 32, 33};
-   public static final int[] CLOSE = {34, 35, 36, 37};
+   public static final int[] P2_SHOT = {26, 27, 28};
+   public static final int[] P1_FAST = {29, 30};
+   public static final int[] P1_SHOT = {31, 32, 33, 36};
+   public static final int[] MULTI = {34, 35, 37};
 
    public static String text(int index) {
       return TEXT[index];
