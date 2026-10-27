@@ -14,6 +14,8 @@ public final class ModDamage {
    public static final ResourceKey<DamageType> ETHAN_MACE = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("ethan_mace"));
    public static final ResourceKey<DamageType> ETHAN_SWORD = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("ethan_sword"));
 
+   public static final ResourceKey<DamageType> ELI_ROCKET = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("eli_rocket"));
+
    private ModDamage() {
    }
 
@@ -27,6 +29,11 @@ public final class ModDamage {
 
    public static DamageSource ethanSword(ServerLevel level, net.minecraft.world.entity.Entity attacker) {
       return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ETHAN_SWORD), attacker);
+   }
+
+   /** His firework rocket: armor still works, enchantment protection does not (see the bypasses_enchantments tag). */
+   public static DamageSource eliRocket(ServerLevel level, net.minecraft.world.entity.Entity attacker) {
+      return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ELI_ROCKET), attacker);
    }
 
    public static DamageSource sear(ServerLevel level) {

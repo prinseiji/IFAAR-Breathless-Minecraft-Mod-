@@ -432,3 +432,6 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 25e (combined 25a-25e)
 - Rage parry now uses his sword: the axe is swapped for his sword and he holds it up in a mirrored blocking pose (no shield). New clip SWORD_BLOCK, synced PARRYING flag.
+
+## Batch 26a (firework crossbow)
+- Eli fires firework rockets with a crossbow: ground (backs off if you are close, loads with a red outline + warning sound, tracks you, fires; 1/3 of the time against a raised shield he holds the aim a beat first), and aerial (rises ~13 blocks, loads, fires a fixed-damage rocket, dives into a guaranteed water clutch). Multishot at 3+ foes. Phase/low-HP ramp: cooldown 160/100/70 ticks, fast reload in phase two and under 35

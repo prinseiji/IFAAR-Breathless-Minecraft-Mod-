@@ -314,6 +314,15 @@
       }
     ]
   },
+  "crossbow_fire": {
+    "sounds": [
+      {
+        "name": "breathless:crossbow_fire",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
   "combo_warning": {
     "sounds": [
       {

@@ -20,10 +20,14 @@ public final class ModParticles {
    /** The target on the ground for the stun slam (flat, turns slowly). */
    public static SimpleParticleType STUN_MARK;
 
+   /** The small shine that turns at his crossbow while he aims. */
+   public static SimpleParticleType XB_GLINT;
+
    public static void register() {
       SPORE_EYE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye"), FabricParticleTypes.simple());
       SPORE_EYE_SURGE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye_surge"), FabricParticleTypes.simple());
       STUN_MARK = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("stun_mark"), FabricParticleTypes.simple());
+      XB_GLINT = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("xb_glint"), FabricParticleTypes.simple());
       RAGE_RING = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("rage_ring"), FabricParticleTypes.simple());
    }
 }

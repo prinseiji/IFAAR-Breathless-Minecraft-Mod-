@@ -37,6 +37,8 @@ public class StagnatedRenderState extends ArmedEntityRenderState {
    public boolean elijah;
    public boolean raging;
    public boolean swordBlock;
+   public int xbKind = -1;
+   public float xbTime;
    /** Seconds into the enrage intro, -1 when not playing. */
    public float enrage = -1.0F;
    /** Worn armor: helmet, chestplate, leggings, boots. */

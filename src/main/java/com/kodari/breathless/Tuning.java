@@ -375,4 +375,20 @@ public final class Tuning {
    public static final int RAGE_PARRY_GAP = 45;
    public static final int RAGE_PARRY_GAP_RANGE = 30;
    public static final int RAGE_PARRY_STAGGER = 18;
+
+   // ---- the firework crossbow ----
+   public static final double XB_SPEED = 2.2;
+   public static final double XB_AIR_SPEED = 3.4;
+   public static final double XB_BLAST_RADIUS = 2.2;
+   public static final float XB_BURN_SECONDS = 4.0F;
+   /** Aerial snipe: fixed damage, how high he goes, and the cooldown (in ticks) after each sequence by situation. */
+   public static final float XB_AIR_DAMAGE = 8.0F;
+   public static final double XB_AIR_HEIGHT = 13.0;
+   public static final int XB_COOLDOWN_P1 = 160;
+   public static final int XB_COOLDOWN_P2 = 100;
+   public static final int XB_COOLDOWN_LOW = 70;
+   /** Normal / fast reload and the shot, in ticks (the clips are 1.04 s, 0.63 s and 0.63 s). */
+   public static final int XB_LOAD_TICKS = 21;
+   public static final int XB_FAST_LOAD_TICKS = 13;
+   public static final int XB_SHOT_TICKS = 13;
 }

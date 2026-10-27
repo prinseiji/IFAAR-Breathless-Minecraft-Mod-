@@ -75,6 +75,8 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       state.elijah = entity.isElijah();
       state.raging = entity.isRaging();
       state.swordBlock = entity.isParrying();
+      state.xbKind = entity.xbKind;
+      state.xbTime = entity.xbClock >= 0 ? (entity.xbClock + partialTick) / 20.0F : 0.0F;
       state.spot = entity.spotClock >= 0 ? (entity.spotClock + partialTick) / 20.0F : -1.0F;
    }
 

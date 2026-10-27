@@ -364,6 +364,9 @@ public class Stagnated extends Monster {
          return false;
       }
       boolean hurt = super.hurtServer(level, source, amount);
+      if (this.sweaty && hurt && source.getEntity() instanceof LivingEntity foe && !(foe instanceof Player) && !(foe instanceof Stagnated) && !(foe instanceof Warden)) {
+         this.foes.put(foe, this.tickCount);
+      }
       if (this.sweaty && hurt && source.getEntity() instanceof Warden warden) {
          // Ego: he hits back at a Warden, and anyone close gets to watch.
          this.wardenGrudge = warden;
@@ -507,7 +510,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0 || this.parryStagger > 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE;
    }
 
    @Override
@@ -516,6 +519,9 @@ public class Stagnated extends Monster {
       if (this.sweaty && !this.level().isClientSide() && this.tickCount % 10 == 0) {
          // Always, even while he climbs out: the client stops the music if the updates stop for 3 seconds.
          this.pingBoss((ServerLevel)this.level(), this.isEnraged() ? 2 : 1);
+      }
+      if (this.sweaty && !this.level().isClientSide() && !this.rockets.isEmpty()) {
+         EliRockets.tick((ServerLevel)this.level(), this, this.rockets);
       }
       if (this.level().isClientSide()) {
          if (this.emergeClock >= 0) {
@@ -544,6 +550,15 @@ public class Stagnated extends Monster {
          }
          if (this.unarmClock >= 0 && ++this.unarmClock > Tuning.STAGNATED_UNARM_TICKS) {
             this.unarmClock = -1;
+         }
+         if (this.xbKind >= 0) {
+            this.xbClock++;
+            int len = this.xbKind == 0 || this.xbKind == 2 ? Tuning.XB_LOAD_TICKS : (this.xbKind == 1 || this.xbKind == 3 ? Tuning.XB_FAST_LOAD_TICKS : (this.xbKind >= 5 ? Tuning.XB_SHOT_TICKS : 100000));
+            if (this.xbClock > len) {
+               // A reload ends in the aim pose, a shot ends the sequence.
+               this.xbKind = this.xbKind <= 3 ? 4 : -1;
+               this.xbClock = this.xbKind == 4 ? 0 : -1;
+            }
          }
          if (this.windClock >= 0 && ++this.windClock > Tuning.SWEATY_WIND_TICKS) {
             this.windClock = -1;
@@ -752,6 +767,7 @@ public class Stagnated extends Monster {
 
    /** Phase two. Called when his health would reach zero for the first time (or by /breathless enrage). */
    private void startEnrage(ServerLevel level) {
+      this.abortCrossbow(level);
       this.entityData.set(ENRAGED, true);
       // Phase two: 5L0TH has taken over, and the name tag says so.
       this.setCustomName(Component.literal("xX_5L0TH_Xx"));
@@ -936,6 +952,9 @@ public class Stagnated extends Monster {
          this.holdTemp(Items.GOLDEN_APPLE);
          return;
       }
+      if (this.tickCrossbow(level, target)) {
+         return;
+      }
       boolean mace = this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.MACE) || this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.DIAMOND_AXE);
 
       // The swap between the sword and the mace (reuses the unarm animation: the item changes at tick 7).
@@ -1018,7 +1037,12 @@ public class Stagnated extends Monster {
       if (!this.locked && !this.fleeing && motion.y <= 0.0 && this.airTicks > 3 && !this.landed) {
          this.locked = true;
          double h = this.groundBelow();
-         if (target != null && h >= 0.0) {
+         if (this.forceClutch) {
+            // Straight down into the water.
+            this.lockVx = 0.0;
+            this.lockVz = 0.0;
+            this.markY = Double.NaN;
+         } else if (target != null && h >= 0.0) {
             double vy = motion.y;
             double y = h;
             int t = 0;
@@ -1064,7 +1088,7 @@ public class Stagnated extends Monster {
                this.decided = true;
                double ddx = target == null ? 99.0 : target.getX() - this.getX();
                double ddz = target == null ? 99.0 : target.getZ() - this.getZ();
-               this.smashing = target != null && !this.fleeing && Math.sqrt(ddx * ddx + ddz * ddz) <= Tuning.SWEATY_SMASH_REACH;
+               this.smashing = !this.forceClutch && target != null && !this.fleeing && Math.sqrt(ddx * ddx + ddz * ddz) <= Tuning.SWEATY_SMASH_REACH;
             }
             if (!this.decided) {
                // not close to the ground yet
@@ -1139,7 +1163,7 @@ public class Stagnated extends Monster {
    /** While his shield is up it has to stay up for a while before he lowers it to swing. */
    @Override
    public boolean isWithinMeleeAttackRange(LivingEntity target) {
-      return !(this.sweaty && ((this.guardUp && this.guardHold > 0) || this.comboWind > 0)) && super.isWithinMeleeAttackRange(target);
+      return !(this.sweaty && ((this.guardUp && this.guardHold > 0) || this.comboWind > 0 || this.xbState != XB_NONE)) && super.isWithinMeleeAttackRange(target);
    }
 
    /** The rage parry: he swaps the axe for his sword and holds it up in the blocking pose. */
@@ -1263,6 +1287,7 @@ public class Stagnated extends Monster {
    }
 
    private void finishDive(ServerLevel level) {
+      this.forceClutch = false;
       float fall = this.landedFall;
       boolean smash = this.smashing && this.smashAnim && fall >= 1.5F;
       if (this.smashing && !smash && this.landed && fall >= 1.5F) {
@@ -1812,6 +1837,21 @@ public class Stagnated extends Monster {
       } else if (event == 79) {
          this.clutchClock = 0;
          this.flying = false;
+      } else if (event >= 90 && event <= 93) {
+         this.xbKind = event - 90;
+         this.xbClock = 0;
+      } else if (event == 94 || event == 95) {
+         this.xbKind = event == 94 ? 5 : 6;
+         this.xbClock = 0;
+      } else if (event == 96) {
+         this.xbKind = 4;
+         this.xbClock = 0;
+      } else if (event == 97) {
+         this.xbKind = -1;
+         this.xbClock = -1;
+      } else if (event == 98) {
+         this.flying = true;
+         this.flyTicks = 0;
       } else if (event == 85) {
          this.enrageClock = 0;
          this.flying = false;
@@ -1953,6 +1993,7 @@ public class Stagnated extends Monster {
       if (this.parryMelee >= Tuning.RAGE_MELEE_PARRIES || this.parryMace >= Tuning.RAGE_MACE_PARRIES) {
          this.parryMelee = 0;
          this.parryMace = 0;
+         this.abortCrossbow(level);
          this.rageTicks = Tuning.RAGE_TICKS;
          this.entityData.set(RAGING, true);
          this.parryWin = 0;
@@ -1975,6 +2016,347 @@ public class Stagnated extends Monster {
    private int parryWin;
    private int parryGap;
    private int parryStagger;
+
+   // ---- the firework crossbow ----
+   private static final int XB_NONE = 0;
+   private static final int XB_HOP = 1;
+   private static final int XB_RISE = 2;
+   private static final int XB_LOAD = 3;
+   private static final int XB_AIM = 4;
+   private static final int XB_FIRE = 5;
+   private int xbState;
+   private int xbTicks;
+   private int xbCool = 200;
+   private int xbClose;
+   private int xbHold;
+   private double xbRiseTo;
+   private boolean xbAir;
+   private boolean xbFast;
+   private boolean xbFeinted;
+   private boolean forceClutch;
+   private ItemStack xbPrev = ItemStack.EMPTY;
+   private final java.util.List<EliRockets.Rocket> rockets = new java.util.ArrayList<>();
+   private final java.util.Map<LivingEntity, Integer> foes = new java.util.WeakHashMap<>();
+   /** Client side: which crossbow clip is playing (-1 none) and its clock. 0/1 reload (ground normal/fast), 2/3 the same in the air, 4 aim pose, 5/6 shot (ground/air). */
+   public int xbKind = -1;
+   public int xbClock = -1;
+
+   /** Foes close to him: players (not creative / spectator) and anything that hit him lately. Nearest first. */
+   private java.util.List<LivingEntity> foeList(ServerLevel level) {
+      java.util.List<LivingEntity> list = new java.util.ArrayList<>();
+      for (Player p : level.players()) {
+         if (p.isAlive() && !p.isCreative() && !p.isSpectator() && p.distanceToSqr(this) < 12.0 * 12.0) {
+            list.add(p);
+         }
+      }
+      for (java.util.Map.Entry<LivingEntity, Integer> e : this.foes.entrySet()) {
+         LivingEntity f = e.getKey();
+         if (f != null && f.isAlive() && this.tickCount - e.getValue() < 200 && f.distanceToSqr(this) < 12.0 * 12.0 && !list.contains(f)) {
+            list.add(f);
+         }
+      }
+      list.sort(java.util.Comparator.comparingDouble(f -> f.distanceToSqr(this)));
+      return list;
+   }
+
+   private void aimAt(LivingEntity t) {
+      double dx = t.getX() - this.getX();
+      double dz = t.getZ() - this.getZ();
+      double dy = t.getEyeY() - (this.getY() + 1.4);
+      float yaw = (float)(Mth.atan2(dz, dx) * 180.0F / (float)Math.PI) - 90.0F;
+      float pitch = (float)(-(Mth.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * 180.0F / (float)Math.PI));
+      this.setYRot(yaw);
+      this.setYBodyRot(yaw);
+      this.setYHeadRot(yaw);
+      this.setXRot(pitch);
+   }
+
+   private boolean canBackOff(ServerLevel level, LivingEntity target) {
+      double dx = this.getX() - target.getX();
+      double dz = this.getZ() - target.getZ();
+      double l = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+      for (double h : new double[] {0.5, 1.6}) {
+         net.minecraft.world.phys.Vec3 from = new net.minecraft.world.phys.Vec3(this.getX(), this.getY() + h, this.getZ());
+         net.minecraft.world.phys.Vec3 to = from.add(dx / l * 7.0, 0.0, dz / l * 7.0);
+         if (level.clip(new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this)).getType() != net.minecraft.world.phys.HitResult.Type.MISS) {
+            return false;
+         }
+      }
+      return true;
+   }
+
+   private ItemStack loadedCrossbow(boolean loaded) {
+      ItemStack bow = new ItemStack(Items.CROSSBOW);
+      if (loaded) {
+         bow.set(net.minecraft.core.component.DataComponents.CHARGED_PROJECTILES,
+            net.minecraft.world.item.component.ChargedProjectiles.of(new net.minecraft.world.item.ItemStackTemplate(Items.FIREWORK_ROCKET)));
+      }
+      return bow;
+   }
+
+   /**
+    * The firework crossbow sequence. Returns true while he is busy with it (the rest of his behavior waits).
+    * Ground: (back off) - load - aim, tracking you the whole time - shoot. Air: rise - load - aim - shoot - dive with a guaranteed water clutch.
+    */
+   private boolean tickCrossbow(ServerLevel level, LivingEntity target) {
+      if (this.xbCool > 0) {
+         this.xbCool--;
+      }
+      if (this.xbState == XB_NONE) {
+         if (this.isNoGravity() && !this.diving) {
+            this.setNoGravity(false);
+         }
+         if (target == null || this.diving || this.windTicks > 0 || this.swapTicks > 0 || this.eatTicks > 0 || this.action != 0 || this.comboWind > 0 || this.rageTicks > 0
+            || this.axeSwap || this.spotTicks > 0 || this.armoringTicks > 0 || this.emergeTicks > 0 || this.enrageTicks > 0 || this.fleeing || !this.onGround()
+            || !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
+            return false;
+         }
+         double dist = this.distanceTo(target);
+         if (dist < 2.5) {
+            this.xbClose++;
+         } else {
+            this.xbClose = Math.max(0, this.xbClose - 2);
+         }
+         if (this.xbCool > 0 || dist > 22.0 || !this.hasLineOfSight(target)) {
+            return false;
+         }
+         int crowd = this.foeList(level).size();
+         float hp = this.getHealth() / this.getMaxHealth();
+         boolean low = hp < 0.35F;
+         boolean want = this.xbClose >= 30 || crowd >= 3 || low || this.random.nextFloat() < (this.isEnraged() ? 0.02F : 0.01F);
+         if (!want) {
+            return false;
+         }
+         boolean airOk = dist >= 6.0 && this.roomAbove(15) && !this.isInWater() && this.xbClose < 30 && crowd < 3;
+         this.xbAir = airOk && this.random.nextFloat() < (this.isEnraged() ? 0.35F : 0.15F);
+         this.xbFast = low || (this.isEnraged() && this.random.nextFloat() < 0.4F);
+         this.xbFeinted = false;
+         this.xbHold = 0;
+         this.xbTicks = 0;
+         this.xbPrev = this.getItemBySlot(EquipmentSlot.MAINHAND).copy();
+         this.setGuard(false);
+         this.engaged = false;
+         this.getNavigation().stop();
+         this.setItemSlot(EquipmentSlot.MAINHAND, this.loadedCrossbow(false));
+         this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+         this.refreshStats();
+         if (this.xbAir) {
+            this.xbState = XB_RISE;
+            this.xbRiseTo = this.getY() + Tuning.XB_AIR_HEIGHT;
+            level.broadcastEntityEvent(this, (byte)77);
+            this.playSound(SoundEvents.WIND_CHARGE_BURST.value(), 1.5F, 1.0F);
+            level.sendParticles(ParticleTypes.GUST_EMITTER_SMALL, this.getX(), this.getY(), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         } else if (dist < 7.0 && this.canBackOff(level, target)) {
+            this.xbState = XB_HOP;
+            double dx = this.getX() - target.getX();
+            double dz = this.getZ() - target.getZ();
+            double l = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+            this.setDeltaMovement(dx / l * 1.2, 0.42, dz / l * 1.2);
+            level.broadcastEntityEvent(this, (byte)77);
+            this.playSound(SoundEvents.WIND_CHARGE_BURST.value(), 1.3F, 1.1F);
+         } else {
+            this.startLoad(level);
+         }
+         return true;
+      }
+      // Lost or lost sight of the target in the middle of it.
+      if (target == null || !target.isAlive()) {
+         if (this.xbAir && this.xbState != XB_FIRE) {
+            this.finishCrossbow(level);
+         } else {
+            this.abortCrossbow(level);
+         }
+         return this.xbState != XB_NONE;
+      }
+      this.xbTicks++;
+      switch (this.xbState) {
+         case XB_HOP -> {
+            this.aimAt(target);
+            if ((this.xbTicks >= 6 && this.onGround()) || this.xbTicks >= 24) {
+               this.startLoad(level);
+            }
+         }
+         case XB_RISE -> {
+            this.aimAt(target);
+            this.setNoGravity(true);
+            if (this.getY() >= this.xbRiseTo || this.xbTicks > 40 || !this.roomAbove(2)) {
+               this.setDeltaMovement(0.0, 0.0, 0.0);
+               this.startLoad(level);
+            } else {
+               this.setDeltaMovement(0.0, 0.85, 0.0);
+            }
+         }
+         case XB_LOAD -> {
+            this.aimAt(target);
+            if (this.xbAir) {
+               this.setNoGravity(true);
+               this.setDeltaMovement(0.0, 0.0, 0.0);
+            }
+            int len = this.xbFast ? Tuning.XB_FAST_LOAD_TICKS : Tuning.XB_LOAD_TICKS;
+            if (this.xbTicks == 2) {
+               this.playSound(SoundEvents.CROSSBOW_LOADING_START.value(), 1.5F, 1.0F);
+            } else if (this.xbTicks == len / 2) {
+               this.playSound(SoundEvents.CROSSBOW_LOADING_MIDDLE.value(), 1.5F, 1.0F);
+            } else if (this.xbTicks == len - 1) {
+               this.playSound(SoundEvents.CROSSBOW_LOADING_END.value(), 1.5F, 1.0F);
+            }
+            if (this.xbTicks >= len / 2) {
+               this.glint(level);
+            }
+            if (this.xbTicks >= len) {
+               this.setItemSlot(EquipmentSlot.MAINHAND, this.loadedCrossbow(true));
+               this.xbState = XB_AIM;
+               this.xbTicks = 0;
+               level.broadcastEntityEvent(this, (byte)96);
+            }
+         }
+         case XB_AIM -> {
+            this.aimAt(target);
+            this.glint(level);
+            if (this.xbAir) {
+               this.setNoGravity(true);
+               this.setDeltaMovement(0.0, 0.0, 0.0);
+            }
+            if (this.xbTicks >= 5) {
+               // The feint: you raise your shield, he keeps aiming for a moment as if waiting, then fires anyway (at once if you lower it).
+               if (!this.xbAir && !this.xbFeinted && target instanceof Player blocker && blocker.isBlocking() && this.random.nextFloat() < 0.33F) {
+                  this.xbFeinted = true;
+                  this.xbHold = 6 + this.random.nextInt(15);
+               }
+               if (this.xbHold > 0) {
+                  this.xbHold--;
+                  if (target instanceof Player waiting && !waiting.isBlocking()) {
+                     this.xbHold = 0;
+                  }
+               }
+               if (this.xbHold <= 0) {
+                  this.shootCrossbow(level, target);
+               }
+            }
+         }
+         case XB_FIRE -> {
+            if (this.xbAir) {
+               this.setNoGravity(true);
+               this.setDeltaMovement(0.0, 0.0, 0.0);
+            }
+            if (this.xbTicks >= Tuning.XB_SHOT_TICKS) {
+               this.finishCrossbow(level);
+            }
+         }
+         default -> {
+         }
+      }
+      return this.xbState != XB_NONE;
+   }
+
+   private void startLoad(ServerLevel level) {
+      this.xbState = XB_LOAD;
+      this.xbTicks = 0;
+      int kind = (this.xbAir ? 2 : 0) + (this.xbFast ? 1 : 0);
+      level.broadcastEntityEvent(this, (byte)(90 + kind));
+      // The warning: red outline and the alert sound, the whole time he loads.
+      level.broadcastEntityEvent(this, (byte)81);
+      this.playSound(ModSounds.COMBO_WARNING, 2.5F, 1.0F);
+   }
+
+   private void glint(ServerLevel level) {
+      double yaw = Math.toRadians(this.getYHeadRot());
+      double ex = this.getX() - Math.sin(yaw) * 0.85 + Math.cos(yaw) * 0.3;
+      double ez = this.getZ() + Math.cos(yaw) * 0.85 + Math.sin(yaw) * 0.3;
+      level.sendParticles(ModParticles.XB_GLINT, ex, this.getY() + 1.4, ez, 1, 0.0, 0.0, 0.0, 0.0);
+   }
+
+   private void shootCrossbow(ServerLevel level, LivingEntity target) {
+      java.util.List<LivingEntity> foeList = this.foeList(level);
+      java.util.List<LivingEntity> targets = new java.util.ArrayList<>();
+      if (!this.xbAir && foeList.size() >= 3) {
+         // Several foes around him: one rocket at each of the nearest, each weaker so one player is not hit three times over.
+         for (LivingEntity f : foeList) {
+            if (targets.size() < 3) {
+               targets.add(f);
+            }
+         }
+      } else {
+         targets.add(target);
+      }
+      boolean multi = targets.size() > 1;
+      for (LivingEntity t : targets) {
+         double dist = this.distanceTo(t);
+         float dmg = this.xbAir ? Tuning.XB_AIR_DAMAGE : EliRockets.damageAt(dist);
+         boolean burn = !this.xbAir && dist < 3.0;
+         EliRockets.fire(level, this, t, multi ? dmg * 0.6F : dmg, burn && !multi, this.xbAir, this.rockets);
+      }
+      this.playSound(ModSounds.XB_FIRE, 3.0F, 1.0F);
+      this.playSound(SoundEvents.FIREWORK_ROCKET_LAUNCH, 2.0F, 1.0F);
+      level.broadcastEntityEvent(this, (byte)(this.xbAir ? 95 : 94));
+      this.setItemSlot(EquipmentSlot.MAINHAND, this.loadedCrossbow(false));
+      this.xbState = XB_FIRE;
+      this.xbTicks = 0;
+      if (!this.xbAir) {
+         // The recoil.
+         net.minecraft.world.phys.Vec3 look = this.getViewVector(1.0F);
+         this.setDeltaMovement(this.getDeltaMovement().add(-look.x * 0.22, 0.05, -look.z * 0.22));
+      }
+   }
+
+   /** The sequence ended normally: the sword comes back (ground), or he dives with the clutch (air). */
+   private void finishCrossbow(ServerLevel level) {
+      boolean air = this.xbAir;
+      level.broadcastEntityEvent(this, (byte)97);
+      level.broadcastEntityEvent(this, (byte)80);
+      this.xbState = XB_NONE;
+      this.xbTicks = 0;
+      float hp = this.getHealth() / this.getMaxHealth();
+      this.xbCool = hp < 0.35F ? Tuning.XB_COOLDOWN_LOW : (this.isEnraged() ? Tuning.XB_COOLDOWN_P2 : Tuning.XB_COOLDOWN_P1);
+      if (air) {
+         // Down again, always into the water: no smash, no landing spot to aim at, so there is nothing to miss.
+         this.xbAir = false;
+         this.setNoGravity(false);
+         this.diving = true;
+         this.forceClutch = true;
+         this.smashing = false;
+         this.locked = false;
+         this.decided = false;
+         this.smashAnim = false;
+         this.landed = false;
+         this.landedFall = 0.0F;
+         this.airTicks = 0;
+         this.clutchTicks = 0;
+         this.clutchPlaced = false;
+         this.clutchPos = null;
+         this.fallDistance = 0.0;
+         this.setDeltaMovement(0.0, -0.3, 0.0);
+         level.broadcastEntityEvent(this, (byte)98);
+      } else {
+         this.restoreWeapon();
+      }
+   }
+
+   private void restoreWeapon() {
+      if (!this.xbPrev.isEmpty()) {
+         this.setItemSlot(EquipmentSlot.MAINHAND, this.xbPrev.copy());
+      } else {
+         this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansSword());
+      }
+      this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+      this.xbPrev = ItemStack.EMPTY;
+      this.refreshStats();
+   }
+
+   /** Anything else takes over (phase two, the rage, no target): put everything back. */
+   private void abortCrossbow(ServerLevel level) {
+      if (this.xbState != XB_NONE) {
+         this.xbState = XB_NONE;
+         this.xbTicks = 0;
+         this.xbAir = false;
+         this.setNoGravity(false);
+         level.broadcastEntityEvent(this, (byte)97);
+         level.broadcastEntityEvent(this, (byte)80);
+         if (this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.CROSSBOW)) {
+            this.restoreWeapon();
+         }
+      }
+   }
 
    /** A hit on him while the rage parry is up: it bounces off, the attacker is thrown back and he is left open for a moment. */
    private void rageParry(ServerLevel level, DamageSource source) {
