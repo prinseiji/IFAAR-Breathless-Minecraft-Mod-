@@ -440,8 +440,9 @@ Everything. See DEVELOPMENT.md.
 - Crossbow voicelines are said the moment he fires (after the shield stall), cutting in over the 60-tick voice cooldown.
 - His sword, mace and slams now ignore Protection enchantments (bypasses_enchantments tag), like the rocket. Armor still counts.
 - Rockets about 1.4x to 1.5x stronger (24 / 19 / 14 / 9 before armor at 2.5 / 4.5 / 8 / 12 blocks). Rage axe multiplier 2.0 to 1.6.
-- Crossbow cooldowns 160/100/70 to 100/70/50. Aerial snipe chance 15%/35% to 30%/50%, and his first shot of a fight is a snipe when there is room.
+- Crossbow cooldowns 160/100/70 to 130/90/90 (low HP no longer shoots more often, since that made him run off and drag the fight out). Load 21 to 14 ticks, fast load 13 to 9. Aerial snipe chance 15%/35% to 30%/50%, and his first shot of a fight is a snipe when there is room.
 - New: he shoots when you stay 9+ blocks away for 1.25 s (running off, getting further).
-- Glint 0.5 block further forward (`XB_GLINT_FORWARD`) and much bigger (0.2 to 0.55).
-- Shield stall: when your shield is up as he finishes aiming he now always holds the aim for 2 to 3.5 seconds (was 0.3 to 1 s, and only 1 time in 3), then fires anyway. Lower the shield and he fires at once. `XB_STALL_*` in Tuning.
+- Glint 0.5 block further forward (`XB_GLINT_FORWARD` 1.9, past the rocket) and much bigger (0.2 to 0.55).
+- Shield stall: when your shield is up as he finishes aiming he now always holds the aim for 1.2 to 2 seconds (was 0.3 to 1 s, and only 1 time in 3), then fires anyway. Lower the shield and he fires at once. `XB_STALL_*` in Tuning.
 - Aerial snipe damage 8 to 16 before armor (about 2 hearts through full diamond or netherite, up from 1).
+- Slam one-shot fix: with the Protection bypass the Breach boost (made for a Protection IV player) stacked on top of Hard difficulty, so a max stun slam did about 26 damage to full netherite. Stun slam max 16 to 9 and smash max 12 to 7 (about 6 and 4.4 hearts on Hard through full netherite).

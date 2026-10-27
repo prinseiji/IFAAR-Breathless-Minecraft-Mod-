@@ -271,7 +271,7 @@ public final class Tuning {
    /** Smash damage = base + fall * per block, capped (12 = 6 hearts). */
    public static final float SWEATY_SMASH_BASE = 4.0F;
    public static final float SWEATY_SMASH_PER_BLOCK = 1.6F;
-   public static final float SWEATY_SMASH_MAX = 12.0F;
+   public static final float SWEATY_SMASH_MAX = 7.0F;
    /** The cycle: fights with the diamond sword for this many ticks or hits (whichever first), then swaps to the mace for a launch + smash, then swaps back. */
    public static final int SWEATY_SWORD_TICKS = 220;
    public static final int SWEATY_SWORD_HITS = 4;
@@ -298,7 +298,7 @@ public final class Tuning {
    public static final double SWEATY_HEALTH = 100.0;
    /** Stun slam: launches higher (more time to get out of the way) and may hit harder (cap 16 = 8 hearts). */
    public static final double SWEATY_STUN_LAUNCH_UP = 1.5;
-   public static final float SWEATY_STUN_MAX = 16.0F;
+   public static final float SWEATY_STUN_MAX = 9.0F;
    /** Steering toward the target in the air: acceleration per tick and top speed (lower = easier to dodge). */
    public static final double SWEATY_STEER = 0.045;
    public static final double SWEATY_STEER_CAP = 0.7;
@@ -384,23 +384,23 @@ public final class Tuning {
    /** Aerial snipe: fixed damage, how high he goes, and the cooldown (in ticks) after each sequence by situation. */
    public static final float XB_AIR_DAMAGE = 16.0F;
    public static final double XB_AIR_HEIGHT = 13.0;
-   public static final int XB_COOLDOWN_P1 = 100;
-   public static final int XB_COOLDOWN_P2 = 70;
-   public static final int XB_COOLDOWN_LOW = 50;
+   public static final int XB_COOLDOWN_P1 = 130;
+   public static final int XB_COOLDOWN_P2 = 90;
+   public static final int XB_COOLDOWN_LOW = 90;
    /** Chance that a shot is an aerial snipe when there is room. The first shot of a fight is always one if there is room. */
    public static final float XB_AIR_CHANCE_P1 = 0.30F;
    public static final float XB_AIR_CHANCE_P2 = 0.50F;
    /** He shoots when you stay this far (blocks) away for this many ticks (running away, getting further). */
    public static final double XB_FAR_DIST = 9.0;
-   public static final int XB_FAR_TICKS = 25;
+   public static final int XB_FAR_TICKS = 40;
    /** How far in front of the crossbow the glint shows (blocks) and its size. */
    /** Shield stall: when your shield is up as he finishes aiming he keeps aiming (the glint stays) for this many ticks, then fires anyway. Lowering the shield makes him fire at once. */
    public static final float XB_STALL_CHANCE = 1.0F;
-   public static final int XB_STALL_MIN = 40;
-   public static final int XB_STALL_RANGE = 31;
-   public static final double XB_GLINT_FORWARD = 1.35;
+   public static final int XB_STALL_MIN = 24;
+   public static final int XB_STALL_RANGE = 17;
+   public static final double XB_GLINT_FORWARD = 1.9;
    /** Normal / fast reload and the shot, in ticks (the clips are 1.04 s, 0.63 s and 0.63 s). */
-   public static final int XB_LOAD_TICKS = 21;
-   public static final int XB_FAST_LOAD_TICKS = 13;
+   public static final int XB_LOAD_TICKS = 14;
+   public static final int XB_FAST_LOAD_TICKS = 9;
    public static final int XB_SHOT_TICKS = 13;
 }
