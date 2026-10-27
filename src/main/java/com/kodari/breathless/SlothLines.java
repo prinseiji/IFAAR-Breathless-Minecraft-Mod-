@@ -40,6 +40,12 @@ public final class SlothLines {
    public static final int[] AXE = {2, 3, 4, 5, 6};
    public static final int[] STUN = {7, 8, 9, 10, 11};
    public static final int[] TAUNT = {12, 13, 14, 15, 16};
+   /** Crossbow lines. Which line goes with which moment is just this table, so move numbers between groups freely (keep each group in ascending order). */
+   public static final int[] RELOAD = {17, 18, 19, 20};
+   public static final int[] AIR = {21, 22, 23, 24, 25};
+   public static final int[] FAR = {26, 27, 29, 30};
+   public static final int[] SHOT = {28, 31, 32, 33};
+   public static final int[] CLOSE = {34, 35, 36, 37};
 
    public static String text(int index) {
       return TEXT[index];
