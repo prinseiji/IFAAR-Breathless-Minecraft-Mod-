@@ -17,7 +17,7 @@ final class GlintParticle extends SingleQuadParticle {
       this.xd = 0.0D;
       this.yd = 0.0D;
       this.zd = 0.0D;
-      this.quadSize = 0.2F;
+      this.quadSize = 0.32F;
       this.lifetime = 2;
       this.alpha = 0.95F;
       this.roll = level.getGameTime() * 0.09F;

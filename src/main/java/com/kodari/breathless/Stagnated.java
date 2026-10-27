@@ -2028,6 +2028,9 @@ public class Stagnated extends Monster {
    private int xbTicks;
    private int xbCool = 200;
    private int xbClose;
+   /** Ticks the target has stayed far away (running off), and whether his first crossbow shot of the fight has been taken. */
+   private int xbAway;
+   private boolean xbFirstDone;
    private int xbHold;
    private double xbRiseTo;
    private boolean xbAir;
@@ -2117,19 +2120,37 @@ public class Stagnated extends Monster {
          } else {
             this.xbClose = Math.max(0, this.xbClose - 2);
          }
+         if (dist >= Tuning.XB_FAR_DIST) {
+            this.xbAway++;
+         } else {
+            this.xbAway = Math.max(0, this.xbAway - 2);
+         }
          if (this.xbCool > 0 || dist > 22.0 || !this.hasLineOfSight(target)) {
             return false;
          }
          int crowd = this.foeList(level).size();
          float hp = this.getHealth() / this.getMaxHealth();
          boolean low = hp < 0.35F;
-         boolean want = this.xbClose >= 30 || crowd >= 3 || low || this.random.nextFloat() < (this.isEnraged() ? 0.02F : 0.01F);
+         boolean far = this.xbAway >= Tuning.XB_FAR_TICKS;
+         boolean want = this.xbClose >= 30 || crowd >= 3 || low || far || this.random.nextFloat() < (this.isEnraged() ? 0.02F : 0.01F);
          if (!want) {
             return false;
          }
          boolean airOk = dist >= 6.0 && this.roomAbove(15) && !this.isInWater() && this.xbClose < 30 && crowd < 3;
-         this.xbAir = airOk && this.random.nextFloat() < (this.isEnraged() ? 0.35F : 0.15F);
+         this.xbAir = airOk && (!this.xbFirstDone || this.random.nextFloat() < (this.isEnraged() ? Tuning.XB_AIR_CHANCE_P2 : Tuning.XB_AIR_CHANCE_P1));
+         this.xbFirstDone = true;
+         this.xbAway = 0;
          this.xbFast = low || (this.isEnraged() && this.random.nextFloat() < 0.4F);
+         // Voice: aerial and fast-reload lines always (they cut in over the cooldown), ground banter in phase two only (Tuning.XB_TALK_PHASE_ONE).
+         if (this.xbAir) {
+            this.slothCooldown = 0;
+            this.sloth(SlothLines.AIR);
+         } else if (this.xbFast) {
+            this.slothCooldown = 0;
+            this.sloth(SlothLines.RELOAD);
+         } else if (this.isEnraged() || Tuning.XB_TALK_PHASE_ONE) {
+            this.sloth(this.xbClose >= 30 || crowd >= 3 ? SlothLines.CLOSE : (far ? SlothLines.FAR : SlothLines.SHOT));
+         }
          this.xbFeinted = false;
          this.xbHold = 0;
          this.xbTicks = 0;
@@ -2261,8 +2282,8 @@ public class Stagnated extends Monster {
 
    private void glint(ServerLevel level) {
       double yaw = Math.toRadians(this.getYHeadRot());
-      double ex = this.getX() - Math.sin(yaw) * 0.85 + Math.cos(yaw) * 0.3;
-      double ez = this.getZ() + Math.cos(yaw) * 0.85 + Math.sin(yaw) * 0.3;
+      double ex = this.getX() - Math.sin(yaw) * Tuning.XB_GLINT_FORWARD + Math.cos(yaw) * 0.3;
+      double ez = this.getZ() + Math.cos(yaw) * Tuning.XB_GLINT_FORWARD + Math.sin(yaw) * 0.3;
       level.sendParticles(ModParticles.XB_GLINT, ex, this.getY() + 1.4, ez, 1, 0.0, 0.0, 0.0, 0.0);
    }
 

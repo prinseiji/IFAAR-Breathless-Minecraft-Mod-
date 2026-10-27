@@ -42,7 +42,7 @@ public final class EliRockets {
 
    /** Damage before armor by distance to the target: close hurts most (the player has to alternate between close and far). */
    public static float damageAt(double dist) {
-      double[][] pts = {{2.5, 18.0}, {4.5, 14.0}, {8.0, 10.0}, {12.0, 6.0}};
+      double[][] pts = {{2.5, 24.0}, {4.5, 19.0}, {8.0, 14.0}, {12.0, 9.0}};
       if (dist <= pts[0][0]) {
          return (float)pts[0][1];
       }

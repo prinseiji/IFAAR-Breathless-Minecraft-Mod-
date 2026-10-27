@@ -369,7 +369,7 @@ public final class Tuning {
    public static final int RAGE_MACE_PARRIES = 2;
    public static final int RAGE_RESET_TICKS = 200;
    public static final int RAGE_TICKS = 300;
-   public static final float RAGE_DAMAGE = 2.0F;
+   public static final float RAGE_DAMAGE = 1.6F;
    /** Rage parry: how long his guard is up, the pause between, and how long he is open after a bounced hit. */
    public static final int RAGE_PARRY_WINDOW = 14;
    public static final int RAGE_PARRY_GAP = 45;
@@ -384,9 +384,19 @@ public final class Tuning {
    /** Aerial snipe: fixed damage, how high he goes, and the cooldown (in ticks) after each sequence by situation. */
    public static final float XB_AIR_DAMAGE = 8.0F;
    public static final double XB_AIR_HEIGHT = 13.0;
-   public static final int XB_COOLDOWN_P1 = 160;
-   public static final int XB_COOLDOWN_P2 = 100;
-   public static final int XB_COOLDOWN_LOW = 70;
+   public static final int XB_COOLDOWN_P1 = 100;
+   public static final int XB_COOLDOWN_P2 = 70;
+   public static final int XB_COOLDOWN_LOW = 50;
+   /** Chance that a shot is an aerial snipe when there is room. The first shot of a fight is always one if there is room. */
+   public static final float XB_AIR_CHANCE_P1 = 0.30F;
+   public static final float XB_AIR_CHANCE_P2 = 0.50F;
+   /** He shoots when you stay this far (blocks) away for this many ticks (running away, getting further). */
+   public static final double XB_FAR_DIST = 9.0;
+   public static final int XB_FAR_TICKS = 25;
+   /** How far in front of the crossbow the glint shows (blocks) and its size. */
+   public static final double XB_GLINT_FORWARD = 1.35;
+   /** Crossbow voicelines in phase one too? (false: only phase two talks while shooting, except the aerial and reload lines) */
+   public static final boolean XB_TALK_PHASE_ONE = false;
    /** Normal / fast reload and the shot, in ticks (the clips are 1.04 s, 0.63 s and 0.63 s). */
    public static final int XB_LOAD_TICKS = 21;
    public static final int XB_FAST_LOAD_TICKS = 13;

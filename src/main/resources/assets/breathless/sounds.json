@@ -688,5 +688,194 @@
         "attenuation_distance": 64
       }
     ]
+  },
+  "sloth_diealready": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_diealready",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_justburn": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_justburn",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_whywontyoudie": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_whywontyoudie",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_giveup": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_giveup",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_aboveyou": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_aboveyou",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_eyesup": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_eyesup",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_headsup": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_headsup",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_whereareyoulooking": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_whereareyoulooking",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_watchmefly": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_watchmefly",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_dontmove": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_dontmove",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_dodgethis": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_dodgethis",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_bang": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_bang",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_thinkfast": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_thinkfast",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_noscope": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_noscope",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_eatlead": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_eatlead",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_saycheese": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_saycheese",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_letslightthiscandlehuh": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_letslightthiscandlehuh",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_playfair": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_playfair",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_respectthe1v1": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_respectthe1v1",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_imbeingsubjectedtopeerpressuregetback": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_imbeingsubjectedtopeerpressuregetback",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_justmorekillsforme": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_justmorekillsforme",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
   }
 }

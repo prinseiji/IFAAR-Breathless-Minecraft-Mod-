@@ -39,7 +39,7 @@ public final class ModSounds {
    public static SoundEvent ETHAN_SUMMON;
    public static SoundEvent FRUSTRATED;
    /** Phase two voicelines, in the order of SlothLines. */
-   public static final String[] SLOTH_FILES = {"justdie", "staystill", "faceme", "stophiding", "clever", "youthinkyouresafe", "cheaptricks", "iwantyoudead", "catchthis", "keeprunning", "youreajoke", "laugh", "youregettingrustyplayer", "keepswinging", "youreoutclassed", "isthiswhathelostto", "isthisallyouvegot"};
+   public static final String[] SLOTH_FILES = {"justdie", "staystill", "faceme", "stophiding", "clever", "youthinkyouresafe", "cheaptricks", "iwantyoudead", "catchthis", "keeprunning", "youreajoke", "laugh", "youregettingrustyplayer", "keepswinging", "youreoutclassed", "isthiswhathelostto", "isthisallyouvegot", "diealready", "justburn", "whywontyoudie", "giveup", "aboveyou", "eyesup", "headsup", "whereareyoulooking", "watchmefly", "dontmove", "dodgethis", "bang", "thinkfast", "noscope", "eatlead", "saycheese", "letslightthiscandlehuh", "playfair", "respectthe1v1", "imbeingsubjectedtopeerpressuregetback", "justmorekillsforme"};
    public static final SoundEvent[] SLOTH = new SoundEvent[SLOTH_FILES.length];
    public static SoundEvent PARRY;
    public static SoundEvent ELI_PHASE_ONE;
