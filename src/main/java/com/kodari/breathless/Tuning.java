@@ -373,6 +373,34 @@ public final class Tuning {
    public static final int MOUND_HEIGHT = 3;
    /** His first attack after a heart summon is a stun slam (the usual wind-up and warning, then he leaps). */
    public static final boolean SUMMON_OPENER_SLAM = true;
+   /**
+    * The rocket barrage. Now and then he reloads without shooting (no red outline, no alert sound): each one stocks a rocket. At 5 stocked his next ranged attack is the barrage:
+    * five rockets fired up, landing one by one on marked spots. The strikes cannot be blocked or parried. Catching up to him (closer than STOCK_CANCEL_DIST) cancels a stocking reload.
+    */
+   public static final int BARRAGE_STOCK = 5;
+   /** The stocking reloads and the barrage happen in phase one too (with the phase one voicelines, which have no captions). False: phase two only. */
+   public static final boolean BARRAGE_IN_PHASE_ONE = true;
+   /** Chance that a stocking reload that is not the fifth gets a feint line (phase one only; phase two has none). */
+   public static final float FEINT_LINE_CHANCE = 0.6F;
+   public static final double BARRAGE_MIN_DIST = 6.0;
+   public static final float BARRAGE_AIR_CHANCE = 0.5F;
+   /** Ticks into the animation at which each rocket leaves (0.29 0.5 0.67 0.96 1.21 s on the ground, 0.17 0.33 0.58 0.79 1.0 s in the air), and how long each animation lasts. */
+   public static final int[] BARRAGE_GROUND_TICKS = {6, 10, 13, 19, 24};
+   public static final int[] BARRAGE_AIR_TICKS = {3, 7, 12, 16, 20};
+   public static final int BARRAGE_GROUND_LEN = 27;
+   public static final int BARRAGE_AIR_LEN = 24;
+   /** From a rocket leaving to it landing (ticks), the blast radius and damage before armor (each rocket). */
+   public static final int STRIKE_DELAY = 24;
+   public static final double STRIKE_RADIUS = 2.5;
+   public static final float BARRAGE_DAMAGE = 10.0F;
+   /** A stocking reload: chance per tick (when nothing else is wanted), the pause after one, his short cooldown afterwards, and how close you must get to cancel it. */
+   public static final float STOCK_CHANCE = 0.012F;
+   public static final int STOCK_COOLDOWN = 100;
+   public static final int STOCK_AFTER_COOLDOWN = 30;
+   public static final double STOCK_CANCEL_DIST = 3.5;
+   /** After a stocking reload he may go straight into a stun slam (the feint): chance, and the most distance. */
+   public static final float STOCK_SLAM_CHANCE = 0.4F;
+   public static final double STOCK_SLAM_DIST = 10.0;
    /** Eli's Sword: a block in its first PARRY_TICKS ticks is a full parry; the world then freezes for FREEZE_TICKS (0.5 s). Blocking later takes half the damage. */
    public static final int PARRY_TICKS = 7;
    public static final int PARRY_FREEZE_TICKS = 10;

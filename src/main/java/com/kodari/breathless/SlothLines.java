@@ -30,10 +30,36 @@ public final class SlothLines {
       null,
       null,
       null,
-      null
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "I HAVE YOU NOW",
+      "NO MORE TRICKS",
+      "I'LL MAKE THIS HURT",
+      "SCORCH THE EARTH!",
+      "LET THE SUN FALL",
+      "NOWHERE TO RUN",
+      "GET OFF",
+      "YOU THINK THIS IS A JOKE?",
+      "I WILL MAKE IT RAIN",
+      "TRY PARRYING THESE",
+      "WHERE DO YOU THINK YOU'RE GOING?",
+      "WATCH YOUR GROUND"
    };
    private static final float[] SECONDS = {
-      1.14F, 1.02F, 0.74F, 1.35F, 0.74F, 1.25F, 1.11F, 1.30F, 0.98F, 1.25F, 1.28F, 1.97F, 1.95F, 1.04F, 1.25F, 2.86F, 1.44F, 1.58F, 1.58F, 1.56F, 1.9F, 2.28F, 1.49F, 1.05F, 1.74F, 1.44F, 1.51F, 1.42F, 1.02F, 1.49F, 1.44F, 2.21F, 2.14F, 2.81F, 1.25F, 2.21F, 2.48F, 1.83F
+      1.14F, 1.02F, 0.74F, 1.35F, 0.74F, 1.25F, 1.11F, 1.30F, 0.98F, 1.25F, 1.28F, 1.97F, 1.95F, 1.04F, 1.25F, 2.86F, 1.44F, 1.58F, 1.58F, 1.56F, 1.9F, 2.28F, 1.49F, 1.05F, 1.74F, 1.44F, 1.51F, 1.42F, 1.02F, 1.49F, 1.44F, 2.21F, 2.14F, 2.81F, 1.25F, 2.21F, 2.48F, 1.83F,
+      1.88F, 1.81F, 1.25F, 1.65F, 2.35F, 0.67F, 0.95F, 2.11F, 1.05F, 1.49F, 1.83F, 1.37F, 1.25F, 1.3F, 1.35F, 1.58F, 1.21F, 2.25F, 1.35F, 1.97F, 1.6F, 1.67F, 1.74F, 1.83F, 1.83F
    };
 
    public static final int[] MACE = {0, 1};
@@ -50,6 +76,17 @@ public final class SlothLines {
    public static final int[] P1_FAST = {29, 30};
    public static final int[] P1_SHOT = {31, 32, 33, 36};
    public static final int[] MULTI = {34, 35, 37};
+   /** The rocket barrage. Phase one lines have no caption, phase two lines do. FIVE: the fifth rocket is stocked; VOLLEY: the barrage from the ground; AERIAL_VOLLEY: from the air (the sword one only when the player holds Eli's Sword); CANCEL: you caught him reloading; FEINT: a stocking reload that is not the fifth. */
+   public static final int[] FIVE_P1 = {38, 39};
+   public static final int[] VOLLEY_P1 = {40, 41, 42};
+   public static final int[] CANCEL_P1 = {43, 44};
+   public static final int[] AERIAL_VOLLEY_P1 = {45, 46, 47};
+   public static final int[] FEINT_P1 = {48, 49, 50};
+   public static final int[] FIVE_P2 = {51, 52, 53};
+   public static final int[] VOLLEY_P2 = {54, 55, 56};
+   public static final int[] CANCEL_P2 = {57, 58};
+   public static final int[] AERIAL_VOLLEY_P2 = {59, 60, 61, 62};
+   public static final int[] AERIAL_VOLLEY_P2_NO_SWORD = {59, 61, 62};
 
    public static String text(int index) {
       return TEXT[index];

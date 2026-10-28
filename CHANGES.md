@@ -470,3 +470,15 @@ Everything. See DEVELOPMENT.md.
 - The guard shrieker always has open air on all four sides and two blocks above, and the other sculk blocks stay at least 4 blocks from it, so it can be walled off with wool or broken. Nothing is placed if no such spot exists.
 - Nidus blocks made by world generation are started with a scheduled tick, and the block's random tick picks them up if that is missed.
 
+## Batch 32 (untested): the rocket barrage (mechanics; the voicelines come in the next batch)
+- Phase two only. Now and then, when he would not otherwise shoot, he backs off and does a stocking reload (the fast reload animation): no red outline, no alert sound, no shot. Each one stocks a rocket (a spark and a twinkle as the tell, at most 5). `STOCK_CHANCE`, `STOCK_COOLDOWN`.
+- Getting within 3.5 blocks of him (`STOCK_CANCEL_DIST`) during a stocking reload cancels it: nothing stocked, he is in melee. After one finishes he may go straight into a stun slam (`STOCK_SLAM_CHANCE` 40%, within 10 blocks), the feint.
+- With 5 stocked, his next ranged attack (6 to 22 blocks away) is the barrage: from the ground, or in the air using the rise of the aerial shot (`BARRAGE_AIR_CHANCE` 50%). Animations `shootbarrage` and `aerialbarrage` are converted from ElijahTheZenith.bbmodel (the converter was checked against the existing shoot, reload and midair shoot clips and reproduces them exactly). Rockets leave at the animation's timestamps.
+- Each rocket flies up and lands on a marked spot (a red ring) 1.2 s later, one by one in the order they left. Alternate rockets are aimed at you (with a little lead), the others 3 to 5 blocks around you. 10 damage before armor each, radius 2.5 (`BARRAGE_DAMAGE`, `STRIKE_RADIUS`).
+- New damage type `eli_barrage`: bypasses shields and enchantments, so it cannot be blocked or parried, and it never counts as a parry for his rage.
+
+## Batch 33 (untested): barrage voicelines, and the barrage in phase one too (this zip also contains Batch 32)
+- 25 new voicelines (mono OGG, matched to the loudness of the other sloth lines) for the barrage. Groups in SlothLines: FIVE (the fifth rocket is stocked), VOLLEY (barrage from the ground), AERIAL_VOLLEY (from the air), CANCEL (you caught him reloading) and FEINT, each with a phase one and a phase two set. Phase one lines have no caption; phase two captions use the file names (WATCH YOUR GROUND, WHERE DO YOU THINK YOU'RE GOING?, TRY PARRYING THESE).
+- Voice hooks: FIVE when the fifth is stocked, FEINT on other stocking reloads (phase one only, 60%), CANCEL when you cancel a reload, VOLLEY / AERIAL_VOLLEY as the first rocket leaves. "Try parrying these" is only said when the player holds Eli's Sword.
+- The stocking reloads and the barrage now happen in phase one as well (`BARRAGE_IN_PHASE_ONE`, set false for phase two only).
+

@@ -886,5 +886,230 @@
         "attenuation_distance": 24
       }
     ]
+  },
+  "sloth_thatmakesfiveofthem": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_thatmakesfiveofthem",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_itsabouttogetbrightinhere": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_itsabouttogetbrightinhere",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_takecover": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_takecover",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_itsgettinghotinhere": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_itsgettinghotinhere",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_heyidmoveifiwereyou": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_heyidmoveifiwereyou",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_hey": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hey",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_stepoff": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_stepoff",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_heycounttheseforme": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_heycounttheseforme",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_watchthis": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_watchthis",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_heyoverhere": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_heyoverhere",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_toomuchcoffee": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_toomuchcoffee",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_coldfeethuh": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_coldfeethuh",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_jumpy": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_jumpy",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_ihaveyounow": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_ihaveyounow",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_nomoretricks": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_nomoretricks",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_illmakethishurt": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_illmakethishurt",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_scorchtheearth": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_scorchtheearth",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_letthesunfall": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_letthesunfall",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_nowheretorun": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_nowheretorun",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_getoff": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_getoff",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_youthinkthisisajoke": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_youthinkthisisajoke",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_iwillmakeitrain": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_iwillmakeitrain",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_tryparryingthese": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_tryparryingthese",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_wheredoyouthinkyourgoing": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_wheredoyouthinkyourgoing",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_watchyourground": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_watchyourground",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
   }
 }

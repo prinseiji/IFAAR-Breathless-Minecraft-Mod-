@@ -2,6 +2,7 @@ package com.kodari.breathless;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import java.util.EnumSet;
 import net.minecraft.core.BlockPos;
@@ -522,6 +523,9 @@ public class Stagnated extends Monster {
    @Override
    public void aiStep() {
       super.aiStep();
+      if (!this.level().isClientSide() && !this.strikes.isEmpty()) {
+         this.tickStrikes((ServerLevel)this.level());
+      }
       if (this.sweaty && !this.level().isClientSide() && this.tickCount % 10 == 0) {
          // Always, even while he climbs out: the client stops the music if the updates stop for 3 seconds.
          this.pingBoss((ServerLevel)this.level(), this.isEnraged() ? 2 : 1);
@@ -1855,6 +1859,9 @@ public class Stagnated extends Monster {
       } else if (event == 96) {
          this.xbKind = 4;
          this.xbClock = 0;
+      } else if (event == 99 || event == 100) {
+         this.xbKind = event == 99 ? 7 : 8;
+         this.xbClock = 0;
       } else if (event == 97) {
          this.xbKind = -1;
          this.xbClock = -1;
@@ -2033,6 +2040,7 @@ public class Stagnated extends Monster {
    private static final int XB_LOAD = 3;
    private static final int XB_AIM = 4;
    private static final int XB_FIRE = 5;
+   private static final int XB_BARRAGE = 6;
    private int xbState;
    private int xbTicks;
    private int xbCool = 200;
@@ -2043,6 +2051,12 @@ public class Stagnated extends Monster {
    private int xbHold;
    private double xbRiseTo;
    private boolean xbAir;
+   /** Stocking reload (a reload with no shot), the rockets stocked so far, the pause before the next one, the barrage in progress, and the rockets still falling: {x, y, z, ticks left}. */
+   private boolean xbStocking;
+   private int xbStock;
+   private int xbStockCool;
+   private boolean xbBarrage;
+   private final java.util.List<double[]> strikes = new java.util.ArrayList<>();
    private boolean xbFast;
    private boolean xbFeinted;
    private boolean forceClutch;
@@ -2114,6 +2128,9 @@ public class Stagnated extends Monster {
       if (this.xbCool > 0) {
          this.xbCool--;
       }
+      if (this.xbStockCool > 0) {
+         this.xbStockCool--;
+      }
       if (this.xbState == XB_NONE) {
          if (this.isNoGravity() && !this.diving) {
             this.setNoGravity(false);
@@ -2142,14 +2159,23 @@ public class Stagnated extends Monster {
          boolean low = hp < 0.35F;
          boolean far = this.xbAway >= Tuning.XB_FAR_TICKS;
          boolean want = this.xbClose >= 30 || crowd >= 3 || low || far || this.random.nextFloat() < (this.isEnraged() ? 0.02F : 0.01F);
-         if (!want) {
+         // Phase two: with 5 rockets stocked his next ranged attack is the barrage; now and then, when nothing else is wanted, he stocks one (a reload with no shot).
+         boolean barrageReady = (this.isEnraged() || Tuning.BARRAGE_IN_PHASE_ONE) && this.xbStock >= Tuning.BARRAGE_STOCK && dist >= Tuning.BARRAGE_MIN_DIST;
+         boolean stockNow = !want && !barrageReady && (this.isEnraged() || Tuning.BARRAGE_IN_PHASE_ONE) && this.xbStock < Tuning.BARRAGE_STOCK && this.xbStockCool <= 0 && dist >= 4.0 && this.random.nextFloat() < Tuning.STOCK_CHANCE;
+         if (!want && !barrageReady && !stockNow) {
             return false;
          }
          boolean airOk = dist >= 6.0 && this.roomAbove(15) && !this.isInWater() && this.xbClose < 30 && crowd < 3;
-         this.xbAir = airOk && (!this.xbFirstDone || this.random.nextFloat() < (this.isEnraged() ? Tuning.XB_AIR_CHANCE_P2 : Tuning.XB_AIR_CHANCE_P1));
-         this.xbFirstDone = true;
+         this.xbBarrage = barrageReady;
+         this.xbStocking = stockNow;
+         if (barrageReady || stockNow) {
+            this.xbAir = barrageReady && airOk && this.random.nextFloat() < Tuning.BARRAGE_AIR_CHANCE;
+         } else {
+            this.xbAir = airOk && (!this.xbFirstDone || this.random.nextFloat() < (this.isEnraged() ? Tuning.XB_AIR_CHANCE_P2 : Tuning.XB_AIR_CHANCE_P1));
+            this.xbFirstDone = true;
+         }
          this.xbAway = 0;
-         this.xbFast = low || (this.isEnraged() && this.random.nextFloat() < 0.4F);
+         this.xbFast = stockNow || low || (this.isEnraged() && this.random.nextFloat() < 0.4F);
          this.xbFeinted = false;
          this.xbHold = 0;
          this.xbTicks = 0;
@@ -2189,6 +2215,15 @@ public class Stagnated extends Monster {
          return this.xbState != XB_NONE;
       }
       this.xbTicks++;
+      // Catching up to him in the middle of a stocking reload cancels it: nothing is stocked and he is in melee.
+      if (this.xbStocking && this.distanceTo(target) < Tuning.STOCK_CANCEL_DIST) {
+         this.abortCrossbow(level);
+         this.xbCool = 20;
+         this.xbStockCool = Tuning.STOCK_COOLDOWN;
+         this.slothCooldown = 0;
+         this.sloth(this.isEnraged() ? SlothLines.CANCEL_P2 : SlothLines.CANCEL_P1);
+         return false;
+      }
       switch (this.xbState) {
          case XB_HOP -> {
             this.aimAt(target);
@@ -2223,7 +2258,9 @@ public class Stagnated extends Monster {
             if (this.xbTicks >= len / 2) {
                this.glint(level);
             }
-            if (this.xbTicks >= len) {
+            if (this.xbTicks >= len && this.xbStocking) {
+               this.finishStock(level, target);
+            } else if (this.xbTicks >= len) {
                this.setItemSlot(EquipmentSlot.MAINHAND, this.loadedCrossbow(true));
                this.xbState = XB_AIM;
                this.xbTicks = 0;
@@ -2263,6 +2300,23 @@ public class Stagnated extends Monster {
                this.finishCrossbow(level);
             }
          }
+         case XB_BARRAGE -> {
+            this.aimAt(target);
+            if (this.xbAir) {
+               this.setNoGravity(true);
+               this.setDeltaMovement(0.0, 0.0, 0.0);
+            }
+            int[] at = this.xbAir ? Tuning.BARRAGE_AIR_TICKS : Tuning.BARRAGE_GROUND_TICKS;
+            for (int i = 0; i < at.length; i++) {
+               if (this.xbTicks == at[i]) {
+                  this.launchStrike(level, target, i);
+               }
+            }
+            if (this.xbTicks >= (this.xbAir ? Tuning.BARRAGE_AIR_LEN : Tuning.BARRAGE_GROUND_LEN)) {
+               this.xbStock = 0;
+               this.finishCrossbow(level);
+            }
+         }
          default -> {
          }
       }
@@ -2270,13 +2324,132 @@ public class Stagnated extends Monster {
    }
 
    private void startLoad(ServerLevel level) {
+      if (this.xbBarrage) {
+         this.startBarrage(level);
+         return;
+      }
       this.xbState = XB_LOAD;
       this.xbTicks = 0;
       int kind = (this.xbAir ? 2 : 0) + (this.xbFast ? 1 : 0);
       level.broadcastEntityEvent(this, (byte)(90 + kind));
-      // The warning: red outline and the alert sound, the whole time he loads.
+      // The warning: red outline and the alert sound, the whole time he loads. A stocking reload has neither (that is how you tell it will not be a shot).
+      if (!this.xbStocking) {
+         level.broadcastEntityEvent(this, (byte)81);
+         this.playSound(ModSounds.COMBO_WARNING, 2.5F, 1.0F);
+      }
+   }
+
+   private void startBarrage(ServerLevel level) {
+      this.xbState = XB_BARRAGE;
+      this.xbTicks = 0;
+      this.setItemSlot(EquipmentSlot.MAINHAND, this.loadedCrossbow(true));
+      level.broadcastEntityEvent(this, (byte)(this.xbAir ? 100 : 99));
       level.broadcastEntityEvent(this, (byte)81);
       this.playSound(ModSounds.COMBO_WARNING, 2.5F, 1.0F);
+   }
+
+   /** The stocking reload is done: one more rocket stocked, a spark to count by, and sometimes straight into a stun slam while you are still bracing for a shot. */
+   private void finishStock(ServerLevel level, LivingEntity target) {
+      this.xbStock++;
+      this.xbStocking = false;
+      level.broadcastEntityEvent(this, (byte)97);
+      this.xbState = XB_NONE;
+      this.xbTicks = 0;
+      this.xbCool = Tuning.STOCK_AFTER_COOLDOWN;
+      this.xbStockCool = Tuning.STOCK_COOLDOWN;
+      this.restoreWeapon();
+      double yaw = Math.toRadians(this.getYHeadRot());
+      level.sendParticles(ParticleTypes.FIREWORK, this.getX() - Math.sin(yaw) * 0.8 + Math.cos(yaw) * 0.3, this.getY() + 1.35, this.getZ() + Math.cos(yaw) * 0.8 + Math.sin(yaw) * 0.3, 8, 0.1, 0.1, 0.1, 0.06);
+      this.playSound(SoundEvents.FIREWORK_ROCKET_TWINKLE, 0.8F, 1.6F);
+      // Voice: the fifth one gets its line; the others sometimes taunt (phase one only).
+      this.slothCooldown = 0;
+      if (this.xbStock >= Tuning.BARRAGE_STOCK) {
+         this.sloth(this.isEnraged() ? SlothLines.FIVE_P2 : SlothLines.FIVE_P1);
+      } else if (!this.isEnraged() && this.random.nextFloat() < Tuning.FEINT_LINE_CHANCE) {
+         this.sloth(SlothLines.FEINT_P1);
+      }
+      if (target != null && this.distanceTo(target) <= Tuning.STOCK_SLAM_DIST && this.random.nextFloat() < Tuning.STOCK_SLAM_CHANCE) {
+         this.openerSlam = true;
+      }
+   }
+
+   /** One rocket of the barrage: it leaves upward now and lands on a marked spot STRIKE_DELAY ticks later. Alternate ones go on you, the others around you. */
+   private void launchStrike(ServerLevel level, LivingEntity target, int index) {
+      Vec3 p = target.position();
+      Vec3 v = target.getDeltaMovement();
+      double x = p.x + v.x * Tuning.STRIKE_DELAY * 0.6;
+      double z = p.z + v.z * Tuning.STRIKE_DELAY * 0.6;
+      if (index % 2 == 1) {
+         double a = this.random.nextDouble() * Math.PI * 2.0;
+         double r = 3.0 + this.random.nextDouble() * 2.0;
+         x += Math.cos(a) * r;
+         z += Math.sin(a) * r;
+      }
+      BlockPos bp = BlockPos.containing(x, p.y + 1.0, z);
+      double gy = p.y;
+      for (int dy = 0; dy < 10; dy++) {
+         BlockPos b = new BlockPos(bp.getX(), bp.getY() - dy, bp.getZ());
+         if (!level.getBlockState(b).isAir() && level.getBlockState(b.above()).isAir()) {
+            gy = b.getY() + 1.0;
+            break;
+         }
+      }
+      this.strikes.add(new double[]{x, gy, z, Tuning.STRIKE_DELAY});
+      if (index == 0) {
+         // Voice: said as the first rocket leaves. "Try parrying these" only when the player actually holds Eli's Sword.
+         this.slothCooldown = 0;
+         boolean p2 = this.isEnraged();
+         boolean sword = target instanceof Player held && (held.getMainHandItem().is(ModItems.ELI_SWORD) || held.getOffhandItem().is(ModItems.ELI_SWORD));
+         this.sloth(this.xbAir ? (p2 ? (sword ? SlothLines.AERIAL_VOLLEY_P2 : SlothLines.AERIAL_VOLLEY_P2_NO_SWORD) : SlothLines.AERIAL_VOLLEY_P1) : (p2 ? SlothLines.VOLLEY_P2 : SlothLines.VOLLEY_P1));
+      }
+      double yaw = Math.toRadians(this.getYHeadRot());
+      double mx = this.getX() - Math.sin(yaw) * 0.8 + Math.cos(yaw) * 0.3;
+      double mz = this.getZ() + Math.cos(yaw) * 0.8 + Math.sin(yaw) * 0.3;
+      level.sendParticles(ParticleTypes.FIREWORK, mx, this.getY() + 1.35, mz, 10, 0.05, 0.3, 0.05, 0.25);
+      level.playSound(null, mx, this.getY() + 1.35, mz, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 2.0F, 1.0F);
+   }
+
+   /** Every tick: draw the marks of the rockets still falling, and land the ones that are due. They land in the order they left, one by one. */
+   private void tickStrikes(ServerLevel level) {
+      for (int i = this.strikes.size() - 1; i >= 0; i--) {
+         double[] s = this.strikes.get(i);
+         s[3]--;
+         if (s[3] <= 0) {
+            this.strikes.remove(i);
+            this.landStrike(level, s[0], s[1], s[2]);
+         } else if (((int)s[3]) % 2 == 0) {
+            for (int k = 0; k < 20; k++) {
+               double a = k * Math.PI * 2.0 / 20.0;
+               level.sendParticles(new DustParticleOptions(0xFF3A1A, 1.4F), s[0] + Math.cos(a) * Tuning.STRIKE_RADIUS, s[1] + 0.08, s[2] + Math.sin(a) * Tuning.STRIKE_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
+            }
+            level.sendParticles(new DustParticleOptions(0xFF3A1A, 1.0F), s[0], s[1] + 0.08, s[2], 3, 0.4, 0.0, 0.4, 0.0);
+         }
+      }
+   }
+
+   private void landStrike(ServerLevel level, double x, double y, double z) {
+      level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.HOSTILE, 3.0F, 0.9F);
+      level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, SoundSource.HOSTILE, 2.5F, 1.0F);
+      level.sendParticles(ParticleTypes.EXPLOSION, x, y + 0.5, z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.FLAME, x, y + 0.3, z, 24, 0.9, 0.3, 0.9, 0.08);
+      Vec3 at = new Vec3(x, y, z);
+      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(x - Tuning.STRIKE_RADIUS, y - 1.0, z - Tuning.STRIKE_RADIUS, x + Tuning.STRIKE_RADIUS, y + 3.0, z + Tuning.STRIKE_RADIUS),
+            e -> e != this && !(e instanceof Stagnated) && e.isAlive() && !e.isSpectator() && !(e instanceof Player p && p.isCreative()))) {
+         double dx = e.getX() - x;
+         double dz = e.getZ() - z;
+         if (dx * dx + dz * dz > Tuning.STRIKE_RADIUS * Tuning.STRIKE_RADIUS) {
+            continue;
+         }
+         // Not blockable and not parryable (the damage type bypasses shields), so there is no shield check here.
+         if (e.hurtServer(level, ModDamage.eliBarrage(level, this), Tuning.BARRAGE_DAMAGE)) {
+            Vec3 push = e.position().subtract(at).multiply(1.0, 0.0, 1.0);
+            if (push.lengthSqr() > 1.0E-4) {
+               push = push.normalize().scale(0.5);
+               e.setDeltaMovement(e.getDeltaMovement().add(push.x, 0.25, push.z));
+               e.hurtMarked = true;
+            }
+         }
+      }
    }
 
    private void glint(ServerLevel level) {
@@ -2333,6 +2506,8 @@ public class Stagnated extends Monster {
    /** The sequence ended normally: the sword comes back (ground), or he dives with the clutch (air). */
    private void finishCrossbow(ServerLevel level) {
       boolean air = this.xbAir;
+      this.xbBarrage = false;
+      this.xbStocking = false;
       level.broadcastEntityEvent(this, (byte)97);
       level.broadcastEntityEvent(this, (byte)80);
       this.xbState = XB_NONE;
@@ -2380,6 +2555,8 @@ public class Stagnated extends Monster {
          this.xbState = XB_NONE;
          this.xbTicks = 0;
          this.xbAir = false;
+         this.xbBarrage = false;
+         this.xbStocking = false;
          this.setNoGravity(false);
          level.broadcastEntityEvent(this, (byte)97);
          level.broadcastEntityEvent(this, (byte)80);

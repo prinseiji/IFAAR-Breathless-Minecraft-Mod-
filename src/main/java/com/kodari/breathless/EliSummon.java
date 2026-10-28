@@ -98,7 +98,7 @@ public final class EliSummon {
       // Parry: blocking with Eli's Sword right as the hit lands (first PARRY_TICKS of the block) cancels it, knocks the attacker back, flashes white and freezes time for half a second.
       ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
          // Only Eli's Sword parries count toward his rage (never against the stun slam).
-         if (entity instanceof net.minecraft.server.level.ServerPlayer blocker && source.getEntity() instanceof Stagnated eli && eli.isSweaty() && !eli.isStunSmash() && blocker.isBlocking()) {
+         if (entity instanceof net.minecraft.server.level.ServerPlayer blocker && source.getEntity() instanceof Stagnated eli && eli.isSweaty() && !eli.isStunSmash() && !source.is(ModDamage.ELI_BARRAGE) && blocker.isBlocking()) {
             int held = blocker.getTicksUsingItem();
             boolean swordBlock = blocker.getUseItem().is(ModItems.ELI_SWORD) && held <= Tuning.PARRY_TICKS;
             if (swordBlock) {
