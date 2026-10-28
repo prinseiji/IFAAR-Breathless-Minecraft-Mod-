@@ -446,3 +446,8 @@ Everything. See DEVELOPMENT.md.
 - Shield stall: when your shield is up as he finishes aiming he now always holds the aim for 1.2 to 2 seconds (was 0.3 to 1 s, and only 1 time in 3), then fires anyway. Lower the shield and he fires at once. `XB_STALL_*` in Tuning.
 - Aerial snipe damage 8 to 16 before armor (about 2 hearts through full diamond or netherite, up from 1).
 - Slam one-shot fix: with the Protection bypass the Breach boost (made for a Protection IV player) stacked on top of Hard difficulty, so a max stun slam did about 26 damage to full netherite. Stun slam max 16 to 9 and smash max 12 to 7 (about 6 and 4.4 hearts on Hard through full netherite).
+
+## Batch 28 (untested): stall variety, more aerial shots, rarer spawn
+- Shield stall now happens about half the time when your shield is up (`XB_STALL_CHANCE` 1.0 to 0.5); otherwise he fires straight away. Stall length unchanged (1.2 to 2 s).
+- Aerial snipe chance 30%/50% to 35%/55% (phase one/phase two). His first shot of a fight is still a snipe when there is room.
+- Natural surface spawn rarer: `SWEATY_SURFACE_ODDS` 1800 to 2700 (average surface time before he turns up goes from 30 to 45 minutes; the 10 minute cooldown is unchanged).

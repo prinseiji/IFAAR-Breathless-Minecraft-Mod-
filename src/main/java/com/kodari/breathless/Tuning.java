@@ -290,7 +290,7 @@ public final class Tuning {
    public static final int STAGNATED_SURFACE_GRACE_TICKS = 60;
    public static final float STAGNATED_SURFACE_DAMAGE = 2.0F;
    /** The sweaty one also turns up on the surface: each second a player is above ground the odds are 1 in this, then a long cooldown (seconds). */
-   public static final int SWEATY_SURFACE_ODDS = 1800;
+   public static final int SWEATY_SURFACE_ODDS = 2700;
    public static final int SWEATY_SURFACE_COOLDOWN_SECONDS = 600;
    /** Breach II on his mace: the smash counts the victim's armor as this much weaker (0.3 = 30%). */
    public static final double SWEATY_BREACH = 0.38;
@@ -388,14 +388,14 @@ public final class Tuning {
    public static final int XB_COOLDOWN_P2 = 90;
    public static final int XB_COOLDOWN_LOW = 90;
    /** Chance that a shot is an aerial snipe when there is room. The first shot of a fight is always one if there is room. */
-   public static final float XB_AIR_CHANCE_P1 = 0.30F;
-   public static final float XB_AIR_CHANCE_P2 = 0.50F;
+   public static final float XB_AIR_CHANCE_P1 = 0.35F;
+   public static final float XB_AIR_CHANCE_P2 = 0.55F;
    /** He shoots when you stay this far (blocks) away for this many ticks (running away, getting further). */
    public static final double XB_FAR_DIST = 9.0;
    public static final int XB_FAR_TICKS = 40;
    /** How far in front of the crossbow the glint shows (blocks) and its size. */
    /** Shield stall: when your shield is up as he finishes aiming he keeps aiming (the glint stays) for this many ticks, then fires anyway. Lowering the shield makes him fire at once. */
-   public static final float XB_STALL_CHANCE = 1.0F;
+   public static final float XB_STALL_CHANCE = 0.5F;
    public static final int XB_STALL_MIN = 24;
    public static final int XB_STALL_RANGE = 17;
    public static final double XB_GLINT_FORWARD = 1.9;
