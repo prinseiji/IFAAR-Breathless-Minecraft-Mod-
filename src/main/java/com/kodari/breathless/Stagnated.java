@@ -172,6 +172,12 @@ public class Stagnated extends Monster {
    private boolean decided;
    /** This round's launch is a stun slam: axe in hand and red glow on the way down, mace on the landing, and it breaks a raised shield. */
    private boolean stunPlan;
+   /** Set when a Rotting Heart summoned him: his first heavy attack is a stun slam. */
+   private boolean openerSlam;
+
+   public void setOpenerSlam() {
+      this.openerSlam = true;
+   }
    /** Client-side: red glow while it is about to stun slam. */
    public boolean stunning;
 
@@ -963,7 +969,10 @@ public class Stagnated extends Monster {
          this.faceTarget();
          if (Tuning.STAGNATED_UNARM_TICKS - this.swapTicks == Tuning.STAGNATED_UNARM_AT) {
             // Going for the heavy hit: sometimes it is a stun slam (axe on the way down), more often against a raised shield.
-            this.stunPlan = this.swapToMace && this.random.nextFloat() < (this.isEnraged() ? Tuning.SWEATY_ENRAGED_STUN_CHANCE : (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE));
+            this.stunPlan = this.swapToMace && (this.openerSlam || this.random.nextFloat() < (this.isEnraged() ? Tuning.SWEATY_ENRAGED_STUN_CHANCE : (target instanceof Player blocker && blocker.isBlocking() ? Tuning.SWEATY_STUN_CHANCE_SHIELD : Tuning.SWEATY_STUN_CHANCE)));
+            if (this.swapToMace) {
+               this.openerSlam = false;
+            }
             this.setItemSlot(EquipmentSlot.MAINHAND, this.swapToMace ? (this.stunPlan ? new ItemStack(Items.DIAMOND_AXE) : this.ethansMace()) : (this.axeSwap ? new ItemStack(Items.DIAMOND_AXE) : this.ethansSword()));
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
             this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.8F, 1.0F);
@@ -975,7 +984,7 @@ public class Stagnated extends Monster {
       } else if (!this.diving && this.windTicks <= 0 && target != null && this.onGround() && this.spotTicks <= 0 && this.armoringTicks <= 0 && this.action == 0 && !this.axeSwap && this.rageTicks <= 0) {
          if (!mace) {
             // Sword phase: fight for a while, then go for the mace.
-            if (++this.swordTicks >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_TICKS : Tuning.SWEATY_SWORD_TICKS) || this.swordHits >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_HITS : Tuning.SWEATY_SWORD_HITS)) {
+            if (this.openerSlam || ++this.swordTicks >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_TICKS : Tuning.SWEATY_SWORD_TICKS) || this.swordHits >= (this.isEnraged() ? Tuning.SWEATY_ENRAGED_SWORD_HITS : Tuning.SWEATY_SWORD_HITS)) {
                this.startSwap(true);
             }
          } else {

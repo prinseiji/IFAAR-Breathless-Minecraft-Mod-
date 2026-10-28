@@ -205,6 +205,80 @@ public final class EliSummon {
       LATER.add(new Object[] {new int[] {ticks}, run});
    }
 
+   /** The first air spot above solid ground in this column, looking a few blocks up and down from y. Null when there is none. */
+   private static BlockPos groundAt(ServerLevel level, int x, int y, int z) {
+      for (int dy = 3; dy >= -3; dy--) {
+         BlockPos p = new BlockPos(x, y + dy, z);
+         BlockState here = level.getBlockState(p);
+         BlockState below = level.getBlockState(p.below());
+         if ((here.isAir() || here.canBeReplaced()) && here.getFluidState().isEmpty() && !below.isAir() && !below.canBeReplaced() && below.getFluidState().isEmpty()) {
+            return p;
+         }
+      }
+      return null;
+   }
+
+   private static boolean blocked(ServerLevel level, BlockPos p) {
+      return !level.getEntitiesOfClass(LivingEntity.class, new net.minecraft.world.phys.AABB(p)).isEmpty();
+   }
+
+   /**
+    * A low mound of sculk heaped on top of the ground around a spot, with sensors on it and a catalyst beside it. Nothing is replaced, and nothing is put where something stands.
+    * Returns the y that Elijah stands at on top of it, or -1 when there is no ground in the middle (then the caller keeps the old behaviour).
+    */
+   private static int mound(ServerLevel level, BlockPos pos) {
+      BlockPos mid = groundAt(level, pos.getX(), pos.getY(), pos.getZ());
+      if (mid == null) {
+         return -1;
+      }
+      int r = Tuning.MOUND_RADIUS;
+      int top = mid.getY();
+      for (int dx = -r; dx <= r; dx++) {
+         for (int dz = -r; dz <= r; dz++) {
+            double d = Math.sqrt(dx * dx + dz * dz);
+            if (d > r) {
+               continue;
+            }
+            BlockPos g = groundAt(level, pos.getX() + dx, mid.getY(), pos.getZ() + dz);
+            if (g == null || Math.abs(g.getY() - mid.getY()) > 2) {
+               continue;
+            }
+            int h = (int)Math.round(Tuning.MOUND_HEIGHT * (1.0 - d / (r + 1.0)));
+            for (int i = 0; i < h; i++) {
+               BlockPos b = g.above(i);
+               BlockState st = level.getBlockState(b);
+               if (!(st.isAir() || st.canBeReplaced()) || !st.getFluidState().isEmpty() || blocked(level, b)) {
+                  break;
+               }
+               level.setBlock(b, Blocks.SCULK.defaultBlockState(), 3);
+               if (dx == 0 && dz == 0) {
+                  top = b.getY() + 1;
+               }
+            }
+         }
+      }
+      // Two sensors on the slope and a catalyst on the ground beside it.
+      int[][] sensors = {{2, 1}, {-2, -1}};
+      for (int[] s : sensors) {
+         BlockPos g = groundAt(level, pos.getX() + s[0], mid.getY(), pos.getZ() + s[1]);
+         if (g == null) {
+            continue;
+         }
+         BlockPos on = g;
+         while (level.getBlockState(on).is(Blocks.SCULK)) {
+            on = on.above();
+         }
+         if (level.getBlockState(on).isAir() && !blocked(level, on)) {
+            level.setBlock(on, Blocks.SCULK_SENSOR.defaultBlockState(), 3);
+         }
+      }
+      BlockPos cat = groundAt(level, pos.getX() + r + 1, mid.getY(), pos.getZ() - 1);
+      if (cat != null && level.getBlockState(cat).isAir() && !blocked(level, cat)) {
+         level.setBlock(cat, Blocks.SCULK_CATALYST.defaultBlockState(), 3);
+      }
+      return top;
+   }
+
    /** The heart bursts at this spot: shriek, put out the fire, sculk splotch, and Elijah arrives. */
    public static void summon(ServerLevel level, BlockPos pos) {
       double x = pos.getX() + 0.5;
@@ -250,6 +324,11 @@ public final class EliSummon {
             }
          }
       }
+      // The mound he climbs out of (on top of the ground, nothing replaced).
+      int moundTop = mound(level, pos);
+      if (moundTop >= 0) {
+         surface = moundTop;
+      }
       // Elijah.
       Stagnated eli = ModEntities.STAGNATED.create(level, EntitySpawnReason.EVENT);
       if (eli == null) {
@@ -258,6 +337,9 @@ public final class EliSummon {
       eli.snapTo(x, surface, z, level.getRandom().nextFloat() * 360.0F, 0.0F);
       eli.makeSweaty();
       eli.setSummoned();
+      if (Tuning.SUMMON_OPENER_SLAM) {
+         eli.setOpenerSlam();
+      }
       level.addFreshEntity(eli);
       Achievements.awardNear(eli, 32.0, "here_burns_the_wicked");
       eli.startEmerging();

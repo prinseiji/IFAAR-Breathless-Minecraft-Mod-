@@ -355,6 +355,11 @@ public final class Tuning {
    public static final float HEART_CHEST_CHANCE = 0.12F;
    /** Summon: radius of the sculk splotch. */
    public static final int HEART_SPLOTCH_RADIUS = 4;
+   /** The mound Elijah climbs out of when a Rotting Heart summons him: radius and height (blocks) at the middle. It sits on top of whatever ground is there, nothing under it is replaced. */
+   public static final int MOUND_RADIUS = 3;
+   public static final int MOUND_HEIGHT = 3;
+   /** His first attack after a heart summon is a stun slam (the usual wind-up and warning, then he leaps). */
+   public static final boolean SUMMON_OPENER_SLAM = true;
    /** Eli's Sword: a block in its first PARRY_TICKS ticks is a full parry; the world then freezes for FREEZE_TICKS (0.5 s). Blocking later takes half the damage. */
    public static final int PARRY_TICKS = 7;
    public static final int PARRY_FREEZE_TICKS = 10;

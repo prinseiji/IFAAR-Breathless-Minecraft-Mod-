@@ -451,3 +451,7 @@ Everything. See DEVELOPMENT.md.
 - Shield stall now happens about half the time when your shield is up (`XB_STALL_CHANCE` 1.0 to 0.5); otherwise he fires straight away. Stall length unchanged (1.2 to 2 s).
 - Aerial snipe chance 30%/50% to 35%/55% (phase one/phase two). His first shot of a fight is still a snipe when there is room.
 - Natural surface spawn rarer: `SWEATY_SURFACE_ODDS` 1800 to 2700 (average surface time before he turns up goes from 30 to 45 minutes; the 10 minute cooldown is unchanged).
+
+## Batch 29 (untested): the mound and the opening slam
+- A Rotting Heart summon now raises a mound of sculk on top of the ground (`MOUND_RADIUS` 3, `MOUND_HEIGHT` 3), with two sensors on the slope and a catalyst beside it. Nothing under it is replaced, nothing is placed where something stands, and water is skipped. Elijah climbs out of the top of it with the usual emerge animation. If there is no ground in the middle the old flat splotch behaviour is kept. The Stagnated Head and the surface spawn are unchanged.
+- His first heavy attack after a heart summon is a stun slam (`SUMMON_OPENER_SLAM`), with the usual sword-to-mace swap, warning sound and flash before the leap. It needs 12 blocks of room above him; without it he falls back to a normal first attack.
