@@ -10,6 +10,8 @@ public final class ModSounds {
    }
 
    public static SoundEvent WHEEZE;
+   /** The Sculk Nidus heartbeat (0.76 s, repeated every 15 ticks). Louder the closer you are. */
+   public static SoundEvent NIDUS_HEARTBEAT;
    public static SoundEvent MASK_ON;
    public static SoundEvent FILTER_ON;
    public static SoundEvent FILTER_OFF;
@@ -61,6 +63,7 @@ public final class ModSounds {
 
    public static void register() {
       WHEEZE = reg("wheeze");
+      NIDUS_HEARTBEAT = reg("nidus_heartbeat");
       MASK_ON = reg("mask_on");
       FILTER_ON = reg("filter_on");
       FILTER_OFF = reg("filter_off");

@@ -455,3 +455,18 @@ Everything. See DEVELOPMENT.md.
 ## Batch 29 (untested): the mound and the opening slam
 - A Rotting Heart summon now raises a mound of sculk on top of the ground (`MOUND_RADIUS` 3, `MOUND_HEIGHT` 3), with two sensors on the slope and a catalyst beside it. Nothing under it is replaced, nothing is placed where something stands, and water is skipped. Elijah climbs out of the top of it with the usual emerge animation. If there is no ground in the middle the old flat splotch behaviour is kept. The Stagnated Head and the surface spawn are unchanged.
 - His first heavy attack after a heart summon is a stun slam (`SUMMON_OPENER_SLAM`), with the usual sword-to-mace swap, warning sound and flash before the leap. It needs 12 blocks of room above him; without it he falls back to a normal first attack.
+
+## Batch 30 (untested): the Sculk Nidus
+- New block, Sculk Nidus (Natural Blocks tab for now; it does not generate in the world yet). Front faces the player who places it. Textures from your Blockbench files (front and sides animate, 4 ticks a frame, to roughly match the heartbeat; the top picture is used for top and bottom).
+- While whole it plays the heartbeat every 15 ticks (louder the closer you are, audible to about 24 blocks), lets spore eyes drift around it, and every heartbeat has a 1 in 60 chance (`NIDUS_SPAWN_ODDS`) to wake a Stagnated for the nearest underground player within 48 blocks (`NIDUS_RANGE`). It ignores the sculk tier and the usual cooldown. After 8 wakes (`NIDUS_WAKES`) it goes quiet but still holds its hearts.
+- Broken (hoe is fastest): 5 experience (`NIDUS_XP`) and 2 Rotting Hearts.
+- No block entity: a scheduled tick is the timer and the wake count lives in the block state.
+- The Stagnated spawn attempt is now its own method (`StagnatedSpawner.trySpawn`) so the Nidus and the usual sculk rule share it. Behaviour of the usual rule is unchanged.
+- Silence effect icon added (`textures/mob_effect/silence.png`, cropped to 18x18); the effect and potion are not built yet.
+- Still to decide: heart drops from regular Stagnateds (still 4% in this batch), the cave structure that holds Nidus blocks and the guard shrieker, and the Potion of Silence.
+
+## Batch 31 (untested): the Nidus cave pocket (this zip also contains Batch 30)
+- New world feature `nidus_pocket`: a patch of sculk on the floor of an existing cave (9 by 6 blocks, `NIDUS_POCKET_RX/RZ`) with a Sculk Nidus in the middle, 2 catalysts, 4 sensors and one guard shrieker that can summon a warden. It only uses caves that are already there and changes nothing but the floor, so it joins onto them. It tries once per 10 chunks between Y -50 and -8 (`rarity_filter` in `placed_feature/nidus_pocket.json`), and most tries find no cave with room and do nothing. Not in the deep dark.
+- The guard shrieker always has open air on all four sides and two blocks above, and the other sculk blocks stay at least 4 blocks from it, so it can be walled off with wool or broken. Nothing is placed if no such spot exists.
+- Nidus blocks made by world generation are started with a scheduled tick, and the block's random tick picks them up if that is missed.
+

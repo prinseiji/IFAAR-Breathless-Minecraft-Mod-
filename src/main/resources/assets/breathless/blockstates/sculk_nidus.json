@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "breathless:block/sculk_nidus"
+    },
+    "facing=east": {
+      "model": "breathless:block/sculk_nidus",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "breathless:block/sculk_nidus",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "breathless:block/sculk_nidus",
+      "y": 270
+    }
+  }
+}

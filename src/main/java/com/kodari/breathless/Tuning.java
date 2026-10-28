@@ -195,6 +195,19 @@ public final class Tuning {
    public static final int STAGNATED_SPAWN_ODDS = 45;
    public static final int STAGNATED_COOLDOWN_SECONDS = 90;
    public static final int STAGNATED_MAX_NEAR = 2;
+   /** Sculk Nidus: it wakes Stagnateds for players within this many blocks. */
+   public static final double NIDUS_RANGE = 48.0;
+   /** Chance per heartbeat (every 0.75 s) of a wake-up roll is 1 in this (60 is about one try every 45 seconds). It ignores the sculk tier and the usual cooldown. */
+   public static final int NIDUS_SPAWN_ODDS = 60;
+   /** How many Stagnateds one Nidus can wake before it goes quiet (it still holds its hearts). */
+   public static final int NIDUS_WAKES = 8;
+   /** Experience when it is broken (like the other sculk blocks). */
+   public static final int NIDUS_XP = 5;
+   /** The cave pocket that holds a Nidus: size of the sculk floor patch (blocks, either side of the middle), and how many catalysts and sensors it gets. */
+   public static final int NIDUS_POCKET_RX = 9;
+   public static final int NIDUS_POCKET_RZ = 6;
+   public static final int NIDUS_POCKET_CATALYSTS = 2;
+   public static final int NIDUS_POCKET_SENSORS = 4;
    /** Length of the emerge animation (7.92 s). */
    public static final int STAGNATED_EMERGE_TICKS = 159;
    /** Sideways reach beyond the sight radius for a sprinting player (it hears the noise). */

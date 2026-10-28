@@ -165,5 +165,6 @@
   "breathless.lore.eli_sword_2": "You are unable to apply enchantments onto it due to your lack of knowledge of the item.",
   "breathless.lore.rotting_heart_1": "It pulsates in your hands, a terrible presence emanates within it.",
   "breathless.lore.rotting_heart_2": "It's hideous, you wish to burn it.",
-  "breathless.tooltip.hold_shift": "Hold [Shift] for description"
+  "breathless.tooltip.hold_shift": "Hold [Shift] for description",
+  "block.breathless.sculk_nidus": "Sculk Nidus"
 }

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "breathless:block/sculk_nidus_side",
+    "down": "breathless:block/sculk_nidus_top",
+    "up": "breathless:block/sculk_nidus_top",
+    "north": "breathless:block/sculk_nidus_front",
+    "south": "breathless:block/sculk_nidus_side",
+    "east": "breathless:block/sculk_nidus_side",
+    "west": "breathless:block/sculk_nidus_side"
+  }
+}

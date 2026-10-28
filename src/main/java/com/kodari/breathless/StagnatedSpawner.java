@@ -78,10 +78,17 @@ public final class StagnatedSpawner {
       if (player.getRandom().nextInt(Tuning.STAGNATED_SPAWN_ODDS) != 0) {
          return;
       }
+      if (trySpawn(player)) {
+         COOLDOWN.put(id, Tuning.STAGNATED_COOLDOWN_SECONDS);
+      }
+   }
+
+   /** One attempt to put a Stagnated out of sight around the player. Used by the usual sculk rule above and by the Sculk Nidus. True when one appeared. */
+   public static boolean trySpawn(ServerPlayer player) {
       ServerLevel level = (ServerLevel)player.level();
       AABB area = player.getBoundingBox().inflate(64.0);
       if (level.getEntitiesOfClass(Stagnated.class, area).size() >= Tuning.STAGNATED_MAX_NEAR) {
-         return;
+         return false;
       }
       for (int attempt = 0; attempt < 24; attempt++) {
          double angle = player.getRandom().nextDouble() * Math.PI * 2.0;
@@ -95,7 +102,7 @@ public final class StagnatedSpawner {
             }
             Stagnated mob = ModEntities.STAGNATED.create(level, EntitySpawnReason.EVENT);
             if (mob == null) {
-               return;
+               return false;
             }
             mob.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getRandom().nextFloat() * 360.0F, 0.0F);
             if (!level.noCollision(mob) || player.hasLineOfSight(mob)) {
@@ -104,9 +111,9 @@ public final class StagnatedSpawner {
             }
             level.addFreshEntity(mob);
             mob.startEmerging();
-            COOLDOWN.put(id, Tuning.STAGNATED_COOLDOWN_SECONDS);
-            return;
+            return true;
          }
       }
+      return false;
    }
 }

@@ -37,6 +37,8 @@ public class Breathless implements ModInitializer {
       ModEffects.register();
       ModEntities.register();
       ModParticles.register();
+      ModBlocks.register();
+      ModWorldgen.register();
       ModItems.register();
       PayloadTypeRegistry.clientboundPlay().register(ExposurePayload.TYPE, ExposurePayload.CODEC);
       PayloadTypeRegistry.clientboundPlay().register(FiendPayload.TYPE, FiendPayload.CODEC);
@@ -53,6 +55,7 @@ public class Breathless implements ModInitializer {
       MobRules.init();
       EliSummon.init();
 
+      CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.NATURAL_BLOCKS).register(entries -> entries.accept(ModBlocks.SCULK_NIDUS));
       CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> {
          entries.accept(ModItems.GAS_MASK_EMPTY);
          entries.accept(ModItems.maskWith(new MaskFilters(Tuning.FILTER_MAX, Tuning.FILTER_MAX)));

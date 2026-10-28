@@ -877,5 +877,14 @@
         "attenuation_distance": 64
       }
     ]
+  },
+  "nidus_heartbeat": {
+    "sounds": [
+      {
+        "name": "breathless:nidus_heartbeat",
+        "stream": false,
+        "attenuation_distance": 24
+      }
+    ]
   }
 }
