@@ -297,7 +297,7 @@ public final class Tuning {
    public static final float SWEATY_STUN_CHANCE_SHIELD = 0.7F;
    /** Elijah eats a golden apple (standing still) when his health drops to this fraction, at most this many times per fight, taking this many ticks. */
    public static final float SWEATY_EAT_BELOW = 0.4F;
-   public static final int SWEATY_APPLES = 2;
+   public static final int SWEATY_APPLES = 3;
    public static final int SWEATY_EAT_TICKS = 32;
    /** Every Stagnated except the sweaty one withers away above the spore layer: grace period before it starts, then damage once a second. */
    public static final int STAGNATED_SURFACE_GRACE_TICKS = 60;
