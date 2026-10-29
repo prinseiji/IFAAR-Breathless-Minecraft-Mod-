@@ -1260,7 +1260,11 @@ public class Stagnated extends Monster {
    }
 
    private void stunRing(ServerLevel level, double x, double y, double z) {
-      double r = this.stunRadius();
+      this.stunRing(level, x, y, z, this.stunRadius());
+   }
+
+   /** The stun slam marker at any radius: the barrage uses it too, so both warnings look the same. */
+   private void stunRing(ServerLevel level, double x, double y, double z, double r) {
       // The rotating target on the ground (its size travels as the particle's velocity), with red dust drifting up from it.
       level.sendParticles(ModParticles.STUN_MARK, x, y, z, 0, r * 1.7, 0.0, 0.0, 1.0);
       level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 1.2F), x, y + 0.3, z, 8, r * 0.7, 0.35, r * 0.7, 0.0);
@@ -1325,8 +1329,8 @@ public class Stagnated extends Monster {
       if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
          this.startSwap(false);
       }
-      if (smash && !this.smash(level, fall, stun)) {
-         // The smash did nothing (a shield soaked it): the fall is its own to take.
+      if (smash && !this.smash(level, fall, stun) && (!stun || Tuning.STUN_WHIFF_FALL_DAMAGE)) {
+         // The smash did nothing (a shield soaked it, or you dodged): the fall is its own to take. Stun slams skip this unless Tuning says otherwise.
          this.hurtServer(level, this.damageSources().fall(), Math.max(0.0F, (float)Math.ceil(fall - 3.0F)));
       }
    }
@@ -2373,17 +2377,31 @@ public class Stagnated extends Monster {
       }
    }
 
-   /** One rocket of the barrage: it leaves upward now and lands on a marked spot STRIKE_DELAY ticks later. Alternate ones go on you, the others around you. */
+   /** One rocket of the barrage: it leaves upward now and lands on a marked spot STRIKE_DELAY ticks later. The first mark is right on you, the others are scattered around you. */
    private void launchStrike(ServerLevel level, LivingEntity target, int index) {
       Vec3 p = target.position();
-      Vec3 v = target.getDeltaMovement();
-      double x = p.x + v.x * Tuning.STRIKE_DELAY * 0.6;
-      double z = p.z + v.z * Tuning.STRIKE_DELAY * 0.6;
-      if (index % 2 == 1) {
-         double a = this.random.nextDouble() * Math.PI * 2.0;
-         double r = 3.0 + this.random.nextDouble() * 2.0;
-         x += Math.cos(a) * r;
-         z += Math.sin(a) * r;
+      double x = p.x;
+      double z = p.z;
+      if (index > 0) {
+         // Scatter around you, not too close to the marks already placed (a few tries, then the last one stands).
+         for (int attempt = 0; attempt < 12; attempt++) {
+            double a = this.random.nextDouble() * Math.PI * 2.0;
+            double r = Tuning.STRIKE_SCATTER_MIN + this.random.nextDouble() * (Tuning.STRIKE_SCATTER_MAX - Tuning.STRIKE_SCATTER_MIN);
+            x = p.x + Math.cos(a) * r;
+            z = p.z + Math.sin(a) * r;
+            boolean clear = true;
+            for (double[] o : this.strikes) {
+               double ddx = o[0] - x;
+               double ddz = o[2] - z;
+               if (ddx * ddx + ddz * ddz < Tuning.STRIKE_MIN_GAP * Tuning.STRIKE_MIN_GAP) {
+                  clear = false;
+                  break;
+               }
+            }
+            if (clear) {
+               break;
+            }
+         }
       }
       BlockPos bp = BlockPos.containing(x, p.y + 1.0, z);
       double gy = p.y;
@@ -2394,7 +2412,12 @@ public class Stagnated extends Monster {
             break;
          }
       }
-      this.strikes.add(new double[]{x, gy, z, Tuning.STRIKE_DELAY});
+      double yaw = Math.toRadians(this.getYHeadRot());
+      double mx = this.getX() - Math.sin(yaw) * 0.8 + Math.cos(yaw) * 0.3;
+      double mz = this.getZ() + Math.cos(yaw) * 0.8 + Math.sin(yaw) * 0.3;
+      double my = this.getY() + 1.35;
+      // {x, ground y, z, ticks left, muzzle x, muzzle y, muzzle z}
+      this.strikes.add(new double[]{x, gy, z, Tuning.STRIKE_DELAY, mx, my, mz});
       if (index == 0) {
          // Voice: said as the first rocket leaves. "Try parrying these" only when the player actually holds Eli's Sword.
          this.slothCooldown = 0;
@@ -2402,14 +2425,20 @@ public class Stagnated extends Monster {
          boolean sword = target instanceof Player held && (held.getMainHandItem().is(ModItems.ELI_SWORD) || held.getOffhandItem().is(ModItems.ELI_SWORD));
          this.sloth(this.xbAir ? (p2 ? (sword ? SlothLines.AERIAL_VOLLEY_P2 : SlothLines.AERIAL_VOLLEY_P2_NO_SWORD) : SlothLines.AERIAL_VOLLEY_P1) : (p2 ? SlothLines.VOLLEY_P2 : SlothLines.VOLLEY_P1));
       }
-      double yaw = Math.toRadians(this.getYHeadRot());
-      double mx = this.getX() - Math.sin(yaw) * 0.8 + Math.cos(yaw) * 0.3;
-      double mz = this.getZ() + Math.cos(yaw) * 0.8 + Math.sin(yaw) * 0.3;
-      level.sendParticles(ParticleTypes.FIREWORK, mx, this.getY() + 1.35, mz, 10, 0.05, 0.3, 0.05, 0.25);
-      level.playSound(null, mx, this.getY() + 1.35, mz, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 2.0F, 1.0F);
+      level.sendParticles(ParticleTypes.FIREWORK, mx, my, mz, 10, 0.05, 0.3, 0.05, 0.25);
+      level.playSound(null, mx, my, mz, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 2.0F, 1.0F);
    }
 
-   /** Every tick: draw the marks of the rockets still falling, and land the ones that are due. They land in the order they left, one by one. */
+   /** A short streak of his rocket trail (same particles as the crossbow shot) between two heights. */
+   private static void rocketTrail(ServerLevel level, double x, double z, double yFrom, double yTo) {
+      for (int k = 0; k < 4; k++) {
+         double y = yFrom + (yTo - yFrom) * (k / 3.0);
+         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, y, z, 1, 0.03, 0.03, 0.03, 0.0);
+      }
+      level.sendParticles(ParticleTypes.END_ROD, x, yTo, z, 1, 0.0, 0.0, 0.0, 0.0);
+   }
+
+   /** Every tick: draw the marks and the rockets still in flight, and land the ones that are due. They land in the order they left, one by one. */
    private void tickStrikes(ServerLevel level) {
       for (int i = this.strikes.size() - 1; i >= 0; i--) {
          double[] s = this.strikes.get(i);
@@ -2417,22 +2446,34 @@ public class Stagnated extends Monster {
          if (s[3] <= 0) {
             this.strikes.remove(i);
             this.landStrike(level, s[0], s[1], s[2]);
-         } else if (((int)s[3]) % 2 == 0) {
-            for (int k = 0; k < 20; k++) {
-               double a = k * Math.PI * 2.0 / 20.0;
-               level.sendParticles(new DustParticleOptions(0xFF3A1A, 1.4F), s[0] + Math.cos(a) * Tuning.STRIKE_RADIUS, s[1] + 0.08, s[2] + Math.sin(a) * Tuning.STRIKE_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
-            }
-            level.sendParticles(new DustParticleOptions(0xFF3A1A, 1.0F), s[0], s[1] + 0.08, s[2], 3, 0.4, 0.0, 0.4, 0.0);
+            continue;
+         }
+         int left = (int)s[3];
+         int age = Tuning.STRIKE_DELAY - left;
+         // The warning: the stun slam's own marker (rotating target and red ring), at the strike's size.
+         if (left % 2 == 0 || age <= 1) {
+            this.stunRing(level, s[0], s[1] + 0.1, s[2], Tuning.STRIKE_RADIUS);
+         }
+         if (age <= Tuning.STRIKE_RISE_TICKS) {
+            // Up out of his crossbow.
+            double step = Tuning.STRIKE_RISE_HEIGHT / Tuning.STRIKE_RISE_TICKS;
+            rocketTrail(level, s[4], s[6], s[5] + (age - 1) * step, s[5] + age * step);
+         }
+         if (left == Tuning.STRIKE_FALL_TICKS) {
+            level.playSound(null, s[0], s[1], s[2], SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 1.5F, 1.5F);
+         }
+         if (left <= Tuning.STRIKE_FALL_TICKS) {
+            // Straight down onto the mark.
+            double step = Tuning.STRIKE_FALL_HEIGHT / Tuning.STRIKE_FALL_TICKS;
+            rocketTrail(level, s[0], s[2], s[1] + (left + 1) * step, s[1] + left * step);
          }
       }
    }
 
    private void landStrike(ServerLevel level, double x, double y, double z) {
-      level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.HOSTILE, 3.0F, 0.9F);
-      level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, SoundSource.HOSTILE, 2.5F, 1.0F);
-      level.sendParticles(ParticleTypes.EXPLOSION, x, y + 0.5, z, 1, 0.0, 0.0, 0.0, 0.0);
-      level.sendParticles(ParticleTypes.FLAME, x, y + 0.3, z, 24, 0.9, 0.3, 0.9, 0.08);
       Vec3 at = new Vec3(x, y, z);
+      // The same blast as his crossbow rockets: cyan / teal ball, flash, sculk souls, and the firework sounds.
+      EliRockets.burst(level, this, new Vec3(x, y + 0.4, z));
       for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(x - Tuning.STRIKE_RADIUS, y - 1.0, z - Tuning.STRIKE_RADIUS, x + Tuning.STRIKE_RADIUS, y + 3.0, z + Tuning.STRIKE_RADIUS),
             e -> e != this && !(e instanceof Stagnated) && e.isAlive() && !e.isSpectator() && !(e instanceof Player p && p.isCreative()))) {
          double dx = e.getX() - x;

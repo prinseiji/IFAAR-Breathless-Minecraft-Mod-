@@ -146,7 +146,8 @@ public final class EliRockets {
       return to.normalize().dot(flat.normalize()) > 0.0;
    }
 
-   private static void explode(ServerLevel level, Stagnated eli, Rocket r, Vec3 at, LivingEntity primary) {
+   /** The look and sound of one of his rocket blasts (no damage). The barrage uses the same one so both blasts match. */
+   public static void burst(ServerLevel level, Stagnated eli, Vec3 at) {
       level.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.HOSTILE, 3.0F, 0.9F);
       level.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, SoundSource.HOSTILE, 2.5F, 1.0F);
       level.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.HOSTILE, 2.0F, 0.8F);
@@ -160,6 +161,10 @@ public final class EliRockets {
       level.sendParticles(new DustParticleOptions(0x064B49, 2.2F), at.x, at.y, at.z, 34, 0.9, 0.9, 0.9, 0.0);
       level.sendParticles(new DustParticleOptions(0x0F9F98, 1.6F), at.x, at.y, at.z, 22, 0.7, 0.7, 0.7, 0.0);
       level.sendParticles(ParticleTypes.SCULK_SOUL, at.x, at.y, at.z, 18, 0.5, 0.5, 0.5, 0.12);
+   }
+
+   private static void explode(ServerLevel level, Stagnated eli, Rocket r, Vec3 at, LivingEntity primary) {
+      burst(level, eli, at);
       for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(at, at).inflate(Tuning.XB_BLAST_RADIUS), e -> e != eli && !(e instanceof Stagnated) && e.isAlive() && !e.isSpectator()
          && !(e instanceof Player p && p.isCreative()))) {
          float dmg = e == primary ? r.damage : r.damage * 0.6F;

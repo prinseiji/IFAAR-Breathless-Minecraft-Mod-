@@ -394,9 +394,19 @@ public final class Tuning {
    public static final double STRIKE_RADIUS = 2.5;
    public static final float BARRAGE_DAMAGE = 10.0F;
    /** A stocking reload: chance per tick (when nothing else is wanted), the pause after one, his short cooldown afterwards, and how close you must get to cancel it. */
-   public static final float STOCK_CHANCE = 0.012F;
-   public static final int STOCK_COOLDOWN = 100;
-   public static final int STOCK_AFTER_COOLDOWN = 30;
+   public static final float STOCK_CHANCE = 0.04F;
+   public static final int STOCK_COOLDOWN = 40;
+   public static final int STOCK_AFTER_COOLDOWN = 20;
+   /** A stun slam that connects with nobody (you dodged it) no longer costs him fall damage. True brings the old behavior back. Plain smashes are unchanged. */
+   public static final boolean STUN_WHIFF_FALL_DAMAGE = false;
+   /** Barrage marks: scatter ring around you (min / max blocks), the least gap between two marks, and how the rockets fly (up from his crossbow, then straight down onto the mark). */
+   public static final double STRIKE_SCATTER_MIN = 3.5;
+   public static final double STRIKE_SCATTER_MAX = 6.5;
+   public static final double STRIKE_MIN_GAP = 3.2;
+   public static final int STRIKE_RISE_TICKS = 8;
+   public static final double STRIKE_RISE_HEIGHT = 20.0;
+   public static final int STRIKE_FALL_TICKS = 9;
+   public static final double STRIKE_FALL_HEIGHT = 27.0;
    public static final double STOCK_CANCEL_DIST = 3.5;
    /** After a stocking reload he may go straight into a stun slam (the feint): chance, and the most distance. */
    public static final float STOCK_SLAM_CHANCE = 0.4F;
