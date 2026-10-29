@@ -389,22 +389,28 @@ public final class Tuning {
    public static final int[] BARRAGE_AIR_TICKS = {3, 7, 12, 16, 20};
    public static final int BARRAGE_GROUND_LEN = 27;
    public static final int BARRAGE_AIR_LEN = 24;
-   /** From a rocket leaving to it landing (ticks), the blast radius and damage before armor (each rocket). */
-   public static final int STRIKE_DELAY = 24;
-   public static final double STRIKE_RADIUS = 2.5;
-   public static final float BARRAGE_DAMAGE = 10.0F;
+   /** From each rocket leaving to it landing (ticks); every mark is already on the ground from the start of the barrage, the blast radius and damage before armor (each rocket). */
+   public static final int STRIKE_WARN_TICKS = 26;
+   public static final double STRIKE_RADIUS = 3.5;
+   public static final float BARRAGE_DAMAGE = 14.0F;
+   /** Slowness II after being caught by a blast (ticks). */
+   public static final int BARRAGE_SLOW_TICKS = 30;
    /** A stocking reload: chance per tick (when nothing else is wanted), the pause after one, his short cooldown afterwards, and how close you must get to cancel it. */
-   public static final float STOCK_CHANCE = 0.04F;
-   public static final int STOCK_COOLDOWN = 40;
+   public static final float STOCK_CHANCE = 0.08F;
+   public static final int STOCK_COOLDOWN = 20;
    public static final int STOCK_AFTER_COOLDOWN = 20;
    /** A stun slam that connects with nobody (you dodged it) no longer costs him fall damage. True brings the old behavior back. Plain smashes are unchanged. */
    public static final boolean STUN_WHIFF_FALL_DAMAGE = false;
    /** Barrage marks: scatter ring around you (min / max blocks), the least gap between two marks, and how the rockets fly (up from his crossbow, then straight down onto the mark). */
-   public static final double STRIKE_SCATTER_MIN = 3.5;
-   public static final double STRIKE_SCATTER_MAX = 6.5;
-   public static final double STRIKE_MIN_GAP = 3.2;
-   public static final int STRIKE_RISE_TICKS = 8;
-   public static final double STRIKE_RISE_HEIGHT = 20.0;
+   public static final double STRIKE_SCATTER_MIN = 3.0;
+   public static final double STRIKE_SCATTER_MAX = 7.0;
+   public static final double STRIKE_MIN_GAP = 3.5;
+   /** Marks stay free (the first follows you, the others wander around you) until STRIKE_LOCK_TICKS before landing, then lock. Wander speed: radians per tick around you, blocks per tick in / out. */
+   public static final int STRIKE_LOCK_TICKS = 14;
+   public static final double STRIKE_WANDER_ANGLE = 0.045;
+   public static final double STRIKE_WANDER_RADIAL = 0.06;
+   public static final int STRIKE_RISE_TICKS = 3;
+   public static final double STRIKE_RISE_HEIGHT = 16.0;
    public static final int STRIKE_FALL_TICKS = 9;
    public static final double STRIKE_FALL_HEIGHT = 27.0;
    public static final double STOCK_CANCEL_DIST = 3.5;

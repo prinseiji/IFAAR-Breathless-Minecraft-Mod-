@@ -2060,7 +2060,29 @@ public class Stagnated extends Monster {
    private int xbStock;
    private int xbStockCool;
    private boolean xbBarrage;
-   private final java.util.List<double[]> strikes = new java.util.ArrayList<>();
+   /** One barrage rocket: its mark (it follows / wanders around the target until it locks), when the rocket leaves, when it lands, and its muzzle. */
+   private static final class Strike {
+      double x;
+      double y;
+      double z;
+      double mx;
+      double my;
+      double mz;
+      int index;
+      int age;
+      int launchAt;
+      int landAt;
+      boolean launched;
+      LivingEntity target;
+      boolean onTarget;
+      boolean locked;
+      double ang;
+      double rad;
+      double dAng;
+      double dRad;
+   }
+
+   private final java.util.List<Strike> strikes = new java.util.ArrayList<>();
    private boolean xbFast;
    private boolean xbFeinted;
    private boolean forceClutch;
@@ -2310,11 +2332,9 @@ public class Stagnated extends Monster {
                this.setNoGravity(true);
                this.setDeltaMovement(0.0, 0.0, 0.0);
             }
-            int[] at = this.xbAir ? Tuning.BARRAGE_AIR_TICKS : Tuning.BARRAGE_GROUND_TICKS;
-            for (int i = 0; i < at.length; i++) {
-               if (this.xbTicks == at[i]) {
-                  this.launchStrike(level, target, i);
-               }
+            if (this.xbTicks == 1) {
+               // All the marks appear at once; the rockets leave one by one on the animation's beats.
+               this.placeStrikes(level, target);
             }
             if (this.xbTicks >= (this.xbAir ? Tuning.BARRAGE_AIR_LEN : Tuning.BARRAGE_GROUND_LEN)) {
                this.xbStock = 0;
@@ -2377,56 +2397,84 @@ public class Stagnated extends Monster {
       }
    }
 
-   /** One rocket of the barrage: it leaves upward now and lands on a marked spot STRIKE_DELAY ticks later. The first mark is right on you, the others are scattered around you. */
-   private void launchStrike(ServerLevel level, LivingEntity target, int index) {
-      Vec3 p = target.position();
-      double x = p.x;
-      double z = p.z;
-      if (index > 0) {
-         // Scatter around you, not too close to the marks already placed (a few tries, then the last one stands).
-         for (int attempt = 0; attempt < 12; attempt++) {
-            double a = this.random.nextDouble() * Math.PI * 2.0;
-            double r = Tuning.STRIKE_SCATTER_MIN + this.random.nextDouble() * (Tuning.STRIKE_SCATTER_MAX - Tuning.STRIKE_SCATTER_MIN);
-            x = p.x + Math.cos(a) * r;
-            z = p.z + Math.sin(a) * r;
-            boolean clear = true;
-            for (double[] o : this.strikes) {
-               double ddx = o[0] - x;
-               double ddz = o[2] - z;
-               if (ddx * ddx + ddz * ddz < Tuning.STRIKE_MIN_GAP * Tuning.STRIKE_MIN_GAP) {
-                  clear = false;
-                  break;
-               }
-            }
-            if (clear) {
-               break;
-            }
-         }
-      }
-      BlockPos bp = BlockPos.containing(x, p.y + 1.0, z);
-      double gy = p.y;
+   /** The ground height under a mark (looks a few blocks down from the target's height); keeps the old height over a gap. */
+   private double strikeGround(ServerLevel level, double x, double py, double z, double fallback) {
+      BlockPos bp = BlockPos.containing(x, py + 1.0, z);
       for (int dy = 0; dy < 10; dy++) {
          BlockPos b = new BlockPos(bp.getX(), bp.getY() - dy, bp.getZ());
          if (!level.getBlockState(b).isAir() && level.getBlockState(b.above()).isAir()) {
-            gy = b.getY() + 1.0;
-            break;
+            return b.getY() + 1.0;
          }
       }
+      return fallback;
+   }
+
+   /**
+    * The barrage starts: every mark appears on the ground right away (the first on you, the rest around you) and they follow / wander around you
+    * for a while before they lock. Each rocket leaves on its animation beat and lands STRIKE_WARN_TICKS after that beat, in the order they left.
+    */
+   private void placeStrikes(ServerLevel level, LivingEntity target) {
+      Vec3 p = target.position();
+      int[] at = this.xbAir ? Tuning.BARRAGE_AIR_TICKS : Tuning.BARRAGE_GROUND_TICKS;
+      for (int index = 0; index < at.length; index++) {
+         Strike st = new Strike();
+         st.index = index;
+         st.target = target;
+         st.onTarget = index == 0;
+         // This runs one tick into the animation.
+         st.launchAt = Math.max(1, at[index] - 1);
+         st.landAt = st.launchAt + Tuning.STRIKE_WARN_TICKS;
+         double x = p.x;
+         double z = p.z;
+         if (!st.onTarget) {
+            // Start somewhere around you, not too close to the marks already placed (a few tries, then the last one stands).
+            for (int attempt = 0; attempt < 16; attempt++) {
+               double a = this.random.nextDouble() * Math.PI * 2.0;
+               double r = Tuning.STRIKE_SCATTER_MIN + this.random.nextDouble() * (Tuning.STRIKE_SCATTER_MAX - Tuning.STRIKE_SCATTER_MIN);
+               x = p.x + Math.cos(a) * r;
+               z = p.z + Math.sin(a) * r;
+               boolean clear = true;
+               for (Strike o : this.strikes) {
+                  double ddx = o.x - x;
+                  double ddz = o.z - z;
+                  if (ddx * ddx + ddz * ddz < Tuning.STRIKE_MIN_GAP * Tuning.STRIKE_MIN_GAP) {
+                     clear = false;
+                     break;
+                  }
+               }
+               if (clear) {
+                  break;
+               }
+            }
+            st.ang = Math.atan2(z - p.z, x - p.x);
+            st.rad = Math.sqrt((x - p.x) * (x - p.x) + (z - p.z) * (z - p.z));
+            // Each one circles you at its own slow pace and drifts in and out.
+            st.dAng = (0.5 + this.random.nextDouble() * 0.5) * Tuning.STRIKE_WANDER_ANGLE * (this.random.nextBoolean() ? 1.0 : -1.0);
+            st.dRad = (0.5 + this.random.nextDouble() * 0.5) * Tuning.STRIKE_WANDER_RADIAL * (this.random.nextBoolean() ? 1.0 : -1.0);
+         }
+         st.x = x;
+         st.z = z;
+         st.y = this.strikeGround(level, x, p.y, z, p.y);
+         this.strikes.add(st);
+      }
+      this.playSound(SoundEvents.AMETHYST_BLOCK_RESONATE, 2.0F, 0.7F);
+   }
+
+   /** The rocket leaves his crossbow now: sparks, the launch sound, and (for the first) his voice. */
+   private void fireStrike(ServerLevel level, Strike st) {
       double yaw = Math.toRadians(this.getYHeadRot());
-      double mx = this.getX() - Math.sin(yaw) * 0.8 + Math.cos(yaw) * 0.3;
-      double mz = this.getZ() + Math.cos(yaw) * 0.8 + Math.sin(yaw) * 0.3;
-      double my = this.getY() + 1.35;
-      // {x, ground y, z, ticks left, muzzle x, muzzle y, muzzle z}
-      this.strikes.add(new double[]{x, gy, z, Tuning.STRIKE_DELAY, mx, my, mz});
-      if (index == 0) {
+      st.mx = this.getX() - Math.sin(yaw) * 0.8 + Math.cos(yaw) * 0.3;
+      st.mz = this.getZ() + Math.cos(yaw) * 0.8 + Math.sin(yaw) * 0.3;
+      st.my = this.getY() + 1.35;
+      if (st.index == 0) {
          // Voice: said as the first rocket leaves. "Try parrying these" only when the player actually holds Eli's Sword.
          this.slothCooldown = 0;
          boolean p2 = this.isEnraged();
-         boolean sword = target instanceof Player held && (held.getMainHandItem().is(ModItems.ELI_SWORD) || held.getOffhandItem().is(ModItems.ELI_SWORD));
+         boolean sword = st.target instanceof Player held && (held.getMainHandItem().is(ModItems.ELI_SWORD) || held.getOffhandItem().is(ModItems.ELI_SWORD));
          this.sloth(this.xbAir ? (p2 ? (sword ? SlothLines.AERIAL_VOLLEY_P2 : SlothLines.AERIAL_VOLLEY_P2_NO_SWORD) : SlothLines.AERIAL_VOLLEY_P1) : (p2 ? SlothLines.VOLLEY_P2 : SlothLines.VOLLEY_P1));
       }
-      level.sendParticles(ParticleTypes.FIREWORK, mx, my, mz, 10, 0.05, 0.3, 0.05, 0.25);
-      level.playSound(null, mx, my, mz, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 2.0F, 1.0F);
+      level.sendParticles(ParticleTypes.FIREWORK, st.mx, st.my, st.mz, 10, 0.05, 0.3, 0.05, 0.25);
+      level.playSound(null, st.mx, st.my, st.mz, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 2.0F, 1.0F);
    }
 
    /** A short streak of his rocket trail (same particles as the crossbow shot) between two heights. */
@@ -2438,34 +2486,77 @@ public class Stagnated extends Monster {
       level.sendParticles(ParticleTypes.END_ROD, x, yTo, z, 1, 0.0, 0.0, 0.0, 0.0);
    }
 
-   /** Every tick: draw the marks and the rockets still in flight, and land the ones that are due. They land in the order they left, one by one. */
+   /**
+    * Every tick: move the marks that are still free, draw them, launch the rockets that are due (a short trail up only while the crossbow is still firing),
+    * bring the rockets down onto their marks, and land the ones that are due. They land in the order they left, one by one.
+    */
    private void tickStrikes(ServerLevel level) {
       for (int i = this.strikes.size() - 1; i >= 0; i--) {
-         double[] s = this.strikes.get(i);
-         s[3]--;
-         if (s[3] <= 0) {
+         Strike s = this.strikes.get(i);
+         s.age++;
+         if (s.age >= s.landAt) {
             this.strikes.remove(i);
-            this.landStrike(level, s[0], s[1], s[2]);
+            this.landStrike(level, s.x, s.y, s.z);
             continue;
          }
-         int left = (int)s[3];
-         int age = Tuning.STRIKE_DELAY - left;
-         // The warning: the stun slam's own marker (rotating target and red ring), at the strike's size.
-         if (left % 2 == 0 || age <= 1) {
-            this.stunRing(level, s[0], s[1] + 0.1, s[2], Tuning.STRIKE_RADIUS);
+         int left = s.landAt - s.age;
+         if (!s.launched && s.age >= s.launchAt) {
+            s.launched = true;
+            this.fireStrike(level, s);
          }
-         if (age <= Tuning.STRIKE_RISE_TICKS) {
-            // Up out of his crossbow.
+         if (!s.locked) {
+            if (left <= Tuning.STRIKE_LOCK_TICKS || s.target == null || !s.target.isAlive() || s.target.isRemoved()) {
+               // Locked: it stays where it is now. A click and a white pulse tell you it has committed.
+               s.locked = true;
+               level.playSound(null, s.x, s.y, s.z, SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.HOSTILE, 1.4F, 1.9F);
+               for (int k = 0; k < 24; k++) {
+                  double a = k * Math.PI * 2.0 / 24.0;
+                  level.sendParticles(ParticleTypes.END_ROD, s.x + Math.cos(a) * Tuning.STRIKE_RADIUS, s.y + 0.15, s.z + Math.sin(a) * Tuning.STRIKE_RADIUS, 0, 0.0, 0.05, 0.0, 1.0);
+               }
+            } else {
+               Vec3 tp = s.target.position();
+               if (s.onTarget) {
+                  s.x = tp.x;
+                  s.z = tp.z;
+               } else {
+                  s.ang += s.dAng;
+                  s.rad += s.dRad;
+                  if (s.rad < Tuning.STRIKE_SCATTER_MIN) {
+                     s.rad = Tuning.STRIKE_SCATTER_MIN;
+                     s.dRad = Math.abs(s.dRad);
+                  } else if (s.rad > Tuning.STRIKE_SCATTER_MAX) {
+                     s.rad = Tuning.STRIKE_SCATTER_MAX;
+                     s.dRad = -Math.abs(s.dRad);
+                  }
+                  s.x = tp.x + Math.cos(s.ang) * s.rad;
+                  s.z = tp.z + Math.sin(s.ang) * s.rad;
+               }
+               s.y = this.strikeGround(level, s.x, tp.y, s.z, s.y);
+            }
+         }
+         // The warning: the stun slam's own marker (rotating target and red ring), at the strike's size. Once locked it also gets a white inner ring.
+         if (s.age % 2 == 0 || s.age <= 2) {
+            this.stunRing(level, s.x, s.y + 0.1, s.z, Tuning.STRIKE_RADIUS);
+            if (s.locked) {
+               for (int k = 0; k < 16; k++) {
+                  double a = k * Math.PI * 2.0 / 16.0;
+                  level.sendParticles(new DustParticleOptions(0xFFFFFF, 1.2F), s.x + Math.cos(a) * Tuning.STRIKE_RADIUS * 0.55, s.y + 0.1, s.z + Math.sin(a) * Tuning.STRIKE_RADIUS * 0.55, 1, 0.0, 0.0, 0.0, 0.0);
+               }
+            }
+         }
+         int since = s.age - s.launchAt;
+         if (s.launched && since >= 1 && since <= Tuning.STRIKE_RISE_TICKS) {
+            // Up out of his crossbow, quick, and gone before he lowers it.
             double step = Tuning.STRIKE_RISE_HEIGHT / Tuning.STRIKE_RISE_TICKS;
-            rocketTrail(level, s[4], s[6], s[5] + (age - 1) * step, s[5] + age * step);
+            rocketTrail(level, s.mx, s.mz, s.my + (since - 1) * step, s.my + since * step);
          }
          if (left == Tuning.STRIKE_FALL_TICKS) {
-            level.playSound(null, s[0], s[1], s[2], SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 1.5F, 1.5F);
+            level.playSound(null, s.x, s.y, s.z, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 1.5F, 1.5F);
          }
          if (left <= Tuning.STRIKE_FALL_TICKS) {
             // Straight down onto the mark.
             double step = Tuning.STRIKE_FALL_HEIGHT / Tuning.STRIKE_FALL_TICKS;
-            rocketTrail(level, s[0], s[2], s[1] + (left + 1) * step, s[1] + left * step);
+            rocketTrail(level, s.x, s.z, s.y + (left + 1) * step, s.y + left * step);
          }
       }
    }
@@ -2483,6 +2574,8 @@ public class Stagnated extends Monster {
          }
          // Not blockable and not parryable (the damage type bypasses shields), so there is no shield check here.
          if (e.hurtServer(level, ModDamage.eliBarrage(level, this), Tuning.BARRAGE_DAMAGE)) {
+            // Getting caught should cost you more than health: a short slowdown makes the next blasts hard to leave.
+            e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS, Tuning.BARRAGE_SLOW_TICKS, 1));
             Vec3 push = e.position().subtract(at).multiply(1.0, 0.0, 1.0);
             if (push.lengthSqr() > 1.0E-4) {
                push = push.normalize().scale(0.5);
@@ -2592,6 +2685,8 @@ public class Stagnated extends Monster {
 
    /** Anything else takes over (phase two, the rage, no target): put everything back. */
    private void abortCrossbow(ServerLevel level) {
+      // A barrage cut short: the rockets that never left his crossbow do not land.
+      this.strikes.removeIf(st -> !st.launched);
       if (this.xbState != XB_NONE) {
          this.xbState = XB_NONE;
          this.xbTicks = 0;
