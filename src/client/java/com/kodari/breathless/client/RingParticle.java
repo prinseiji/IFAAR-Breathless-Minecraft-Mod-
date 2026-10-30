@@ -1,5 +1,7 @@
 package com.kodari.breathless.client;
 
+import com.kodari.breathless.Stagnated;
+
 import net.fabricmc.fabric.api.client.particle.v1.FabricSpriteSet;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
@@ -8,8 +10,13 @@ import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 
-/** The ring of thorns around Elijah while he is enraged by parries: a flat picture that always faces you and slowly turns. Sent again every couple of ticks by the server. */
+/**
+ * The ring of thorns around Elijah while he is enraged by parries: a flat picture that always faces you and slowly turns.
+ * It is ONE particle that lives as long as the rage lasts and moves with him by itself every tick (the client makes it when the rage starts, nothing is sent along his path),
+ * so there are no copies trailing behind him. The entity id travels as xd.
+ */
 final class RingParticle extends SingleQuadParticle {
    private final int owner;
 
@@ -21,7 +28,8 @@ final class RingParticle extends SingleQuadParticle {
       this.yd = 0.0D;
       this.zd = 0.0D;
       this.quadSize = 1.45F;
-      this.lifetime = 2;
+      // It ends itself (see tick); this is only a very long safety limit.
+      this.lifetime = 1000000;
       this.alpha = 0.95F;
       this.roll = (float)(Math.random() * Math.PI * 2.0);
       this.oRoll = this.roll;
@@ -44,16 +52,20 @@ final class RingParticle extends SingleQuadParticle {
       this.zo = this.z;
       this.oRoll = this.roll;
       this.roll += 0.12F;
-      // Stay on him: move to wherever he is now (the old position becomes the interpolation start).
-      net.minecraft.world.entity.Entity owner = this.level.getEntity(this.owner);
-      if (owner != null) {
-         this.x = owner.getX();
-         this.y = owner.getY() + 0.95;
-         this.z = owner.getZ();
-      }
-      if (this.age++ >= this.lifetime) {
+      Entity found = this.level.getEntity(this.owner);
+      if (!(found instanceof Stagnated eli) || eli.isRemoved() || !eli.isAlive() || !eli.isRaging()) {
          this.remove();
+         return;
       }
+      // Tell him the ring is alive, so a new one is made only if this one is gone.
+      eli.ringSeen = this.level.getGameTime();
+      // Both ends of the movement are HIS (his old and new position), so the ring moves exactly as smoothly as he does.
+      this.xo = eli.xo;
+      this.yo = eli.yo + 0.95;
+      this.zo = eli.zo;
+      this.x = eli.getX();
+      this.y = eli.getY() + 0.95;
+      this.z = eli.getZ();
    }
 
    static final class Provider implements ParticleProvider<SimpleParticleType> {

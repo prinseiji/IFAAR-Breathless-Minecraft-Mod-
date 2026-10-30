@@ -374,10 +374,19 @@ public final class Tuning {
    /** His first attack after a heart summon is a stun slam (the usual wind-up and warning, then he leaps). */
    public static final boolean SUMMON_OPENER_SLAM = true;
    /**
-    * The rocket barrage. Now and then he reloads without shooting (no red outline, no alert sound): each one stocks a rocket. At 5 stocked his next ranged attack is the barrage:
-    * five rockets fired up, landing one by one on marked spots. The strikes cannot be blocked or parried. Catching up to him (closer than STOCK_CANCEL_DIST) cancels a stocking reload.
+    * The rocket barrage. Now and then he reloads without shooting (it looks exactly like a shot reload): each one stocks a rocket, shown as a star above his head (up to 5).
+    * From 3 stocked he decides what the stock is for: the barrage (five rockets fired up, landing one by one on marked spots, cannot be blocked or parried), a chain
+    * (his next normal shot also fires the stock, one rocket after another), or to keep stocking (at 5 it is always the barrage). Catching up to him (closer than STOCK_CANCEL_DIST) cancels a stocking reload.
     */
+   /** Most rockets he can hold (the stars above his head, one each). */
    public static final int BARRAGE_STOCK = 5;
+   /** At this many stocked or more, each stock he adds decides what the stock is for: the barrage (always at the maximum), a chain of normal shots, or keep stocking. */
+   public static final int BARRAGE_MIN_STOCK = 3;
+   public static final float PLAN_BARRAGE_CHANCE = 0.35F;
+   public static final float PLAN_CHAIN_CHANCE = 0.30F;
+   /** A chain: a normal shot also fires what he has stocked (at most this many extra), this many ticks apart. Each rocket of a chain does less damage than a lone shot. */
+   public static final int CHAIN_MAX_EXTRA = 4;
+   public static final int CHAIN_GAP_TICKS = 5;
    /** The stocking reloads and the barrage happen in phase one too (with the phase one voicelines, which have no captions). False: phase two only. */
    public static final boolean BARRAGE_IN_PHASE_ONE = true;
    /** Chance that a stocking reload that is not the fifth gets a feint line (phase one only; phase two has none). */
@@ -390,13 +399,15 @@ public final class Tuning {
    public static final int BARRAGE_GROUND_LEN = 27;
    public static final int BARRAGE_AIR_LEN = 24;
    /** From each rocket leaving to it landing (ticks); every mark is already on the ground from the start of the barrage, the blast radius and damage before armor (each rocket). */
-   public static final int STRIKE_WARN_TICKS = 26;
+   public static final int STRIKE_WARN_TICKS_GROUND = 44;
+   /** Aerial: shorter, because the rise before the volley is already a wait (the marks are down from the moment he decides). */
+   public static final int STRIKE_WARN_TICKS_AIR = 30;
    public static final double STRIKE_RADIUS = 3.5;
    public static final float BARRAGE_DAMAGE = 14.0F;
    /** Slowness II after being caught by a blast (ticks). */
    public static final int BARRAGE_SLOW_TICKS = 30;
    /** A stocking reload: chance per tick (when nothing else is wanted), the pause after one, his short cooldown afterwards, and how close you must get to cancel it. */
-   public static final float STOCK_CHANCE = 0.08F;
+   public static final float STOCK_CHANCE = 0.04F;
    public static final int STOCK_COOLDOWN = 20;
    public static final int STOCK_AFTER_COOLDOWN = 20;
    /** A stun slam that connects with nobody (you dodged it) no longer costs him fall damage. True brings the old behavior back. Plain smashes are unchanged. */
@@ -410,9 +421,9 @@ public final class Tuning {
    public static final double STRIKE_WANDER_ANGLE = 0.045;
    public static final double STRIKE_WANDER_RADIAL = 0.06;
    public static final int STRIKE_RISE_TICKS = 3;
-   public static final double STRIKE_RISE_HEIGHT = 16.0;
-   public static final int STRIKE_FALL_TICKS = 9;
-   public static final double STRIKE_FALL_HEIGHT = 27.0;
+   public static final double STRIKE_RISE_HEIGHT = 24.0;
+   public static final int STRIKE_FALL_TICKS = 14;
+   public static final double STRIKE_FALL_HEIGHT = 28.0;
    public static final double STOCK_CANCEL_DIST = 3.5;
    /** After a stocking reload he may go straight into a stun slam (the feint): chance, and the most distance. */
    public static final float STOCK_SLAM_CHANCE = 0.4F;
@@ -445,7 +456,7 @@ public final class Tuning {
    public static final float XB_BURN_SECONDS = 4.0F;
    /** Aerial snipe: fixed damage, how high he goes, and the cooldown (in ticks) after each sequence by situation. */
    public static final float XB_AIR_DAMAGE = 16.0F;
-   public static final double XB_AIR_HEIGHT = 13.0;
+   public static final double XB_AIR_HEIGHT = 22.0;
    public static final int XB_COOLDOWN_P1 = 130;
    public static final int XB_COOLDOWN_P2 = 90;
    public static final int XB_COOLDOWN_LOW = 90;
