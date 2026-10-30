@@ -26,12 +26,16 @@ public final class ModParticles {
    /** One star per stocked rocket, turning above his head (a single particle that follows him, see StockStarParticle). */
    public static SimpleParticleType STOCK_STAR;
 
+   /** The blood wings behind Elijah on Hard (flat pictures that turn with his body, see WingsParticle). */
+   public static SimpleParticleType BLOOD_WINGS;
+
    public static void register() {
       SPORE_EYE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye"), FabricParticleTypes.simple());
       SPORE_EYE_SURGE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye_surge"), FabricParticleTypes.simple());
       STUN_MARK = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("stun_mark"), FabricParticleTypes.simple());
       XB_GLINT = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("xb_glint"), FabricParticleTypes.simple());
       STOCK_STAR = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("stock_star"), FabricParticleTypes.simple());
+      BLOOD_WINGS = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("blood_wings"), FabricParticleTypes.simple());
       RAGE_RING = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("rage_ring"), FabricParticleTypes.simple());
    }
 }

@@ -387,11 +387,15 @@ public final class Tuning {
    /** A chain: a normal shot also fires what he has stocked (at most this many extra), this many ticks apart. Each rocket of a chain does less damage than a lone shot. */
    public static final int CHAIN_MAX_EXTRA = 4;
    public static final int CHAIN_GAP_TICKS = 5;
+   /** Ticks spent within 7 blocks of his target for him to stock one rocket with no reload (he cannot be kept from stocking by being rushed). */
+   public static final int MELEE_STOCK_TICKS = 100;
+   /** The blood wings behind Elijah on Hard difficulty. */
+   public static final boolean BLOOD_WINGS_ON_HARD = true;
    /** The stocking reloads and the barrage happen in phase one too (with the phase one voicelines, which have no captions). False: phase two only. */
    public static final boolean BARRAGE_IN_PHASE_ONE = true;
    /** Chance that a stocking reload that is not the fifth gets a feint line (phase one only; phase two has none). */
    public static final float FEINT_LINE_CHANCE = 0.6F;
-   public static final double BARRAGE_MIN_DIST = 6.0;
+   public static final double BARRAGE_MIN_DIST = 0.0;
    public static final float BARRAGE_AIR_CHANCE = 0.5F;
    /** Ticks into the animation at which each rocket leaves (0.29 0.5 0.67 0.96 1.21 s on the ground, 0.17 0.33 0.58 0.79 1.0 s in the air), and how long each animation lasts. */
    public static final int[] BARRAGE_GROUND_TICKS = {6, 10, 13, 19, 24};
@@ -413,9 +417,9 @@ public final class Tuning {
    /** A stun slam that connects with nobody (you dodged it) no longer costs him fall damage. True brings the old behavior back. Plain smashes are unchanged. */
    public static final boolean STUN_WHIFF_FALL_DAMAGE = false;
    /** Barrage marks: scatter ring around you (min / max blocks), the least gap between two marks, and how the rockets fly (up from his crossbow, then straight down onto the mark). */
-   public static final double STRIKE_SCATTER_MIN = 3.0;
-   public static final double STRIKE_SCATTER_MAX = 7.0;
-   public static final double STRIKE_MIN_GAP = 3.5;
+   public static final double STRIKE_SCATTER_MIN = 4.0;
+   public static final double STRIKE_SCATTER_MAX = 10.0;
+   public static final double STRIKE_MIN_GAP = 5.5;
    /** Marks stay free (the first follows you, the others wander around you) until STRIKE_LOCK_TICKS before landing, then lock. Wander speed: radians per tick around you, blocks per tick in / out. */
    public static final int STRIKE_LOCK_TICKS = 14;
    public static final double STRIKE_WANDER_ANGLE = 0.045;

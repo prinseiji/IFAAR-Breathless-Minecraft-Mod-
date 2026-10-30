@@ -388,7 +388,7 @@ public class Stagnated extends Monster {
          }
       }
       // A soldier puts its iron on the moment anything hits it (a player or a mob).
-      if (hurt && this.role == 1 && this.armoringTicks <= 0 && this.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && source.getEntity() instanceof LivingEntity && this.isAlive()) {
+      if (hurt && this.role == 1 && !this.sweaty && this.armoringTicks <= 0 && this.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && source.getEntity() instanceof LivingEntity && this.isAlive()) {
          this.armoringTicks = Tuning.STAGNATED_ARMOR_TICKS;
          this.level().broadcastEntityEvent(this, (byte)70);
       }
@@ -532,6 +532,16 @@ public class Stagnated extends Monster {
          if (now - this.ringSeen > 3) {
             this.ringSeen = now;
             this.level().addParticle(ModParticles.RAGE_RING, this.getX(), this.getY() + 0.95, this.getZ(), this.getId(), 0.0, 0.0);
+         }
+      }
+      if (this.level().isClientSide() && this.wantsBloodWings()) {
+         long now = this.level().getGameTime();
+         if (now - this.wingsSeen > 3) {
+            this.wingsSeen = now;
+            double wy = this.getY() + 1.45;
+            // Two copies of the same picture back to back (one for each side to look at), both following him.
+            this.level().addParticle(ModParticles.BLOOD_WINGS, this.getX(), wy, this.getZ(), this.getId(), 0.0, 0.0);
+            this.level().addParticle(ModParticles.BLOOD_WINGS, this.getX(), wy, this.getZ(), this.getId(), 1.0, 0.0);
          }
       }
       if (this.sweaty && !this.level().isClientSide() && this.xbStock > 0 && this.tickCount % 40 == 0) {
@@ -695,6 +705,8 @@ public class Stagnated extends Monster {
    }
 
    private void gear() {
+      // He never wears a soldier's iron: cancel it if a hit started it before his own gear went on.
+      this.armoringTicks = 0;
       this.geared = true;
       this.armoredFlag = true;
       this.setItemSlot(EquipmentSlot.HEAD, this.protectedPiece(Items.DIAMOND_HELMET));
@@ -1907,6 +1919,11 @@ public class Stagnated extends Monster {
       }
    }
 
+   /** Client side: the blood wings are on while Elijah is out of the ground on Hard difficulty. */
+   public boolean wantsBloodWings() {
+      return Tuning.BLOOD_WINGS_ON_HARD && this.isElijah() && this.isAlive() && this.emergeClock < 0 && this.level().getDifficulty() == net.minecraft.world.Difficulty.HARD;
+   }
+
    /** Client side: make a star for every stocked rocket that does not have one. Each star is a single particle that follows him by itself (see StockStarParticle). */
    private void spawnStars() {
       long now = this.level().getGameTime();
@@ -2127,6 +2144,10 @@ public class Stagnated extends Monster {
    public int stockShown;
    /** Client side: the last tick the enrage ring's particle was alive (it is one particle that follows him; a new one is made only if it is gone). */
    public long ringSeen;
+   /** Client side: the last tick the blood wings' particles were alive (two particles, see WingsParticle). */
+   public long wingsSeen;
+   /** Ticks spent close to his target with room in the stock: every MELEE_STOCK_TICKS of it he stocks a rocket without a reload (so a player who never lets go of him cannot stop it). */
+   private int xbMeleeStock;
    public final long[] starSeen = new long[5];
    /** What the stock is for, decided each time he stocks one at 3 or more: nothing yet (keep stocking), the barrage, or a chain of normal shots. */
    private static final int PLAN_KEEP = 0;
@@ -2221,6 +2242,13 @@ public class Stagnated extends Monster {
             this.xbAway++;
          } else {
             this.xbAway = Math.max(0, this.xbAway - 2);
+         }
+         // Close to him for long enough and he stocks a rocket without any reload: a player who never lets go of him still cannot stop him stocking.
+         if ((this.isEnraged() || Tuning.BARRAGE_IN_PHASE_ONE) && dist < 7.0 && this.xbStock < Tuning.BARRAGE_STOCK && this.xbPlan == PLAN_KEEP) {
+            if (++this.xbMeleeStock >= Tuning.MELEE_STOCK_TICKS) {
+               this.xbMeleeStock = 0;
+               this.meleeStock(level);
+            }
          }
          if (this.xbCool > 0 || dist > 22.0 || !this.hasLineOfSight(target)) {
             return false;
@@ -2434,6 +2462,29 @@ public class Stagnated extends Monster {
       this.playSound(ModSounds.COMBO_WARNING, 2.5F, 1.0F);
    }
 
+   /** At 3 or more stocked he decides what the stock is for: the barrage, a chain of normal shots, or keep stocking (always the barrage at the maximum). */
+   private void rollPlan() {
+      if (this.xbStock >= Tuning.BARRAGE_STOCK) {
+         this.xbPlan = PLAN_BARRAGE;
+      } else if (this.xbStock >= Tuning.BARRAGE_MIN_STOCK) {
+         float roll = this.random.nextFloat();
+         this.xbPlan = roll < Tuning.PLAN_BARRAGE_CHANCE ? PLAN_BARRAGE : (roll < Tuning.PLAN_BARRAGE_CHANCE + Tuning.PLAN_CHAIN_CHANCE ? PLAN_CHAIN : PLAN_KEEP);
+      }
+   }
+
+   /** Stocked without a reload, because the fight never gave him room for one: a spark and a twinkle, a new star, and the plan is rolled as usual. */
+   private void meleeStock(ServerLevel level) {
+      this.xbStock++;
+      this.syncStock(level);
+      level.sendParticles(ParticleTypes.FIREWORK, this.getX(), this.getY() + 1.3, this.getZ(), 8, 0.25, 0.3, 0.25, 0.06);
+      level.playSound(null, this.getX(), this.getY() + 1.3, this.getZ(), SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.HOSTILE, 1.2F, 1.6F);
+      this.rollPlan();
+      if (this.xbStock >= Tuning.BARRAGE_STOCK) {
+         this.slothCooldown = 0;
+         this.sloth(this.isEnraged() ? SlothLines.FIVE_P2 : SlothLines.FIVE_P1);
+      }
+   }
+
    /** The stocking reload is done: one more rocket stocked, a spark to count by, and sometimes straight into a stun slam while you are still bracing for a shot. */
    private void finishStock(ServerLevel level, LivingEntity target) {
       this.xbStock++;
@@ -2441,13 +2492,7 @@ public class Stagnated extends Monster {
       level.broadcastEntityEvent(this, (byte)97);
       level.broadcastEntityEvent(this, (byte)80);
       this.syncStock(level);
-      // At 3 or more he decides what the stock is for: the barrage, a chain of normal shots, or keep stocking (always the barrage at 5).
-      if (this.xbStock >= Tuning.BARRAGE_STOCK) {
-         this.xbPlan = PLAN_BARRAGE;
-      } else if (this.xbStock >= Tuning.BARRAGE_MIN_STOCK) {
-         float roll = this.random.nextFloat();
-         this.xbPlan = roll < Tuning.PLAN_BARRAGE_CHANCE ? PLAN_BARRAGE : (roll < Tuning.PLAN_BARRAGE_CHANCE + Tuning.PLAN_CHAIN_CHANCE ? PLAN_CHAIN : PLAN_KEEP);
-      }
+      this.rollPlan();
       this.xbState = XB_NONE;
       this.xbTicks = 0;
       this.xbCool = Tuning.STOCK_AFTER_COOLDOWN;
