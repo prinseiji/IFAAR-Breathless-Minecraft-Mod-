@@ -19,6 +19,11 @@ import net.minecraft.world.entity.Entity;
  */
 final class RingParticle extends SingleQuadParticle {
    private final int owner;
+   /** His position on the previous tick (kept here, so the ring's old position is his old position). */
+   private double prevX;
+   private double prevY;
+   private double prevZ;
+   private boolean hasPrev;
 
    private RingParticle(ClientLevel level, double x, double y, double z, int owner, TextureAtlasSprite sprite) {
       super(level, x, y, z, sprite);
@@ -60,12 +65,19 @@ final class RingParticle extends SingleQuadParticle {
       // Tell him the ring is alive, so a new one is made only if this one is gone.
       eli.ringSeen = this.level.getGameTime();
       // Both ends of the movement are HIS (his old and new position), so the ring moves exactly as smoothly as he does.
-      this.xo = eli.xo;
-      this.yo = eli.yo + 0.95;
-      this.zo = eli.zo;
-      this.x = eli.getX();
-      this.y = eli.getY() + 0.95;
-      this.z = eli.getZ();
+      double nx = eli.getX();
+      double ny = eli.getY();
+      double nz = eli.getZ();
+      this.xo = this.hasPrev ? this.prevX : nx;
+      this.yo = (this.hasPrev ? this.prevY : ny) + 0.95;
+      this.zo = this.hasPrev ? this.prevZ : nz;
+      this.x = nx;
+      this.y = ny + 0.95;
+      this.z = nz;
+      this.prevX = nx;
+      this.prevY = ny;
+      this.prevZ = nz;
+      this.hasPrev = true;
    }
 
    static final class Provider implements ParticleProvider<SimpleParticleType> {

@@ -2528,19 +2528,7 @@ public class Stagnated extends Monster {
          st.y = this.strikeGround(level, x, p.y, z, p.y);
          this.strikes.add(st);
       }
-      this.playSound(SoundEvents.AMETHYST_BLOCK_RESONATE, 2.0F, 0.7F);
-   }
-
-   /** The ground height under a mark (looks a few blocks down from the target's height); keeps the old height over a gap. */
-   private double strikeGround(ServerLevel level, double x, double py, double z, double fallback) {
-      BlockPos bp = BlockPos.containing(x, py + 1.0, z);
-      for (int dy = 0; dy < 10; dy++) {
-         BlockPos b = new BlockPos(bp.getX(), bp.getY() - dy, bp.getZ());
-         if (!level.getBlockState(b).isAir() && level.getBlockState(b.above()).isAir()) {
-            return b.getY() + 1.0;
-         }
-      }
-      return fallback;
+      this.playSound(SoundEvents.FIREWORK_ROCKET_TWINKLE, 2.0F, 0.5F);
    }
 
    /** Rocket number `index` leaves his crossbow now: its mark starts the countdown, sparks and the launch sound, and (for the first) his voice. */

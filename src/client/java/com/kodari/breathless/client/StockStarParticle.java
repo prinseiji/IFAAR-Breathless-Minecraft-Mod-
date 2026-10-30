@@ -29,6 +29,11 @@ final class StockStarParticle extends SingleQuadParticle {
    private double oOrbZ;
    private double bob;
    private double oBob;
+   /** His position on the previous tick (kept here, so the star's old position is his old position). */
+   private double prevX;
+   private double prevY;
+   private double prevZ;
+   private boolean hasPrev;
 
    private StockStarParticle(ClientLevel level, double x, double y, double z, int owner, int index, TextureAtlasSprite sprite) {
       super(level, x, y, z, sprite);
@@ -85,12 +90,19 @@ final class StockStarParticle extends SingleQuadParticle {
       this.bob = Math.sin(this.level.getGameTime() * 0.12 + this.index) * 0.06;
       double top = eli.getBbHeight() + 0.6;
       // The old position is HIS old position too, so the star moves exactly as smoothly as he does (no trail of copies).
-      this.xo = eli.xo + this.oOrbX;
-      this.yo = eli.yo + top + this.oBob;
-      this.zo = eli.zo + this.oOrbZ;
-      this.x = eli.getX() + this.orbX;
-      this.y = eli.getY() + top + this.bob;
-      this.z = eli.getZ() + this.orbZ;
+      double nx = eli.getX();
+      double ny = eli.getY();
+      double nz = eli.getZ();
+      this.xo = (this.hasPrev ? this.prevX : nx) + this.oOrbX;
+      this.yo = (this.hasPrev ? this.prevY : ny) + top + this.oBob;
+      this.zo = (this.hasPrev ? this.prevZ : nz) + this.oOrbZ;
+      this.x = nx + this.orbX;
+      this.y = ny + top + this.bob;
+      this.z = nz + this.orbZ;
+      this.prevX = nx;
+      this.prevY = ny;
+      this.prevZ = nz;
+      this.hasPrev = true;
       this.roll += 0.06F;
    }
 
