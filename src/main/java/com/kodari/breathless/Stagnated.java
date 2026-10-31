@@ -764,6 +764,34 @@ public class Stagnated extends Monster {
       return (float)(breached / normal);
    }
 
+   /**
+    * The raw damage that, after the difficulty multiplier (x1.5 on Hard) and vanilla armor, does what the hit would do if the victim's armor counted for `ignore` less.
+    * Worked out by searching, because armor takes off less of a bigger hit, so a simple multiplier would hit harder than intended (as on Hard). Returns the damage unchanged with no armor.
+    */
+   private static float ignoreArmor(ServerLevel level, LivingEntity victim, float damage, double ignore) {
+      double armor = victim.getAttributeValue(Attributes.ARMOR);
+      if (armor <= 0.0 || ignore <= 0.0) {
+         return damage;
+      }
+      double toughness = victim.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
+      double mult = level.getDifficulty() == net.minecraft.world.Difficulty.HARD ? 1.5 : 1.0;
+      double y = damage * mult;
+      double weak = armor * (1.0 - ignore);
+      double target = y * (1.0 - Math.min(20.0, Math.max(weak / 5.0, weak - y / (2.0 + toughness / 4.0))) / 25.0);
+      double lo = y;
+      double hi = y * 6.0;
+      for (int i = 0; i < 30; i++) {
+         double mid = (lo + hi) / 2.0;
+         double taken = mid * (1.0 - Math.min(20.0, Math.max(armor / 5.0, armor - mid / (2.0 + toughness / 4.0))) / 25.0);
+         if (taken < target) {
+            lo = mid;
+         } else {
+            hi = mid;
+         }
+      }
+      return (float)(((lo + hi) / 2.0) / mult);
+   }
+
    /** An armor piece with Protection II (Tuning.SWEATY_PROTECTION). */
    private ItemStack protectedPiece(net.minecraft.world.item.Item item) {
       ItemStack piece = new ItemStack(item);
@@ -2019,6 +2047,10 @@ public class Stagnated extends Monster {
       }
       if (crit && (raging || !heavy)) {
          damage *= Tuning.SWEATY_CRIT_MULT;
+      }
+      // His light hits ignore part of the armor (Tuning.SWORD_ARMOR_IGNORE); the heavy swing does not.
+      if (!heavy && target instanceof LivingEntity armored) {
+         damage = ignoreArmor(level, armored, damage, Tuning.SWORD_ARMOR_IGNORE);
       }
       boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), damage);
       if (hit) {

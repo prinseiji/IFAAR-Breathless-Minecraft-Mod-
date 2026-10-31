@@ -355,6 +355,8 @@ public final class Tuning {
    public static final float SWORD_CHARGE_TICKS = 12.5F;
    public static final float SWORD_CRIT_CHARGE = 0.9F;
    public static final int SWORD_MIN_GAP_TICKS = 10;
+   /** His light sword hits ignore this fraction of the victim's armor (the heavy swing does not: on Hard it already takes most of a full diamond player's health). 0 turns it off. */
+   public static final double SWORD_ARMOR_IGNORE = 0.20;
    public static final double SWEATY_COMBO_KNOCKBACK = 1.1;
    public static final double SWEATY_COMBO_REACH = 3.6;
    /** Crit hop: chance per tick when in range, cooldown, damage multiplier. */

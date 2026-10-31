@@ -487,3 +487,7 @@ Everything. See DEVELOPMENT.md.
 - He cannot swing again sooner than 10 ticks after any sword hit, light or heavy (`SWORD_MIN_GAP_TICKS`). Before this, his one-second swing timer restarted whenever he was interrupted (a heavy swing, a weapon swap, a guard drop), so he could swing again almost at once, which is the "spam". His normal rhythm (one swing a second) is unchanged.
 - The heavy swing is unchanged apart from resetting the charge.
 
+## Batch 35 (untested): light hits ignore part of the armor
+- His light sword hits now ignore 20% of the victim's armor (`SWORD_ARMOR_IGNORE`, 0 turns it off). Through full diamond a light hit goes from about 1.1 to 1.8 hearts on Normal and from 1.9 to 2.9 on Hard. The heavy swing is unchanged (on Hard a phase two heavy swing already takes about 8 of 10 hearts).
+- The damage is worked out by `ignoreArmor`, which takes the difficulty multiplier and the way armor takes off less of a bigger hit into account, so Hard does not overshoot (the slam's Breach uses a simpler factor and is untouched).
+
