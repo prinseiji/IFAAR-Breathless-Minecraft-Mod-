@@ -187,7 +187,13 @@ public final class EliSummon {
             }
          }
       }
-      spots.sort(java.util.Comparator.comparingDouble(p -> p.distSqr(center) + level.getRandom().nextDouble() * 3.0));
+      // Each spot gets its random nudge once, before sorting. (Drawing a new random number inside the comparator gave the sort a different answer for the same pair
+      // every time it asked, which makes Java's sort throw "Comparison method violates its general contract!" once there are more than about 30 spots.)
+      java.util.Map<BlockPos, Double> rank = new java.util.HashMap<>();
+      for (BlockPos spot : spots) {
+         rank.put(spot, spot.distSqr(center) + level.getRandom().nextDouble() * 3.0);
+      }
+      spots.sort(java.util.Comparator.comparingDouble(spot -> rank.get(spot)));
       for (int i = 0; i < Math.min(count, spots.size()); i++) {
          level.setBlock(spots.get(i), Blocks.SCULK.defaultBlockState(), 3);
       }

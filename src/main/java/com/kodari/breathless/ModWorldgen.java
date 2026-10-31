@@ -1,23 +1,18 @@
 package com.kodari.breathless;
 
-import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
-import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.biome.Biomes;
-import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
-/** World generation: registers the Nidus cave pocket and adds it to the overworld (not the deep dark, which has its own city). How often it is tried is in data/breathless/worldgen/placed_feature/nidus_pocket.json. */
+/**
+ * World generation. The Anathema pocket is now a structure (data/breathless/worldgen/structure/anathema_pocket.json), so there is nothing to hook here for it:
+ * it is found with /locate structure breathless:anathema_pocket. The older feature version is still registered, because its json files are still in the mod,
+ * but it is no longer added to any biome. It can still be placed by hand with /place feature breathless:nidus_pocket.
+ */
 public final class ModWorldgen {
    private ModWorldgen() {
    }
 
    public static void register() {
       Registry.register(BuiltInRegistries.FEATURE, Breathless.id("nidus_pocket"), new NidusPocketFeature());
-      ResourceKey<PlacedFeature> key = ResourceKey.create(Registries.PLACED_FEATURE, Breathless.id("nidus_pocket"));
-      BiomeModifications.addFeature(BiomeSelectors.foundInOverworld().and(BiomeSelectors.excludeByKey(Biomes.DEEP_DARK)), GenerationStep.Decoration.UNDERGROUND_DECORATION, key);
    }
 }
