@@ -348,6 +348,13 @@ public final class Tuning {
    public static final int SWEATY_COMBO_HITS = 2;
    public static final int SWEATY_COMBO_WIND = 14;
    public static final float SWEATY_COMBO_DAMAGE = 1.9F;
+   /**
+    * Sword cooldown, like a vanilla sword (attack speed 1.6 takes 12.5 ticks to recharge). A light hit does 0.2 + 0.8 x charge squared of its damage (vanilla's formula),
+    * can only crit above SWORD_CRIT_CHARGE, and he cannot swing again sooner than SWORD_MIN_GAP_TICKS after any sword hit (light or heavy), which stops the bursts after a heavy swing or a weapon swap.
+    */
+   public static final float SWORD_CHARGE_TICKS = 12.5F;
+   public static final float SWORD_CRIT_CHARGE = 0.9F;
+   public static final int SWORD_MIN_GAP_TICKS = 10;
    public static final double SWEATY_COMBO_KNOCKBACK = 1.1;
    public static final double SWEATY_COMBO_REACH = 3.6;
    /** Crit hop: chance per tick when in range, cooldown, damage multiplier. */

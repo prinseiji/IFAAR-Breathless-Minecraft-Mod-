@@ -482,3 +482,8 @@ Everything. See DEVELOPMENT.md.
 - Voice hooks: FIVE when the fifth is stocked, FEINT on other stocking reloads (phase one only, 60%), CANCEL when you cancel a reload, VOLLEY / AERIAL_VOLLEY as the first rocket leaves. "Try parrying these" is only said when the player holds Eli's Sword.
 - The stocking reloads and the barrage now happen in phase one as well (`BARRAGE_IN_PHASE_ONE`, set false for phase two only).
 
+## Batch 34 (untested): sword cooldown
+- His light sword hits now follow a vanilla-style cooldown: a charge that fills in 12.5 ticks (`SWORD_CHARGE_TICKS`, a netherite sword's recharge), damage of 0.2 + 0.8 x charge squared (the vanilla formula), crits only above 90% charge (`SWORD_CRIT_CHARGE`).
+- He cannot swing again sooner than 10 ticks after any sword hit, light or heavy (`SWORD_MIN_GAP_TICKS`). Before this, his one-second swing timer restarted whenever he was interrupted (a heavy swing, a weapon swap, a guard drop), so he could swing again almost at once, which is the "spam". His normal rhythm (one swing a second) is unchanged.
+- The heavy swing is unchanged apart from resetting the charge.
+

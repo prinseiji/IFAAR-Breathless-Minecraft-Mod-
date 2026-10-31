@@ -132,6 +132,8 @@ public class Stagnated extends Monster {
    /** Sword fight: hits since the last heavy swing, ticks left of the heavy swing's wind-up, crit hop cooldown, strafe direction/ticks. */
    private int combo;
    private int comboWind;
+   /** Ticks since his last sword hit (the sword charge, as the cooldown bar is for a player). */
+   private int swordSince = 100;
    private int critCool;
    private int strafeDir = 1;
    private int strafeTicks;
@@ -523,6 +525,9 @@ public class Stagnated extends Monster {
    @Override
    public void aiStep() {
       super.aiStep();
+      if (this.swordSince < 200) {
+         this.swordSince++;
+      }
       if (!this.level().isClientSide() && !this.strikes.isEmpty()) {
          this.tickStrikes((ServerLevel)this.level());
       }
@@ -1979,6 +1984,10 @@ public class Stagnated extends Monster {
             this.setGuard(false);
             this.guardDown = Tuning.SWEATY_GUARD_DROP_TICKS;
          }
+         // Not charged enough to swing again yet (right after another hit): no swing, so no bursts.
+         if (this.swordSince < Tuning.SWORD_MIN_GAP_TICKS) {
+            return false;
+         }
          this.combo++;
          return this.swordHit(level, target, false);
       }
@@ -1997,8 +2006,14 @@ public class Stagnated extends Monster {
    private boolean swordHit(ServerLevel level, Entity target, boolean heavy) {
       float damage = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
       boolean raging = this.rageTicks > 0;
+      // The sword charge, as a player's cooldown bar: a light hit before it is full is weaker and cannot crit. The heavy swing has its own wind-up, so it is always full.
+      float charge = heavy ? 1.0F : Math.min(1.0F, (this.swordSince + 0.5F) / Tuning.SWORD_CHARGE_TICKS);
+      this.swordSince = 0;
+      if (!heavy) {
+         damage *= 0.2F + charge * charge * 0.8F;
+      }
       // In the rage every axe swing is a crit.
-      boolean crit = raging || (!heavy && !this.onGround() && this.fallDistance > 0.0F && this.getDeltaMovement().y < 0.0);
+      boolean crit = raging || (!heavy && charge > Tuning.SWORD_CRIT_CHARGE && !this.onGround() && this.fallDistance > 0.0F && this.getDeltaMovement().y < 0.0);
       if (heavy) {
          damage *= raging ? Tuning.RAGE_DAMAGE : Tuning.SWEATY_COMBO_DAMAGE;
       }
