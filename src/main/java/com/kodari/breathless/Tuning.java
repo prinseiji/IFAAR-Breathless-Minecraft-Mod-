@@ -409,7 +409,11 @@ public final class Tuning {
    public static final int MACE_PARRY_ANIM_TICKS = 9;
    public static final int MACE_PARRY_CONTACT_TICK = 3;
    public static final int MACE_PARRY_HOLD_TICKS = 3;
-   public static final float MACE_PARRY_KNOCKBACK = 1.4F;
+   public static final float MACE_PARRY_KNOCKBACK = 3.2F;
+   /** The upward kick that goes with it (blocks per tick of launch speed). */
+   public static final double MACE_PARRY_LIFT = 0.5;
+   /** Hit-stop: when the blades meet the world freezes for this many ticks and the screen flashes white (the same freeze and flash as the player's parry, only shorter). 0 turns it off. */
+   public static final int MACE_PARRY_FREEZE_TICKS = 6;
    public static final int MACE_PARRY_TALK_COOLDOWN = 100;
    /** A parried hit is sent back: this share of the damage returns to the attacker, at most PARRY_REFLECT_CAP (before armor), so a mace smash from a great height cannot one-shot its own user. */
    public static final float PARRY_REFLECT_MULT = 1.0F;

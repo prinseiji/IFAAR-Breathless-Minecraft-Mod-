@@ -241,6 +241,19 @@ public final class EliSummon {
          || level.getFluidState(pos).is(FluidTags.LAVA) || item.isOnFire();
    }
 
+   /** A hit-stop: the white flash on this player's screen and the whole world frozen for a few ticks. */
+   public static void hitstop(net.minecraft.server.level.ServerPlayer player, int ticks) {
+      if (ticks <= 0) {
+         return;
+      }
+      net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new ParryPayload());
+      net.minecraft.server.ServerTickRateManager rate = ((ServerLevel)player.level()).getServer().tickRateManager();
+      if (!rate.isFrozen()) {
+         rate.setFrozen(true);
+         later(ticks, () -> rate.setFrozen(false));
+      }
+   }
+
    private static void later(int ticks, Runnable run) {
       LATER.add(new Object[] {new int[] {ticks}, run});
    }

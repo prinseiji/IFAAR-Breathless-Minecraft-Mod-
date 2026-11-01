@@ -47,8 +47,16 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
          state.rightHandItemStack = ItemStack.EMPTY;
          state.rightHandItemState.clear();
       }
-      state.leftHandItemStack = held;
-      this.itemModelResolver.updateForLiving(state.leftHandItemState, held, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, entity);
+      if (entity.xbKind >= 9 && entity.xbKind <= 11 && !entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD)) {
+         // The mace parry raises the RIGHT arm, so the sword is in that hand for the whole parry.
+         state.rightHandItemStack = held;
+         this.itemModelResolver.updateForLiving(state.rightHandItemState, held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, entity);
+         state.leftHandItemStack = ItemStack.EMPTY;
+         state.leftHandItemState.clear();
+      } else {
+         state.leftHandItemStack = held;
+         this.itemModelResolver.updateForLiving(state.leftHandItemState, held, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, entity);
+      }
       state.aggressive = entity.isAggressive();
       state.attack = entity.getAttackAnim(partialTick);
       state.hurt = entity.hurtTime > 0 ? 1.0F - Math.max(0.0F, (entity.hurtTime - partialTick) / 10.0F) : -1.0F;

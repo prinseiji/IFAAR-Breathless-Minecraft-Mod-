@@ -2541,6 +2541,9 @@ public class Stagnated extends Monster {
          || this.getMainHandItem().is(net.minecraft.world.item.Items.MACE);
       if (busy) {
          this.playSound(ModSounds.ELI_PARRY, 1.4F, 1.0F);
+         if (attacker instanceof net.minecraft.server.level.ServerPlayer hit) {
+            EliSummon.hitstop(hit, Tuning.MACE_PARRY_FREEZE_TICKS);
+         }
          if (back > 0.0F && attacker.isAlive()) {
             attacker.hurtServer(level, ModDamage.parryReflect(level, this), back);
          }
@@ -2570,6 +2573,9 @@ public class Stagnated extends Monster {
          double yaw = Math.toRadians(this.getYHeadRot());
          level.sendParticles(ParticleTypes.CRIT, this.getX() - Math.sin(yaw) * 1.0, this.getY() + 1.3, this.getZ() + Math.cos(yaw) * 1.0, 14, 0.25, 0.25, 0.25, 0.25);
          this.playSound(ModSounds.ELI_PARRY, 1.6F, 1.0F);
+         if (foe instanceof net.minecraft.server.level.ServerPlayer hit) {
+            EliSummon.hitstop(hit, Tuning.MACE_PARRY_FREEZE_TICKS);
+         }
          if (foe != null && foe.isAlive() && this.maceParryBack > 0.0F) {
             foe.hurtServer(level, ModDamage.parryReflect(level, this), this.maceParryBack);
          }
@@ -2584,7 +2590,7 @@ public class Stagnated extends Monster {
             double kz = foe.getZ() - this.getZ();
             double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
             double kb = Tuning.MACE_PARRY_KNOCKBACK * (1.0 - Math.min(1.0, foe.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE)));
-            foe.setDeltaMovement(foe.getDeltaMovement().add(kx / kl * kb, 0.35, kz / kl * kb));
+            foe.setDeltaMovement(foe.getDeltaMovement().add(kx / kl * kb, Tuning.MACE_PARRY_LIFT, kz / kl * kb));
             foe.hurtMarked = true;
          }
       } else if (t >= knock + Tuning.MACE_PARRY_ANIM_TICKS) {
