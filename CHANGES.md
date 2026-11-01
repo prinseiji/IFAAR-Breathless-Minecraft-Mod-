@@ -501,3 +501,6 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 37 (untested): crash fix
 - Fixed a crash in `EliSummon.splotch` (the sculk patch that spreads when a mob dies of spores, or is killed in the sculk). It sorted the spots with a comparator that drew a new random number on every comparison, so the same pair could compare differently each time, and Java's sort throws "Comparison method violates its general contract!" when that happens with more than about 30 spots (the search area is 11 by 11). Each spot now gets its random nudge once before the sort. The look is the same: nearest spots first, a little random.
+
+## Batch 38 (untested): filter recipe result
+- `gas_mask_filter.json` now gives 1 filter instead of 2. Filters have durability, which makes them non-stackable (max stack size 1), and newer Minecraft versions refuse a recipe result larger than the item's maximum stack size, so the recipe with `"count": 2` (added Oct 18) could fail to load or give an empty result. Nothing else about the recipe changed.
