@@ -2579,7 +2579,12 @@ public class Stagnated extends Monster {
       } else if (t == knock) {
          level.broadcastEntityEvent(this, (byte)102);
          if (foe != null && foe.isAlive() && this.distanceTo(foe) < 8.0F) {
-            foe.knockback(Tuning.MACE_PARRY_KNOCKBACK, this.getX() - foe.getX(), this.getZ() - foe.getZ());
+            // Thrown away from him (knockback resistance still counts, like the vanilla knockback).
+            double kx = foe.getX() - this.getX();
+            double kz = foe.getZ() - this.getZ();
+            double kl = Math.max(0.01, Math.sqrt(kx * kx + kz * kz));
+            double kb = Tuning.MACE_PARRY_KNOCKBACK * (1.0 - Math.min(1.0, foe.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE)));
+            foe.setDeltaMovement(foe.getDeltaMovement().add(kx / kl * kb, 0.35, kz / kl * kb));
             foe.hurtMarked = true;
          }
       } else if (t >= knock + Tuning.MACE_PARRY_ANIM_TICKS) {

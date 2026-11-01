@@ -159,9 +159,8 @@ public final class EliSummon {
       if (shooter == null) {
          return;
       }
-      boolean projectile = direct != null && direct != shooter
-         && (direct.getType().is(net.minecraft.tags.EntityTypeTags.ARROWS) || direct.getType().is(net.minecraft.tags.EntityTypeTags.IMPACT_PROJECTILES)
-            || direct.getType().is(net.minecraft.tags.EntityTypeTags.REDIRECTABLE_PROJECTILE));
+      // Arrows, tridents, fireballs, snowballs and the like are all projectiles (this version's EntityType has no tag lookup to ask).
+      boolean projectile = direct != null && direct != shooter && direct instanceof net.minecraft.world.entity.projectile.Projectile;
       if (projectile) {
          net.minecraft.world.phys.Vec3 dir = shooter.getBoundingBox().getCenter().subtract(direct.position()).normalize();
          double speed = Math.max(1.6, direct.getDeltaMovement().length());
