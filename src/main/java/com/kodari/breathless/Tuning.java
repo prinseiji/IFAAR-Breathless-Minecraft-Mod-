@@ -402,6 +402,18 @@ public final class Tuning {
    public static final boolean BLOOD_WINGS_ON_HARD = true;
    /** The stocking reloads and the barrage happen in phase one too (with the phase one voicelines, which have no captions). False: phase two only. */
    public static final boolean BARRAGE_IN_PHASE_ONE = true;
+   /**
+    * The mace parry: any melee hit from a player holding a mace is parried with his sword and does nothing. The block animation is 0.42 s (9 ticks) and the contact (sound and sparks) is at 0.17 s (tick 3);
+    * he holds the pose for MACE_PARRY_HOLD_TICKS, then swings the sword back (another 9 ticks) and knocks the attacker away with MACE_PARRY_KNOCKBACK. He speaks at most once per MACE_PARRY_TALK_COOLDOWN ticks.
+    */
+   public static final int MACE_PARRY_ANIM_TICKS = 9;
+   public static final int MACE_PARRY_CONTACT_TICK = 3;
+   public static final int MACE_PARRY_HOLD_TICKS = 3;
+   public static final float MACE_PARRY_KNOCKBACK = 1.4F;
+   public static final int MACE_PARRY_TALK_COOLDOWN = 100;
+   /** A parried hit is sent back: this share of the damage returns to the attacker, at most PARRY_REFLECT_CAP (before armor), so a mace smash from a great height cannot one-shot its own user. */
+   public static final float PARRY_REFLECT_MULT = 1.0F;
+   public static final float PARRY_REFLECT_CAP = 30.0F;
    /** Chance that a stocking reload that is not the fifth gets a feint line (phase one only; phase two has none). */
    public static final float FEINT_LINE_CHANCE = 0.6F;
    public static final double BARRAGE_MIN_DIST = 0.0;

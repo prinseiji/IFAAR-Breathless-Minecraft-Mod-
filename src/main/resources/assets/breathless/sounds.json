@@ -1111,5 +1111,50 @@
         "attenuation_distance": 64
       }
     ]
+  },
+  "sloth_youllgettheresomeday": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_youllgettheresomeday",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_youthinkiwasgonnastandthereandtakeit": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_youthinkiwasgonnastandthereandtakeit",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_myowntrickagainstme": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_myowntrickagainstme",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "sloth_nooneisbetterthanme": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_nooneisbetterthanme",
+        "stream": false,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "eli_parry": {
+    "sounds": [
+      {
+        "name": "breathless:eli_parry",
+        "stream": false,
+        "attenuation_distance": 32
+      }
+    ]
   }
 }

@@ -14,6 +14,7 @@ public final class ModDamage {
    public static final ResourceKey<DamageType> ETHAN_MACE = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("ethan_mace"));
    public static final ResourceKey<DamageType> ETHAN_SWORD = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("ethan_sword"));
 
+   public static final ResourceKey<DamageType> PARRY_REFLECT = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("parry_reflect"));
    public static final ResourceKey<DamageType> ELI_BARRAGE = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("eli_barrage"));
    public static final ResourceKey<DamageType> ELI_ROCKET = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("eli_rocket"));
 
@@ -33,6 +34,11 @@ public final class ModDamage {
    }
 
    /** His firework rocket: armor still works, enchantment protection does not (see the bypasses_enchantments tag). */
+   /** Damage sent back by a parry. Not scaled by difficulty, and neither blocked nor parried (it is in the bypasses_shield tag). */
+   public static DamageSource parryReflect(ServerLevel level, net.minecraft.world.entity.Entity parrier) {
+      return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(PARRY_REFLECT), parrier);
+   }
+
    public static DamageSource eliBarrage(ServerLevel level, net.minecraft.world.entity.Entity attacker) {
       return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ELI_BARRAGE), attacker);
    }

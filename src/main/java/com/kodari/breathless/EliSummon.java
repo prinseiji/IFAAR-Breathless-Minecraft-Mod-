@@ -98,7 +98,7 @@ public final class EliSummon {
       // Parry: blocking with Eli's Sword right as the hit lands (first PARRY_TICKS of the block) cancels it, knocks the attacker back, flashes white and freezes time for half a second.
       ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
          // Only Eli's Sword parries count toward his rage (never against the stun slam).
-         if (entity instanceof net.minecraft.server.level.ServerPlayer blocker && source.getEntity() instanceof Stagnated eli && eli.isSweaty() && !eli.isStunSmash() && !source.is(ModDamage.ELI_BARRAGE) && blocker.isBlocking()) {
+         if (entity instanceof net.minecraft.server.level.ServerPlayer blocker && source.getEntity() instanceof Stagnated eli && eli.isSweaty() && !eli.isStunSmash() && !source.is(ModDamage.ELI_BARRAGE) && !source.is(ModDamage.PARRY_REFLECT) && blocker.isBlocking()) {
             int held = blocker.getTicksUsingItem();
             boolean swordBlock = blocker.getUseItem().is(ModItems.ELI_SWORD) && held <= Tuning.PARRY_TICKS;
             if (swordBlock) {
@@ -116,6 +116,7 @@ public final class EliSummon {
                Achievements.award(player, "plus_parry");
             }
             parry(player, source.getEntity());
+            reflectParried(player, source, amount);
             return false;
          }
          return true;
@@ -143,6 +144,40 @@ public final class EliSummon {
                .add(LootItem.lootTableItem(ModItems.ROTTING_HEART)));
          }
       });
+   }
+
+   /**
+    * A parried hit goes back. Damage returns to whoever dealt it (Tuning.PARRY_REFLECT_MULT of it, capped), and an arrow or other projectile is turned round and sent back at whoever fired it
+    * (a tick later, because the game bounces it off first). Eli's rockets come back as damage, since they are not entities.
+    */
+   private static void reflectParried(net.minecraft.server.level.ServerPlayer player, net.minecraft.world.damagesource.DamageSource source, float amount) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      net.minecraft.world.entity.Entity shooter = source.getEntity();
+      net.minecraft.world.entity.Entity direct = source.getDirectEntity();
+      if (shooter == null) {
+         return;
+      }
+      boolean projectile = direct != null && direct != shooter
+         && (direct.getType().is(net.minecraft.tags.EntityTypeTags.ARROWS) || direct.getType().is(net.minecraft.tags.EntityTypeTags.IMPACT_PROJECTILES)
+            || direct.getType().is(net.minecraft.tags.EntityTypeTags.REDIRECTABLE_PROJECTILE));
+      if (projectile) {
+         net.minecraft.world.phys.Vec3 dir = shooter.getBoundingBox().getCenter().subtract(direct.position()).normalize();
+         double speed = Math.max(1.6, direct.getDeltaMovement().length());
+         later(1, () -> {
+            if (direct.isAlive()) {
+               direct.setDeltaMovement(dir.scale(speed));
+               direct.hurtMarked = true;
+            }
+         });
+         return;
+      }
+      float back = Math.min(amount * Tuning.PARRY_REFLECT_MULT, Tuning.PARRY_REFLECT_CAP);
+      if (back > 0.0F && shooter instanceof LivingEntity foe && foe.isAlive()) {
+         foe.hurtServer(level, ModDamage.parryReflect(level, player), back);
+         level.sendParticles(ParticleTypes.CRIT, foe.getX(), foe.getY() + foe.getBbHeight() * 0.6, foe.getZ(), 12, 0.3, 0.3, 0.3, 0.2);
+      }
    }
 
    private static void parry(net.minecraft.server.level.ServerPlayer player, net.minecraft.world.entity.Entity attacker) {

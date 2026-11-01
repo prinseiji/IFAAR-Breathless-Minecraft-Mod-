@@ -12,6 +12,8 @@ public final class ModSounds {
    public static SoundEvent WHEEZE;
    /** The Sculk Nidus heartbeat (0.76 s, repeated every 15 ticks). Louder the closer you are. */
    public static SoundEvent NIDUS_HEARTBEAT;
+   /** The clang of Elijah parrying a mace attack. */
+   public static SoundEvent ELI_PARRY;
    public static SoundEvent MASK_ON;
    public static SoundEvent FILTER_ON;
    public static SoundEvent FILTER_OFF;
@@ -41,7 +43,7 @@ public final class ModSounds {
    public static SoundEvent ETHAN_SUMMON;
    public static SoundEvent FRUSTRATED;
    /** Phase two voicelines, in the order of SlothLines. */
-   public static final String[] SLOTH_FILES = {"justdie", "staystill", "faceme", "stophiding", "clever", "youthinkyouresafe", "cheaptricks", "iwantyoudead", "catchthis", "keeprunning", "youreajoke", "laugh", "youregettingrustyplayer", "keepswinging", "youreoutclassed", "isthiswhathelostto", "isthisallyouvegot", "diealready", "justburn", "whywontyoudie", "giveup", "aboveyou", "eyesup", "headsup", "whereareyoulooking", "watchmefly", "dontmove", "dodgethis", "bang", "thinkfast", "noscope", "eatlead", "saycheese", "letslightthiscandlehuh", "playfair", "respectthe1v1", "imbeingsubjectedtopeerpressuregetback", "justmorekillsforme", "thatmakesfiveofthem", "itsabouttogetbrightinhere", "takecover", "itsgettinghotinhere", "heyidmoveifiwereyou", "hey", "stepoff", "heycounttheseforme", "watchthis", "heyoverhere", "toomuchcoffee", "coldfeethuh", "jumpy", "ihaveyounow", "nomoretricks", "illmakethishurt", "scorchtheearth", "letthesunfall", "nowheretorun", "getoff", "youthinkthisisajoke", "iwillmakeitrain", "tryparryingthese", "wheredoyouthinkyourgoing", "watchyourground"};
+   public static final String[] SLOTH_FILES = {"justdie", "staystill", "faceme", "stophiding", "clever", "youthinkyouresafe", "cheaptricks", "iwantyoudead", "catchthis", "keeprunning", "youreajoke", "laugh", "youregettingrustyplayer", "keepswinging", "youreoutclassed", "isthiswhathelostto", "isthisallyouvegot", "diealready", "justburn", "whywontyoudie", "giveup", "aboveyou", "eyesup", "headsup", "whereareyoulooking", "watchmefly", "dontmove", "dodgethis", "bang", "thinkfast", "noscope", "eatlead", "saycheese", "letslightthiscandlehuh", "playfair", "respectthe1v1", "imbeingsubjectedtopeerpressuregetback", "justmorekillsforme", "thatmakesfiveofthem", "itsabouttogetbrightinhere", "takecover", "itsgettinghotinhere", "heyidmoveifiwereyou", "hey", "stepoff", "heycounttheseforme", "watchthis", "heyoverhere", "toomuchcoffee", "coldfeethuh", "jumpy", "ihaveyounow", "nomoretricks", "illmakethishurt", "scorchtheearth", "letthesunfall", "nowheretorun", "getoff", "youthinkthisisajoke", "iwillmakeitrain", "tryparryingthese", "wheredoyouthinkyourgoing", "watchyourground", "youllgettheresomeday", "youthinkiwasgonnastandthereandtakeit", "myowntrickagainstme", "nooneisbetterthanme"};
    public static final SoundEvent[] SLOTH = new SoundEvent[SLOTH_FILES.length];
    public static SoundEvent PARRY;
    public static SoundEvent ELI_PHASE_ONE;
@@ -64,6 +66,7 @@ public final class ModSounds {
    public static void register() {
       WHEEZE = reg("wheeze");
       NIDUS_HEARTBEAT = reg("nidus_heartbeat");
+      ELI_PARRY = reg("eli_parry");
       MASK_ON = reg("mask_on");
       FILTER_ON = reg("filter_on");
       FILTER_OFF = reg("filter_off");

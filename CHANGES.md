@@ -504,3 +504,16 @@ Everything. See DEVELOPMENT.md.
 
 ## Batch 38 (untested): filter recipe result
 - `gas_mask_filter.json` now gives 1 filter instead of 2. Filters have durability, which makes them non-stackable (max stack size 1), and newer Minecraft versions refuse a recipe result larger than the item's maximum stack size, so the recipe with `"count": 2` (added Oct 18) could fail to load or give an empty result. Nothing else about the recipe changed.
+
+## Batch 39 (untested): the mace parry
+- Any melee hit from a player holding a mace is now parried by Elijah's sword and does nothing (`maceParry`). When he is free he does the whole parry: the block (animation `parry`, contact with sparks and the clang at 0.17 s), holds `parrypose` for 3 ticks, then swings the sword back (`parryknockback`) and knocks the attacker away (`MACE_PARRY_KNOCKBACK` 1.4). The sequence is 21 ticks, he does not move or swing meanwhile. When he is busy (a slam, a reload, a swap, a shield, the rage) he still takes no damage, with only the clang.
+- Voicelines when he parries, at most once per 5 seconds (`MACE_PARRY_TALK_COOLDOWN`): phase one "You'll get there someday" and "You think I was gonna stand there and take it?" (no captions); phase two "MY OWN TRICK AGAINST ME" and "NO ONE IS BETTER THAN ME". New sound `eli_parry` from your `parry.ogg`. All converted to mono OGG.
+- Fixed: on the client every animation from kind 5 up was cut at 13 ticks (the length of a shot), so the two barrage animations (27 and 24 ticks) stopped partway through. Each animation now has its own length.
+- This is separate from the rage parry (the player parrying him with Eli's Sword), which is unchanged.
+
+## Batch 40 (untested): parries send the hit back (this zip also contains Batch 39)
+- Fixed a build error in Batch 39: it added `PARRY_KNOCKBACK` to `Tuning.java`, which the player parry already has. The mace parry constants are now `MACE_PARRY_*` (`MACE_PARRY_ANIM_TICKS`, `_CONTACT_TICK`, `_HOLD_TICKS`, `_KNOCKBACK`, `_TALK_COOLDOWN`).
+- Elijah's mace parry now sends the hit back: the attacker takes the damage their mace would have done, at the moment the blades meet (or at once when he is busy). `PARRY_REFLECT_MULT` 1.0 and `PARRY_REFLECT_CAP` 30, so a smash from a great height cannot one-shot its own user.
+- The player's parry with Eli's Sword does the same: the attacker takes the damage they dealt (same two settings), and arrows and other projectiles are turned round and sent back at whoever fired them. Eli's rockets are not entities, so a parried rocket comes back as damage.
+- New damage type `parry_reflect`: not scaled by difficulty, cannot be blocked or parried, and never counts as a parry for his rage. Death message "was undone by ...'s parry".
+

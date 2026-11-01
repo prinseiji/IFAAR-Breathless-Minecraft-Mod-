@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "breathless:eli_barrage"
+    "breathless:eli_barrage",
+    "breathless:parry_reflect"
   ]
 }

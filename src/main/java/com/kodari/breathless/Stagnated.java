@@ -132,6 +132,12 @@ public class Stagnated extends Monster {
    /** Sword fight: hits since the last heavy swing, ticks left of the heavy swing's wind-up, crit hop cooldown, strafe direction/ticks. */
    private int combo;
    private int comboWind;
+   /** The mace parry: ticks since it started (-1 when not parrying), who swung the mace, and the pause before he speaks again. */
+   private int maceParryTicks = -1;
+   private Player maceParryFoe;
+   private int maceParryTalk;
+   /** The damage of the mace hit being parried, sent back to the attacker at the moment the blades meet. */
+   private float maceParryBack;
    /** Ticks since his last sword hit (the sword charge, as the cooldown bar is for a player). */
    private int swordSince = 100;
    private int critCool;
@@ -352,6 +358,11 @@ public class Stagnated extends Monster {
       if (this.emergeTicks > 0 || (this.enrageTicks > 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY))) {
          return false;
       }
+      // A mace attack from a player is parried with his sword: no damage at all.
+      if (this.sweaty && source.getEntity() instanceof Player maceUser && source.getDirectEntity() == maceUser && maceUser.getMainHandItem().is(net.minecraft.world.item.Items.MACE)) {
+         this.maceParry(level, maceUser, amount);
+         return false;
+      }
       if (this.sweaty && this.guardUp && this.blocksShield(source)) {
          if (source.getEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(net.minecraft.tags.ItemTags.AXES)) {
             // An axe breaks the shield: it goes down for a while and he cannot raise it again until the cooldown is over.
@@ -519,7 +530,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE;
    }
 
    @Override
@@ -527,6 +538,14 @@ public class Stagnated extends Monster {
       super.aiStep();
       if (this.swordSince < 200) {
          this.swordSince++;
+      }
+      if (!this.level().isClientSide()) {
+         if (this.maceParryTalk > 0) {
+            this.maceParryTalk--;
+         }
+         if (this.maceParryTicks >= 0) {
+            this.tickMaceParry((ServerLevel)this.level());
+         }
       }
       if (!this.level().isClientSide() && !this.strikes.isEmpty()) {
          this.tickStrikes((ServerLevel)this.level());
@@ -590,7 +609,16 @@ public class Stagnated extends Monster {
          }
          if (this.xbKind >= 0) {
             this.xbClock++;
-            int len = this.xbKind == 0 || this.xbKind == 2 ? Tuning.XB_LOAD_TICKS : (this.xbKind == 1 || this.xbKind == 3 ? Tuning.XB_FAST_LOAD_TICKS : (this.xbKind >= 5 ? Tuning.XB_SHOT_TICKS : 100000));
+            // How long each clip plays: reloads, shots, the two barrage animations, the parry and the swing back (the held parry pose and the aim pose wait for the next event).
+            int len = switch (this.xbKind) {
+               case 0, 2 -> Tuning.XB_LOAD_TICKS;
+               case 1, 3 -> Tuning.XB_FAST_LOAD_TICKS;
+               case 5, 6 -> Tuning.XB_SHOT_TICKS;
+               case 7 -> Tuning.BARRAGE_GROUND_LEN;
+               case 8 -> Tuning.BARRAGE_AIR_LEN;
+               case 9, 10 -> Tuning.MACE_PARRY_ANIM_TICKS;
+               default -> 100000;
+            };
             if (this.xbClock > len) {
                // A reload ends in the aim pose, a shot ends the sequence.
                this.xbKind = this.xbKind <= 3 ? 4 : -1;
@@ -1923,6 +1951,9 @@ public class Stagnated extends Monster {
       } else if (event == 99 || event == 100) {
          this.xbKind = event == 99 ? 7 : 8;
          this.xbClock = 0;
+      } else if (event >= 101 && event <= 103) {
+         this.xbKind = event - 92;
+         this.xbClock = 0;
       } else if (event == 97) {
          this.xbKind = -1;
          this.xbClock = -1;
@@ -1988,7 +2019,7 @@ public class Stagnated extends Monster {
 
    @Override
    public boolean doHurtTarget(ServerLevel level, Entity target) {
-      if (this.shieldTicks > 0) {
+      if (this.shieldTicks > 0 || this.maceParryTicks >= 0) {
          return false;
       }
       if (this.sweaty) {
@@ -2264,6 +2295,9 @@ public class Stagnated extends Monster {
     * Ground: (back off) - load - aim, tracking you the whole time - shoot. Air: rise - load - aim - shoot - dive with a guaranteed water clutch.
     */
    private boolean tickCrossbow(ServerLevel level, LivingEntity target) {
+      if (this.maceParryTicks >= 0) {
+         return false;
+      }
       if (this.xbCool > 0) {
          this.xbCool--;
       }
@@ -2494,6 +2528,65 @@ public class Stagnated extends Monster {
       // The warning: red outline and the alert sound, the whole time he loads. A stocking reload has them too, so you cannot tell it from a real shot (the feint).
       level.broadcastEntityEvent(this, (byte)81);
       this.playSound(ModSounds.COMBO_WARNING, 2.5F, 1.0F);
+   }
+
+   /** A player swung a mace at him: no damage. When he is free he does the whole parry; when busy it is only the clang. */
+   private void maceParry(ServerLevel level, Player attacker, float amount) {
+      if (this.maceParryTicks >= 0) {
+         return;
+      }
+      float back = Math.min(amount * Tuning.PARRY_REFLECT_MULT, Tuning.PARRY_REFLECT_CAP);
+      boolean busy = this.xbState != XB_NONE || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.comboWind > 0
+         || this.parryStagger > 0 || this.spotTicks > 0 || this.armoringTicks > 0 || this.unarmTicks > 0 || this.shieldTicks > 0 || this.enrageTicks > 0
+         || this.getMainHandItem().is(net.minecraft.world.item.Items.MACE);
+      if (busy) {
+         this.playSound(ModSounds.ELI_PARRY, 1.4F, 1.0F);
+         if (back > 0.0F && attacker.isAlive()) {
+            attacker.hurtServer(level, ModDamage.parryReflect(level, this), back);
+         }
+         return;
+      }
+      this.maceParryBack = back;
+      this.maceParryTicks = 0;
+      this.maceParryFoe = attacker;
+      this.getNavigation().stop();
+      level.broadcastEntityEvent(this, (byte)101);
+      if (this.maceParryTalk <= 0) {
+         this.maceParryTalk = Tuning.MACE_PARRY_TALK_COOLDOWN;
+         this.slothCooldown = 0;
+         this.sloth(this.isEnraged() ? SlothLines.PARRY_P2 : SlothLines.PARRY_P1);
+      }
+   }
+
+   private void tickMaceParry(ServerLevel level) {
+      Player foe = this.maceParryFoe;
+      if (foe != null && foe.isAlive()) {
+         this.getLookControl().setLookAt(foe, 60.0F, 60.0F);
+      }
+      int t = ++this.maceParryTicks;
+      int knock = Tuning.MACE_PARRY_ANIM_TICKS + Tuning.MACE_PARRY_HOLD_TICKS;
+      if (t == Tuning.MACE_PARRY_CONTACT_TICK) {
+         // The blades meet.
+         double yaw = Math.toRadians(this.getYHeadRot());
+         level.sendParticles(ParticleTypes.CRIT, this.getX() - Math.sin(yaw) * 1.0, this.getY() + 1.3, this.getZ() + Math.cos(yaw) * 1.0, 14, 0.25, 0.25, 0.25, 0.25);
+         this.playSound(ModSounds.ELI_PARRY, 1.6F, 1.0F);
+         if (foe != null && foe.isAlive() && this.maceParryBack > 0.0F) {
+            foe.hurtServer(level, ModDamage.parryReflect(level, this), this.maceParryBack);
+         }
+         this.maceParryBack = 0.0F;
+      } else if (t == Tuning.MACE_PARRY_ANIM_TICKS) {
+         level.broadcastEntityEvent(this, (byte)103);
+      } else if (t == knock) {
+         level.broadcastEntityEvent(this, (byte)102);
+         if (foe != null && foe.isAlive() && this.distanceTo(foe) < 8.0F) {
+            foe.knockback(Tuning.MACE_PARRY_KNOCKBACK, this.getX() - foe.getX(), this.getZ() - foe.getZ());
+            foe.hurtMarked = true;
+         }
+      } else if (t >= knock + Tuning.MACE_PARRY_ANIM_TICKS) {
+         level.broadcastEntityEvent(this, (byte)97);
+         this.maceParryTicks = -1;
+         this.maceParryFoe = null;
+      }
    }
 
    private void startBarrage(ServerLevel level) {

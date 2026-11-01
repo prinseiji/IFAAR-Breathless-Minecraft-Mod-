@@ -55,11 +55,16 @@ public final class SlothLines {
       "I WILL MAKE IT RAIN",
       "TRY PARRYING THESE",
       "WHERE DO YOU THINK YOU'RE GOING?",
-      "WATCH YOUR GROUND"
+      "WATCH YOUR GROUND",
+      null,
+      null,
+      "MY OWN TRICK AGAINST ME",
+      "NO ONE IS BETTER THAN ME"
    };
    private static final float[] SECONDS = {
       1.14F, 1.02F, 0.74F, 1.35F, 0.74F, 1.25F, 1.11F, 1.30F, 0.98F, 1.25F, 1.28F, 1.97F, 1.95F, 1.04F, 1.25F, 2.86F, 1.44F, 1.58F, 1.58F, 1.56F, 1.9F, 2.28F, 1.49F, 1.05F, 1.74F, 1.44F, 1.51F, 1.42F, 1.02F, 1.49F, 1.44F, 2.21F, 2.14F, 2.81F, 1.25F, 2.21F, 2.48F, 1.83F,
-      1.88F, 1.81F, 1.25F, 1.65F, 2.35F, 0.67F, 0.95F, 2.11F, 1.05F, 1.49F, 1.83F, 1.37F, 1.25F, 1.3F, 1.35F, 1.58F, 1.21F, 2.25F, 1.35F, 1.97F, 1.6F, 1.67F, 1.74F, 1.83F, 1.83F
+      1.88F, 1.81F, 1.25F, 1.65F, 2.35F, 0.67F, 0.95F, 2.11F, 1.05F, 1.49F, 1.83F, 1.37F, 1.25F, 1.3F, 1.35F, 1.58F, 1.21F, 2.25F, 1.35F, 1.97F, 1.6F, 1.67F, 1.74F, 1.83F, 1.83F,
+      2.09F, 2.95F, 1.97F, 1.95F
    };
 
    public static final int[] MACE = {0, 1};
@@ -87,6 +92,9 @@ public final class SlothLines {
    public static final int[] CANCEL_P2 = {57, 58};
    public static final int[] AERIAL_VOLLEY_P2 = {59, 60, 61, 62};
    public static final int[] AERIAL_VOLLEY_P2_NO_SWORD = {59, 61, 62};
+   /** Said when he parries a mace attack. Phase one has no caption, phase two does. */
+   public static final int[] PARRY_P1 = {63, 64};
+   public static final int[] PARRY_P2 = {65, 66};
 
    public static String text(int index) {
       return TEXT[index];

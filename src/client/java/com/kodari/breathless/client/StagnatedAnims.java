@@ -331,4 +331,28 @@ public static final Clip ELIJAH_SPOT = new Clip(1.41667F, false,
          new Track("right_leg", 1, new float[]{0F, 0.08333F}, new float[]{0F, -27F, 0F, 0F, -27F, 0F}),
          new Track("left_leg", 0, new float[]{0F, 0.08333F}, new float[]{-0.56723F, 0F, 0F, -0.56723F, 0F, 0F}),
          new Track("left_leg", 1, new float[]{0F, 0.08333F}, new float[]{0F, -27F, -4F, 0F, -27F, -4F}));
+   // ---- the mace parry (ElijahTheZenithed.bbmodel): the block (0.42 s, contact at 0.17), the held pose, and the swing back that knocks you away (0.42 s) ----
+   public static final Clip PARRY = new Clip(0.41667F, false,
+         new Track("head", 0, new float[]{0F, 0.16667F}, new float[]{0F, 0F, 0F, -1.80761F, -0.01862F, 0.02427F}),
+         new Track("body", 0, new float[]{0F, 0.16667F}, new float[]{0F, 0F, 0F, -0.17453F, 0F, 0F}),
+         new Track("right_arm", 0, new float[]{0F, 0.16667F}, new float[]{0F, 0F, 0F, -2.43908F, -0.64778F, 0.14021F}),
+         new Track("right_arm", 1, new float[]{0F, 0.16667F}, new float[]{0F, 0F, 0F, 2F, -2F, 0F}),
+         new Track("left_arm", 0, new float[]{0F}, new float[]{0F, 0F, 0F}),
+         new Track("left_arm", 1, new float[]{0F}, new float[]{0F, 0F, 0F}),
+         new Track("right_leg", 0, new float[]{0F}, new float[]{0F, 0F, 0F}),
+         new Track("right_leg", 1, new float[]{0F}, new float[]{0F, 0F, 0F}),
+         new Track("left_leg", 0, new float[]{0F}, new float[]{0F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F, 0.16667F}, new float[]{0F, 0F, 0F, 0F, 0F, -3F}));
+   public static final Clip PARRY_POSE = new Clip(0.41667F, false,
+         new Track("head", 0, new float[]{0F}, new float[]{-1.80761F, -0.01862F, 0.02427F}),
+         new Track("body", 0, new float[]{0F}, new float[]{-0.17453F, 0F, 0F}),
+         new Track("right_arm", 0, new float[]{0F}, new float[]{-2.43908F, -0.64778F, 0.14021F}),
+         new Track("right_arm", 1, new float[]{0F}, new float[]{2F, -2F, 0F}),
+         new Track("left_leg", 1, new float[]{0F}, new float[]{0F, 0F, -3F}));
+   public static final Clip PARRY_KNOCKBACK = new Clip(0.41667F, false,
+         new Track("head", 0, new float[]{0F, 0.16667F}, new float[]{-1.80761F, -0.01862F, 0.02427F, -1.43343F, -0.27042F, -0.27844F}),
+         new Track("body", 0, new float[]{0F}, new float[]{-0.17453F, 0F, 0F}),
+         new Track("right_arm", 0, new float[]{0F, 0.125F}, new float[]{-2.43908F, -0.64778F, 0.14021F, -3.24646F, 0.97463F, -1.99091F}),
+         new Track("right_arm", 1, new float[]{0F}, new float[]{2F, -2F, 0F}),
+         new Track("left_leg", 1, new float[]{0F}, new float[]{0F, 0F, -3F}));
 }
