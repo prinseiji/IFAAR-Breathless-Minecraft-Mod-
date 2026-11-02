@@ -22,6 +22,11 @@ public final class Silence {
       return ModEffects.SILENCE != null && entity.hasEffect(ModEffects.SILENCE);
    }
 
+   /** Sounds made BY someone (the game passes the maker as the "except" entity) are dropped while they are silenced. */
+   public static boolean hushes(net.minecraft.world.entity.Entity maker) {
+      return maker instanceof LivingEntity living && silenced(living);
+   }
+
    /** Silent and invisible: Stagnated lose you unless you bump into one. */
    public static boolean ghost(LivingEntity entity) {
       return silenced(entity) && entity.isInvisible();

@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "com.kodari.breathless.client.mixin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["FogRendererMixin"],
+  "client": ["FogRendererMixin", "ClientSilenceMixin"],
   "injectors": {
     "defaultRequire": 0
   }
