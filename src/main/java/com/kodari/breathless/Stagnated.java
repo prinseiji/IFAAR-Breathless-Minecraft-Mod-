@@ -1355,9 +1355,16 @@ public class Stagnated extends Monster {
 
    /** The stun slam marker at any radius: the barrage uses it too, so both warnings look the same. */
    private void stunRing(ServerLevel level, double x, double y, double z, double r) {
+      this.stunRing(level, x, y, z, r, true);
+   }
+
+   /** haze = false leaves out the red dust drifting over the marker (the barrage has many markers, and the haze hides them). */
+   private void stunRing(ServerLevel level, double x, double y, double z, double r, boolean haze) {
       // The rotating target on the ground (its size travels as the particle's velocity), with red dust drifting up from it.
       level.sendParticles(ModParticles.STUN_MARK, x, y, z, 0, r * 1.7, 0.0, 0.0, 1.0);
-      level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 1.2F), x, y + 0.3, z, 8, r * 0.7, 0.35, r * 0.7, 0.0);
+      if (haze) {
+         level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 1.2F), x, y + 0.3, z, 8, r * 0.7, 0.35, r * 0.7, 0.0);
+      }
       for (int i = 0; i < 28; i++) {
          double a = i * Math.PI * 2.0 / 28.0;
          level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F), x + Math.cos(a) * r, y, z + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
@@ -2792,14 +2799,10 @@ public class Stagnated extends Monster {
          int left = s.launched ? s.landAt - s.age : Integer.MAX_VALUE;
          if (!s.locked) {
             if (left <= Tuning.STRIKE_LOCK_TICKS || s.target == null || !s.target.isAlive() || s.target.isRemoved()) {
-               // Locked: it stays where it is now, and the rocket starts coming down. A click and a white pulse tell you it has committed.
+               // Locked: it stays where it is now, and the rocket starts coming down. Two sounds tell you it has committed (no extra particles: they hid the markers).
                s.locked = true;
                level.playSound(null, s.x, s.y, s.z, SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.HOSTILE, 1.4F, 1.9F);
                level.playSound(null, s.x, s.y, s.z, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 1.8F, 1.6F);
-               for (int k = 0; k < 24; k++) {
-                  double a = k * Math.PI * 2.0 / 24.0;
-                  level.sendParticles(ParticleTypes.END_ROD, s.x + Math.cos(a) * Tuning.STRIKE_RADIUS, s.y + 0.15, s.z + Math.sin(a) * Tuning.STRIKE_RADIUS, 0, 0.0, 0.05, 0.0, 1.0);
-               }
             } else {
                Vec3 tp = s.target.position();
                if (s.onTarget) {
@@ -2821,15 +2824,9 @@ public class Stagnated extends Monster {
                s.y = this.strikeGround(level, s.x, tp.y, s.z, s.y);
             }
          }
-         // The warning: the stun slam's own marker (rotating target and red ring), at the strike's size. Once locked it also gets a white inner ring.
+         // The warning: the stun slam's own marker (rotating target and red ring, no haze), at the strike's size.
          if (s.age % 2 == 0 || s.age <= 2) {
-            this.stunRing(level, s.x, s.y + 0.1, s.z, Tuning.STRIKE_RADIUS);
-            if (s.locked) {
-               for (int k = 0; k < 16; k++) {
-                  double a = k * Math.PI * 2.0 / 16.0;
-                  level.sendParticles(new DustParticleOptions(0xFFFFFF, 1.2F), s.x + Math.cos(a) * Tuning.STRIKE_RADIUS * 0.55, s.y + 0.1, s.z + Math.sin(a) * Tuning.STRIKE_RADIUS * 0.55, 1, 0.0, 0.0, 0.0, 0.0);
-               }
-            }
+            this.stunRing(level, s.x, s.y + 0.1, s.z, Tuning.STRIKE_RADIUS, false);
          }
          if (!s.launched) {
             continue;
