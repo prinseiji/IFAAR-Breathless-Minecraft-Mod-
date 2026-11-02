@@ -375,9 +375,8 @@ public final class Tuning {
    /** Rotting Heart: chance to drop from a Stagnated killed by a player, chance per ancient city chest. */
    public static final float HEART_STAGNATED_DROP = 0.06F;
    public static final float HEART_CHEST_CHANCE = 0.15F;
-   /** Chance per chest of the other structures that reach into the spore layer (mineshafts, dungeons, strongholds, trial chambers). Only chests below Y = HEART_LAYER_Y can hold one. */
+   /** Chance per chest of the trial chambers, which always sit down in the spore layer. */
    public static final float HEART_LAYER_CHEST_CHANCE = 0.08F;
-   public static final double HEART_LAYER_Y = 0.0;
    /** Summon: radius of the sculk splotch. */
    public static final int HEART_SPLOTCH_RADIUS = 4;
    /** The mound Elijah climbs out of when a Rotting Heart summons him: radius and height (blocks) at the middle. It sits on top of whatever ground is there, nothing under it is replaced. */

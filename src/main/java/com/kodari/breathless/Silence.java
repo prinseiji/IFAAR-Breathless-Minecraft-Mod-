@@ -18,9 +18,6 @@ public final class Silence {
    private Silence() {
    }
 
-   /** Players whose silent flag was set by this effect, so it is only cleared when we set it. Also saved as an entity tag in case of a restart. */
-   private static final String TAG = "breathless_muted";
-
    public static boolean silenced(LivingEntity entity) {
       return ModEffects.SILENCE != null && entity.hasEffect(ModEffects.SILENCE);
    }
@@ -34,13 +31,9 @@ public final class Silence {
       ServerTickEvents.END_SERVER_TICK.register(server -> {
          for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             boolean on = Tuning.SILENCE_MUTES_SOUNDS && silenced(player);
-            boolean muted = player.getTags().contains(TAG);
-            if (on && !muted) {
-               player.addTag(TAG);
-               player.setSilent(true);
-            } else if (!on && muted) {
-               player.removeTag(TAG);
-               player.setSilent(false);
+            // Players are never silent any other way, so the flag simply follows the effect.
+            if (on != player.isSilent()) {
+               player.setSilent(on);
             }
          }
       });
