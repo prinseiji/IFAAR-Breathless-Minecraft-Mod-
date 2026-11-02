@@ -373,8 +373,11 @@ public final class Tuning {
    public static final int HEMORRHAGE_INTERVAL = 20;
    public static final float HEMORRHAGE_DAMAGE = 1.0F;
    /** Rotting Heart: chance to drop from a Stagnated killed by a player, chance per ancient city chest. */
-   public static final float HEART_STAGNATED_DROP = 0.04F;
-   public static final float HEART_CHEST_CHANCE = 0.12F;
+   public static final float HEART_STAGNATED_DROP = 0.06F;
+   public static final float HEART_CHEST_CHANCE = 0.15F;
+   /** Chance per chest of the other structures that reach into the spore layer (mineshafts, dungeons, strongholds, trial chambers). Only chests below Y = HEART_LAYER_Y can hold one. */
+   public static final float HEART_LAYER_CHEST_CHANCE = 0.08F;
+   public static final double HEART_LAYER_Y = 0.0;
    /** Summon: radius of the sculk splotch. */
    public static final int HEART_SPLOTCH_RADIUS = 4;
    /** The mound Elijah climbs out of when a Rotting Heart summons him: radius and height (blocks) at the middle. It sits on top of whatever ground is there, nothing under it is replaced. */
@@ -505,4 +508,13 @@ public final class Tuning {
    public static final int XB_LOAD_TICKS = 14;
    public static final int XB_FAST_LOAD_TICKS = 9;
    public static final int XB_SHOT_TICKS = 13;
+
+   // ---- Potion of Silence (Awkward Potion + Rotting Heart; Redstone lengthens it, Glowstone does nothing) ----
+   /** 3:00 and 8:00, like Invisibility. */
+   public static final int SILENCE_TICKS = 3600;
+   public static final int SILENCE_LONG_TICKS = 9600;
+   /** Silence + Invisibility: a Stagnated cannot sense you at all unless your bodies touch (his hitbox grown by this many blocks). Not used on Elijah. */
+   public static final double SILENCE_BUMP_MARGIN = 0.2;
+   /** While Silence is on, the vanilla "silent" flag is set on the drinker so footsteps and the like stop making sound. */
+   public static final boolean SILENCE_MUTES_SOUNDS = true;
 }

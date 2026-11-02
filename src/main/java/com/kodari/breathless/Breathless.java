@@ -50,6 +50,7 @@ public class Breathless implements ModInitializer {
       FilterClicks.init();
 
       Hazard.init();
+      Silence.init();
       Achievements.init();
       Lore.init();
       MobRules.init();

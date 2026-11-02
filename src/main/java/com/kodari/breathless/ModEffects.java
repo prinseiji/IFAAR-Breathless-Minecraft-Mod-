@@ -4,7 +4,14 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.Items;
+import net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder;
 
 /**
  * "Stagnation": a marker effect shown in the effect list whenever the exposure meter is above 0,
@@ -20,6 +27,10 @@ public final class ModEffects {
    public static Holder<MobEffect> SPORE_EXPOSURE;
    public static Holder<MobEffect> MORIBUND;
    public static Holder<MobEffect> HEMORRHAGE;
+   /** Silence: nothing you do makes a noise (see Silence.java). Brewed from a Rotting Heart. */
+   public static Holder<MobEffect> SILENCE;
+   public static Holder<Potion> SILENCE_POTION;
+   public static Holder<Potion> LONG_SILENCE_POTION;
 
    private static final class Marker extends MobEffect {
       Marker(int color) {
@@ -45,7 +56,23 @@ public final class ModEffects {
       }
    }
 
+   private static final class Hush extends MobEffect {
+      Hush() {
+         super(MobEffectCategory.BENEFICIAL, 0x2C8F94);
+      }
+   }
+
    public static void register() {
+      SILENCE = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(Registry.register(BuiltInRegistries.MOB_EFFECT, Breathless.id("silence"), new Hush()));
+      // Both potions share the name "silence" (that is what the lang keys use). There is no strong version on purpose.
+      ResourceKey<Potion> silenceKey = ResourceKey.create(Registries.POTION, Breathless.id("silence"));
+      ResourceKey<Potion> longKey = ResourceKey.create(Registries.POTION, Breathless.id("long_silence"));
+      SILENCE_POTION = Registry.registerForHolder(BuiltInRegistries.POTION, silenceKey, new Potion("silence", new MobEffectInstance(SILENCE, Tuning.SILENCE_TICKS, 0)));
+      LONG_SILENCE_POTION = Registry.registerForHolder(BuiltInRegistries.POTION, longKey, new Potion("silence", new MobEffectInstance(SILENCE, Tuning.SILENCE_LONG_TICKS, 0)));
+      FabricPotionBrewingBuilder.BUILD.register(builder -> {
+         builder.addMix(Potions.AWKWARD, ModItems.ROTTING_HEART, SILENCE_POTION);
+         builder.addMix(SILENCE_POTION, Items.REDSTONE, LONG_SILENCE_POTION);
+      });
       HEMORRHAGE = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(Registry.register(BuiltInRegistries.MOB_EFFECT, Breathless.id("hemorrhage"), new Bleed()));
       MobEffect effect = Registry.register(BuiltInRegistries.MOB_EFFECT, Breathless.id("spore_exposure"), new Marker(0x2FB4D8));
       SPORE_EXPOSURE = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect);

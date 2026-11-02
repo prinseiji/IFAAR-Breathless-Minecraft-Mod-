@@ -303,8 +303,13 @@ public class Stagnated extends Monster {
          if (player.isCreative() || player.isSpectator()) {
             return false;
          }
+         boolean hush = Silence.silenced(player);
+         if (hush && !this.isElijah() && player.isInvisible() && !this.getBoundingBox().inflate(Tuning.SILENCE_BUMP_MARGIN).intersects(player.getBoundingBox())) {
+            // Silent and unseen: only bumping into him gives you away.
+            return false;
+         }
          double sight = Tuning.stagnatedSight(Hazard.getExposure(player), Masks.hasWorkingMask(player));
-         return dist <= (player.isSprinting() ? sight * Tuning.STAGNATED_NOISE_FACTOR : sight);
+         return dist <= (player.isSprinting() && !hush ? sight * Tuning.STAGNATED_NOISE_FACTOR : sight);
       }
       if (target instanceof Zombie || target instanceof AbstractSkeleton) {
          return dist <= Tuning.STAGNATED_UNDEAD_SIGHT;

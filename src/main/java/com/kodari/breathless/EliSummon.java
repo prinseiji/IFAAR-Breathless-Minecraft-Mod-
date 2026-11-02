@@ -136,11 +136,27 @@ public final class EliSummon {
          }
       });
       EnchantmentEvents.ALLOW_ENCHANTING.register((enchantment, target, context) -> target.is(ModItems.ELI_SWORD) ? TriState.FALSE : TriState.DEFAULT);
-      // Ancient city chests now and then hold a heart.
+      // Ancient city chests now and then hold a heart; so do chests of the other underground structures, but only the ones down in the spore layer (below Y 0).
+      java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> layered = new java.util.HashSet<>(java.util.List.of(
+         BuiltInLootTables.ABANDONED_MINESHAFT, BuiltInLootTables.SIMPLE_DUNGEON,
+         BuiltInLootTables.STRONGHOLD_CORRIDOR, BuiltInLootTables.STRONGHOLD_CROSSING, BuiltInLootTables.STRONGHOLD_LIBRARY));
+      for (String trial : new String[] {"entrance", "corridor", "intersection", "intersection_barrel", "supply"}) {
+         layered.add(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE,
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", "chests/trial_chambers/" + trial)));
+      }
       LootTableEvents.MODIFY.register((key, table, tableSource, registries) -> {
-         if (tableSource.isBuiltin() && (key.equals(BuiltInLootTables.ANCIENT_CITY) || key.equals(BuiltInLootTables.ANCIENT_CITY_ICE_BOX))) {
+         if (!tableSource.isBuiltin()) {
+            return;
+         }
+         if (key.equals(BuiltInLootTables.ANCIENT_CITY) || key.equals(BuiltInLootTables.ANCIENT_CITY_ICE_BOX)) {
             table.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
                .when(LootItemRandomChanceCondition.randomChance(Tuning.HEART_CHEST_CHANCE))
+               .add(LootItem.lootTableItem(ModItems.ROTTING_HEART)));
+         } else if (layered.contains(key)) {
+            table.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+               .when(LootItemRandomChanceCondition.randomChance(Tuning.HEART_LAYER_CHEST_CHANCE))
+               .when(net.minecraft.world.level.storage.loot.predicates.LocationCheck.checkLocation(
+                  net.minecraft.advancements.criterion.LocationPredicate.Builder.atYLocation(net.minecraft.advancements.criterion.MinMaxBounds.Doubles.atMost(Tuning.HEART_LAYER_Y - 0.01))))
                .add(LootItem.lootTableItem(ModItems.ROTTING_HEART)));
          }
       });
