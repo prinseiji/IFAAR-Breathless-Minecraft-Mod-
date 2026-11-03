@@ -2,6 +2,7 @@ package com.kodari.breathless.client;
 
 import com.kodari.breathless.Breathless;
 import com.kodari.breathless.ModSounds;
+import com.kodari.breathless.Tuning;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
