@@ -31,6 +31,9 @@ final class EliBoss {
    private static final int RAIL_H = 6;
 
    private static int phase;
+   /** Hard fight: its own three themes, and the clock of the last phase (ticks left, -1 = none). */
+   private static boolean hard;
+   private static int timer = -1;
    private static float health = 1.0F;
    private static int silent;
    /** A music track that can be faded out. */
@@ -64,21 +67,26 @@ final class EliBoss {
    private static boolean intro;
    private static int ticks;
 
-   static void ping(int newPhase, float newHealth) {
+   /** code: 1 or 2 on a normal fight, 11 / 12 / 13 on Hard (Elijah, SLOTH, adrenaline). */
+   static void ping(int code, float newHealth, int newTimer) {
       Minecraft mc = Minecraft.getInstance();
       silent = 0;
       health = newHealth;
-      if (newPhase == 0) {
+      timer = newTimer;
+      if (code == 0) {
          fadeOut();
          return;
       }
-      if (newPhase != phase) {
+      boolean newHard = code >= 10;
+      int newPhase = newHard ? code - 10 : code;
+      if (newPhase != phase || newHard != hard) {
          if (newPhase == 2 && phase == 1) {
             popFlash = 16;
          }
          stop(mc);
          phase = newPhase;
-         intro = newPhase == 2;
+         hard = newHard;
+         intro = newPhase == 2 && !newHard;
          start(mc);
       }
    }
@@ -87,7 +95,11 @@ final class EliBoss {
       if (phase == 0) {
          return;
       }
-      playing = new Track(phase == 2 ? (intro ? ModSounds.ELI_TENEBRE_START : ModSounds.ELI_TENEBRE) : ModSounds.ELI_PHASE_ONE);
+      if (hard) {
+         playing = new Track(phase == 1 ? ModSounds.HARD_MUSIC_1 : (phase == 2 ? ModSounds.HARD_MUSIC_2 : ModSounds.HARD_MUSIC_3));
+      } else {
+         playing = new Track(phase == 2 ? (intro ? ModSounds.ELI_TENEBRE_START : ModSounds.ELI_TENEBRE) : ModSounds.ELI_PHASE_ONE);
+      }
       mc.getSoundManager().play(playing);
       playingSince = ticks;
    }
@@ -99,6 +111,8 @@ final class EliBoss {
       }
       playing = null;
       phase = 0;
+      hard = false;
+      timer = -1;
    }
 
    private static void stop(Minecraft mc) {
@@ -107,6 +121,8 @@ final class EliBoss {
       }
       playing = null;
       phase = 0;
+      hard = false;
+      timer = -1;
    }
 
    /** Vanilla background music stays off while the boss theme plays (and for a few seconds after, so it does not cut in during the fade). */
@@ -125,7 +141,10 @@ final class EliBoss {
    static void tick(Minecraft mc) {
       silenceVanilla(mc);
       ticks++;
-      p2ticks = phase == 2 ? p2ticks + 1 : 0;
+      p2ticks = phase >= 2 ? p2ticks + 1 : 0;
+      if (timer > 0) {
+         timer--;
+      }
       if (captionLeft > 0) {
          captionLeft--;
       }
@@ -133,7 +152,7 @@ final class EliBoss {
          popFlash--;
       }
       fxTicks++;
-      barAlpha = Math.max(0.0F, Math.min(1.0F, barAlpha + (phase == 2 ? 0.05F : -0.04F)));
+      barAlpha = Math.max(0.0F, Math.min(1.0F, barAlpha + (phase >= 2 ? 0.05F : -0.04F)));
       if (flash > 0) {
          flash--;
       }
@@ -244,6 +263,17 @@ final class EliBoss {
          g.fill(fx, fy, fx + fill, fy + RAIL_H, (al << 24) | 0xFFFFFF);
       }
       g.blit(RenderPipelines.GUI_TEXTURED, BAR, x, y, 0.0F, 0.0F, BAR_W, BAR_H, 233, 73, 233, 73, (al << 24) | 0xFFFFFF);
+      if (hard && phase == 3 && timer >= 0) {
+         // Phase three: the clock. It drains, and flashes in the last ten seconds.
+         Minecraft mc = Minecraft.getInstance();
+         float frac = Math.max(0.0F, Math.min(1.0F, timer / (float)Tuning.HARD_TIMER_TICKS));
+         int by = y + BAR_H + 2;
+         int color = (timer < 200 && (fxTicks / 3) % 2 == 0) ? 0xFFFFFFFF : 0xFFE02020;
+         g.fill(x, by, x + BAR_W, by + 4, 0xAA000000);
+         g.fill(x, by, x + Math.round(BAR_W * frac), by + 4, color);
+         String text = String.format("%.1f", timer / 20.0F);
+         g.text(mc.font, text, (g.guiWidth() - mc.font.width(text)) / 2, by + 7, color);
+      }
    }
 
    /** Phase two: black tendrils fixed at the screen edges and a shadow that pulses slowly. Only the strength changes, nothing moves. */

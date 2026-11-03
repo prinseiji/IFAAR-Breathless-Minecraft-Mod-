@@ -200,6 +200,8 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
             case 9 -> this.apply(StagnatedAnims.PARRY, state.xbTime);
             case 10 -> this.apply(StagnatedAnims.PARRY_KNOCKBACK, state.xbTime);
             case 11 -> this.apply(StagnatedAnims.PARRY_POSE, 0.0F);
+            case 12 -> this.apply(StagnatedAnims.STAB_TRANSFORM, state.xbTime);
+            case 13 -> this.apply(StagnatedAnims.ADRENALINE, state.xbTime);
             default -> this.apply(StagnatedAnims.XB_AIM, 0.0F);
          }
       } else if (state.smash >= 0.0F) {

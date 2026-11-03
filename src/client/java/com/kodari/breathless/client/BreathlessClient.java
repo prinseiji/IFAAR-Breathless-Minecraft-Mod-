@@ -39,7 +39,7 @@ public class BreathlessClient implements ClientModInitializer {
       EntityRendererRegistry.register(ModEntities.STAGNATED, StagnatedRenderer::new);
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
-      ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.EliPayload.TYPE, (payload, context) -> EliBoss.ping(payload.phase(), payload.health()));
+      ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.EliPayload.TYPE, (payload, context) -> EliBoss.ping(payload.phase(), payload.health(), payload.timer()));
       ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.ParryPayload.TYPE, (payload, context) -> EliBoss.parry());
       ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.CaptionPayload.TYPE, (payload, context) -> EliBoss.caption(payload.text(), payload.ticks()));
       ClientPlayNetworking.registerGlobalReceiver(SpotPayload.TYPE, (payload, context) -> SlothText.spotted());

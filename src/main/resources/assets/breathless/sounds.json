@@ -1156,5 +1156,56 @@
         "attenuation_distance": 32
       }
     ]
+  },
+  "sloth_stab": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_stab",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.sloth_stab"
+  },
+  "sloth_inject": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_inject",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.sloth_inject"
+  },
+  "sloth_glitch": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_glitch",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.breathless.sloth_glitch"
+  },
+  "sloth_hard_1": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_1",
+        "stream": true
+      }
+    ]
+  },
+  "sloth_hard_2": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_2",
+        "stream": true
+      }
+    ]
+  },
+  "sloth_hard_3": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_3",
+        "stream": true
+      }
+    ]
   }
 }

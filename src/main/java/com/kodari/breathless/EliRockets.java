@@ -167,7 +167,7 @@ public final class EliRockets {
       burst(level, eli, at);
       for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(at, at).inflate(Tuning.XB_BLAST_RADIUS), e -> e != eli && !(e instanceof Stagnated) && e.isAlive() && !e.isSpectator()
          && !(e instanceof Player p && p.isCreative()))) {
-         float dmg = e == primary ? r.damage : r.damage * 0.6F;
+         float dmg = (e == primary ? r.damage : r.damage * 0.6F) * eli.hardMult();
          if (shieldStops(e, eli)) {
             level.playSound(null, e.getX(), e.getY(), e.getZ(), SoundEvents.SHIELD_BLOCK.value(), SoundSource.PLAYERS, 1.4F, 0.9F);
             level.sendParticles(ParticleTypes.CRIT, e.getX(), e.getEyeY(), e.getZ(), 10, 0.3, 0.2, 0.3, 0.2);

@@ -173,5 +173,9 @@
   "breathless.lore.rotting_heart_1": "It pulsates in your hands, a terrible presence emanates within it.",
   "breathless.lore.rotting_heart_2": "It's hideous, you wish to burn it.",
   "breathless.tooltip.hold_shift": "Hold [Shift] for description",
+  "subtitles.breathless.sloth_stab": "Blade pierces flesh",
+  "subtitles.breathless.sloth_inject": "Syringe plunges",
+  "subtitles.breathless.sloth_glitch": "Reality glitches",
+  "death.attack.breathless_sloth_blast": "%1$s was erased by the weight of %2$s",
   "block.breathless.sculk_nidus": "Sculk Anathema"
 }

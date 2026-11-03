@@ -14,6 +14,13 @@ public final class ModSounds {
    public static SoundEvent NIDUS_HEARTBEAT;
    /** The clang of Elijah parrying a mace attack. */
    public static SoundEvent ELI_PARRY;
+   /** Hard difficulty: the self-stab, the syringe, the glitch, and the three themes (Elijah, SLOTH, adrenaline). */
+   public static SoundEvent SLOTH_STAB;
+   public static SoundEvent SLOTH_INJECT;
+   public static SoundEvent SLOTH_GLITCH;
+   public static SoundEvent HARD_MUSIC_1;
+   public static SoundEvent HARD_MUSIC_2;
+   public static SoundEvent HARD_MUSIC_3;
    public static SoundEvent MASK_ON;
    public static SoundEvent FILTER_ON;
    public static SoundEvent FILTER_OFF;
@@ -67,6 +74,12 @@ public final class ModSounds {
       WHEEZE = reg("wheeze");
       NIDUS_HEARTBEAT = reg("nidus_heartbeat");
       ELI_PARRY = reg("eli_parry");
+      SLOTH_STAB = reg("sloth_stab");
+      SLOTH_INJECT = reg("sloth_inject");
+      SLOTH_GLITCH = reg("sloth_glitch");
+      HARD_MUSIC_1 = reg("sloth_hard_1");
+      HARD_MUSIC_2 = reg("sloth_hard_2");
+      HARD_MUSIC_3 = reg("sloth_hard_3");
       MASK_ON = reg("mask_on");
       FILTER_ON = reg("filter_on");
       FILTER_OFF = reg("filter_off");

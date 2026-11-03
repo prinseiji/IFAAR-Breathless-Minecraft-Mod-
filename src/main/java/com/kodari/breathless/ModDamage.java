@@ -16,6 +16,7 @@ public final class ModDamage {
 
    public static final ResourceKey<DamageType> PARRY_REFLECT = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("parry_reflect"));
    public static final ResourceKey<DamageType> ELI_BARRAGE = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("eli_barrage"));
+   public static final ResourceKey<DamageType> SLOTH_BLAST = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("sloth_blast"));
    public static final ResourceKey<DamageType> ELI_ROCKET = ResourceKey.create(Registries.DAMAGE_TYPE, Breathless.id("eli_rocket"));
 
    private ModDamage() {
@@ -41,6 +42,11 @@ public final class ModDamage {
 
    public static DamageSource eliBarrage(ServerLevel level, net.minecraft.world.entity.Entity attacker) {
       return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ELI_BARRAGE), attacker);
+   }
+
+   /** The blast at the end of the Hard fight: nothing stops it (see the bypasses_* tags). */
+   public static DamageSource slothBlast(ServerLevel level, net.minecraft.world.entity.Entity attacker) {
+      return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(SLOTH_BLAST), attacker);
    }
 
    public static DamageSource eliRocket(ServerLevel level, net.minecraft.world.entity.Entity attacker) {

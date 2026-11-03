@@ -62,6 +62,16 @@ public class Stagnated extends Monster {
    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> ELIJAH = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
    /** Server-side: ticks left of the enrage intro (invulnerable and busy until then). Client-side clock for the animation, -1 when not playing. */
    private int enrageTicks;
+   // ---- Hard difficulty (Tuning HARD_*): Elijah, then SLOTH after the self-stab, then the adrenaline timer and the blast ----
+   /** Synced stage: 0 = not a Hard fight, 1 Elijah, 2 stabbing himself, 3 SLOTH, 4 injecting, 5 the timer is running, 6 the final charge. */
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> HARD_STAGE = net.minecraft.network.syncher.SynchedEntityData.defineId(Stagnated.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
+   private boolean hardFight;
+   /** Ticks into the running scene (-1 = none) and which scene it is: 1 the stab, 2 the injection, 3 the charge. */
+   private int hardTicks = -1;
+   private int hardSeq;
+   private int hardTimer;
+   private boolean hardSelfHit;
+   private Component hardOldName = Component.empty();
    public int enrageClock = -1;
    /** Client-side: ticks since the "spots you" pose began, -1 when idle. */
    public int spotClock = -1;
@@ -248,6 +258,7 @@ public class Stagnated extends Monster {
    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(ENRAGED, false);
+      builder.define(HARD_STAGE, 0);
       builder.define(ELIJAH, false);
       builder.define(RAGING, false);
       builder.define(PARRYING, false);
@@ -360,7 +371,7 @@ public class Stagnated extends Monster {
 
    @Override
    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-      if (this.emergeTicks > 0 || (this.enrageTicks > 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY))) {
+      if (this.emergeTicks > 0 || ((this.enrageTicks > 0 || (this.hardTicks >= 0 && !this.hardSelfHit)) && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY))) {
          return false;
       }
       // A mace attack from a player is parried with his sword: no damage at all.
@@ -515,6 +526,7 @@ public class Stagnated extends Monster {
       output.putBoolean("Sweaty", this.sweaty);
       output.putBoolean("SweatyGeared", this.geared);
       output.putBoolean("SweatyEnraged", this.isEnraged());
+      output.putBoolean("SweatyHard", this.hardFight);
       output.putBoolean("SweatySummoned", this.summoned);
    }
 
@@ -529,13 +541,15 @@ public class Stagnated extends Monster {
       this.entityData.set(ELIJAH, this.sweaty);
       this.geared = input.getBooleanOr("SweatyGeared", false);
       this.entityData.set(ENRAGED, input.getBooleanOr("SweatyEnraged", false));
+      this.hardFight = input.getBooleanOr("SweatyHard", false);
+      this.entityData.set(HARD_STAGE, this.hardFight ? (this.isEnraged() ? 3 : 1) : 0);
       this.summoned = input.getBooleanOr("SweatySummoned", false);
       this.refreshStats();
    }
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE;
    }
 
    @Override
@@ -579,7 +593,7 @@ public class Stagnated extends Monster {
       }
       if (this.sweaty && !this.level().isClientSide() && this.tickCount % 10 == 0) {
          // Always, even while he climbs out: the client stops the music if the updates stop for 3 seconds.
-         this.pingBoss((ServerLevel)this.level(), this.isEnraged() ? 2 : 1);
+         this.pingBoss((ServerLevel)this.level(), this.bossPhase());
       }
       if (this.sweaty && !this.level().isClientSide() && !this.rockets.isEmpty()) {
          EliRockets.tick((ServerLevel)this.level(), this, this.rockets);
@@ -622,6 +636,8 @@ public class Stagnated extends Monster {
                case 7 -> Tuning.BARRAGE_GROUND_LEN;
                case 8 -> Tuning.BARRAGE_AIR_LEN;
                case 9, 10 -> Tuning.MACE_PARRY_ANIM_TICKS;
+               case 12 -> Tuning.HARD_STAB_TICKS;
+               case 13 -> Tuning.HARD_ADRENALINE_TICKS;
                default -> 100000;
             };
             if (this.xbClock > len) {
@@ -867,13 +883,21 @@ public class Stagnated extends Monster {
 
    /** Phase two. Called when his health would reach zero for the first time (or by /breathless enrage). */
    private void startEnrage(ServerLevel level) {
+      this.startEnrage(level, false);
+   }
+
+   /** hard = the Hard fight's takeover: no golden apple and no animation of its own (the stab scene is already playing), a full health bar, no effects yet. */
+   private void startEnrage(ServerLevel level, boolean hard) {
       this.abortCrossbow(level);
       this.entityData.set(ENRAGED, true);
+      if (hard) {
+         this.entityData.set(HARD_STAGE, 3);
+      }
       // Phase two: 5L0TH has taken over, and the name tag says so.
       this.setCustomName(Component.literal("xX_5L0TH_Xx"));
       Achievements.awardNear(this, 48.0, "rematch");
-      this.pingBoss(level, 2);
-      this.setHealth(this.getMaxHealth() * Tuning.SWEATY_ENRAGE_HEALTH);
+      this.pingBoss(level, this.bossPhase());
+      this.setHealth(this.getMaxHealth() * (hard ? Tuning.HARD_SLOTH_HEALTH : Tuning.SWEATY_ENRAGE_HEALTH));
       this.removeAllEffects();
       this.pickUpWater(level);
       this.diving = false;
@@ -893,14 +917,262 @@ public class Stagnated extends Monster {
       this.guardCooldown = 0;
       this.recentHits = 0;
       this.getNavigation().stop();
-      this.holdTemp(Items.ENCHANTED_GOLDEN_APPLE);
-      this.enrageTicks = Tuning.SWEATY_ENRAGE_TICKS;
-      level.broadcastEntityEvent(this, (byte)80);
-      level.broadcastEntityEvent(this, (byte)85);
+      if (hard) {
+         this.holdTemp(null);
+         level.broadcastEntityEvent(this, (byte)80);
+      } else {
+         this.holdTemp(Items.ENCHANTED_GOLDEN_APPLE);
+         this.enrageTicks = Tuning.SWEATY_ENRAGE_TICKS;
+         level.broadcastEntityEvent(this, (byte)80);
+         level.broadcastEntityEvent(this, (byte)85);
+      }
       // The vanilla totem pop (particles and sound, played on every nearby client).
       level.broadcastEntityEvent(this, (byte)35);
-      this.playSound(ModSounds.ETHAN_ENRAGED_SFX, 2.5F, 1.0F);
-      this.playSound(ModSounds.ETHAN_ENRAGE, 2.0F, 1.0F);
+      if (!hard) {
+         this.playSound(ModSounds.ETHAN_ENRAGED_SFX, 2.5F, 1.0F);
+         this.playSound(ModSounds.ETHAN_ENRAGE, 2.0F, 1.0F);
+      }
+   }
+
+   // ======================= Hard difficulty =======================
+
+   public void setHardFight(boolean hard) {
+      this.hardFight = hard;
+      this.entityData.set(HARD_STAGE, hard ? 1 : 0);
+   }
+
+   public int hardStage() {
+      return this.entityData.get(HARD_STAGE);
+   }
+
+   /** What the music and the bar are told: 1 and 2 on a normal fight, 11 (Elijah), 12 (SLOTH) and 13 (adrenaline, the timer) on Hard. */
+   public int bossPhase() {
+      int stage = this.hardStage();
+      if (stage == 0) {
+         return this.isEnraged() ? 2 : 1;
+      }
+      return stage <= 2 ? 11 : (stage <= 4 ? 12 : 13);
+   }
+
+   /** How much harder he hits on Hard (his sword, mace, rockets and barrage). */
+   public float hardMult() {
+      return switch (this.hardStage()) {
+         case 1, 2 -> Tuning.HARD_P1_DAMAGE;
+         case 3, 4 -> Tuning.HARD_P2_DAMAGE;
+         case 5, 6 -> Tuning.HARD_P3_DAMAGE;
+         default -> 1.0F;
+      };
+   }
+
+   private void hardChat(ServerLevel level, String line) {
+      level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", this.getDisplayName(), line), false);
+   }
+
+   /** Starts a scene: he drops whatever he was doing, cannot be hurt or moved, and the clients play the animation (event, 0 = none). */
+   private void hardBegin(ServerLevel level, int stage, int seq, int event) {
+      this.abortCrossbow(level);
+      this.dropGuard();
+      this.pickUpWater(level);
+      this.holdTemp(null);
+      this.diving = false;
+      this.windTicks = 0;
+      this.swapTicks = 0;
+      this.eatTicks = 0;
+      this.clutchTicks = 0;
+      this.stunPlan = false;
+      this.fleeing = false;
+      this.locked = false;
+      this.decided = false;
+      this.smashing = false;
+      this.smashAnim = false;
+      this.landed = false;
+      this.engaged = false;
+      this.guardCooldown = 0;
+      this.recentHits = 0;
+      this.maceParryTicks = -1;
+      this.maceParryFoe = null;
+      this.getNavigation().stop();
+      level.broadcastEntityEvent(this, (byte)80);
+      this.entityData.set(HARD_STAGE, stage);
+      this.hardSeq = seq;
+      this.hardTicks = 0;
+      if (event > 0) {
+         level.broadcastEntityEvent(this, (byte)event);
+      }
+      this.pingBoss(level, this.bossPhase());
+   }
+
+   private void hardEnd(ServerLevel level) {
+      this.hardTicks = -1;
+      this.hardSeq = 0;
+      level.broadcastEntityEvent(this, (byte)97);
+      this.refreshStats();
+   }
+
+   /** Elijah plunges the sword into himself: the hurt, the second stab, the totem, the leave notice. SLOTH is what stands up. */
+   private void beginStab(ServerLevel level) {
+      this.hardOldName = this.getDisplayName();
+      this.hardBegin(level, 2, 1, 104);
+   }
+
+   private void beginAdrenaline(ServerLevel level) {
+      this.hardBegin(level, 4, 2, 105);
+   }
+
+   private void tickHard(ServerLevel level) {
+      int t = ++this.hardTicks;
+      this.faceTarget();
+      this.getNavigation().stop();
+      if (this.hardSeq == 1) {
+         switch (t) {
+            case 8 -> this.hardChat(level, "wait.");
+            case 24 -> this.hardChat(level, "what are you doing");
+            case 40 -> this.hardChat(level, "that's my hand. that's MY hand");
+            case 54 -> this.hardChat(level, "stop it. STOP");
+            case Tuning.HARD_STAB_FIRST -> {
+               this.playSound(ModSounds.SLOTH_STAB, 1.8F, 1.0F);
+               float amount = Math.min(this.getMaxHealth() * Tuning.HARD_STAB_DAMAGE, this.getHealth() - 1.0F);
+               if (amount > 0.0F) {
+                  // A real hit, so the hurt sound and the red flash come with it.
+                  this.hardSelfHit = true;
+                  this.hurtServer(level, this.damageSources().generic(), amount);
+                  this.hardSelfHit = false;
+               }
+               level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xB01020, 1.6F), this.getX(), this.getY() + 1.2, this.getZ(), 18, 0.3, 0.4, 0.3, 0.0);
+            }
+            case Tuning.HARD_STAB_FIRST + 6 -> this.hardChat(level, "no no no no");
+            case Tuning.HARD_STAB_SECOND -> {
+               this.playSound(ModSounds.SLOTH_STAB, 2.0F, 0.85F);
+               Component old = this.hardOldName;
+               this.startEnrage(level, true);
+               net.minecraft.server.players.PlayerList players = level.getServer().getPlayerList();
+               players.broadcastSystemMessage(Component.literal(old.getString() + " was slain by " + this.getDisplayName().getString()), false);
+               players.broadcastSystemMessage(Component.translatable("multiplayer.player.left", old).withStyle(net.minecraft.ChatFormatting.YELLOW), false);
+            }
+            case Tuning.HARD_STAB_SECOND + 24 -> this.hardChat(level, "quiet now.");
+            default -> { }
+         }
+         if (t >= Tuning.HARD_STAB_TICKS) {
+            this.hardEnd(level);
+         }
+      } else if (this.hardSeq == 2) {
+         switch (t) {
+            case Tuning.HARD_INJECT_AT -> this.playSound(ModSounds.SLOTH_INJECT, 2.0F, 1.0F);
+            case Tuning.HARD_GLITCH_AT -> {
+               this.playSound(ModSounds.SLOTH_GLITCH, 2.5F, 1.0F);
+               // Adrenaline: stronger and faster for the rest of the fight (the vanilla effect swirl shows it).
+               this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 24000, Tuning.SWEATY_STRENGTH));
+               this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, 24000, Tuning.SWEATY_SPEED));
+               level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 40, 0.4, 0.8, 0.4, 0.08);
+            }
+            case Tuning.HARD_ARMOR_AT -> {
+               this.setItemSlot(EquipmentSlot.HEAD, this.protectedPiece(Items.NETHERITE_HELMET));
+               this.setItemSlot(EquipmentSlot.CHEST, this.protectedPiece(Items.NETHERITE_CHESTPLATE));
+               this.setItemSlot(EquipmentSlot.LEGS, this.protectedPiece(Items.NETHERITE_LEGGINGS));
+               this.setItemSlot(EquipmentSlot.FEET, this.protectedPiece(Items.NETHERITE_BOOTS));
+               for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+                  this.setDropChance(slot, 0.0F);
+               }
+               this.playSound(SoundEvents.ARMOR_EQUIP_NETHERITE.value(), 1.5F, 1.0F);
+            }
+            default -> { }
+         }
+         if (t >= Tuning.HARD_ADRENALINE_TICKS) {
+            this.entityData.set(HARD_STAGE, 5);
+            this.hardTimer = Tuning.HARD_TIMER_TICKS;
+            this.hardEnd(level);
+            this.pingBoss(level, this.bossPhase());
+         }
+      } else if (this.hardSeq == 3) {
+         this.nukeMarker(level);
+         if (t == 1) {
+            this.playSound(ModSounds.SLOTH_GLITCH, 3.0F, 0.8F);
+            this.hardChat(level, "let go.");
+         }
+         if (t % 8 == 0) {
+            this.playSound(ModSounds.STUN_WARNING, 3.0F, 1.0F + t * 0.01F);
+         }
+         level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 6, 0.5, 0.9, 0.5, 0.1);
+         if (t >= Tuning.HARD_CHARGE_TICKS) {
+            this.detonate(level);
+         }
+      } else {
+         this.hardEnd(level);
+      }
+   }
+
+   /** Phase three: the clock runs down while the fight goes on. At zero the final charge starts. */
+   private void tickTimer(ServerLevel level) {
+      this.nukeMarker(level);
+      if (--this.hardTimer <= 0) {
+         this.hardBegin(level, 6, 3, 0);
+      } else if (this.hardTimer <= 200 && this.hardTimer % 20 == 0) {
+         this.playSound(ModSounds.STUN_WARNING, 2.5F, 1.0F);
+      }
+   }
+
+   /** The rotating danger zone, as wide as the blast (the same marker as the stun slam). */
+   private void nukeMarker(ServerLevel level) {
+      if (this.tickCount % 2 == 0) {
+         level.sendParticles(ModParticles.STUN_MARK, this.getX(), this.getY() + 0.1, this.getZ(), 0, Tuning.HARD_NUKE_RADIUS * 1.7, 0.0, 0.0, 1.0);
+      }
+   }
+
+   /** The timer ran out: the mass of SLOTH goes off. Everything alive in the radius dies (nothing stops it), and a patch of sculk stays behind. */
+   private void detonate(ServerLevel level) {
+      Vec3 c = this.position();
+      double r = Tuning.HARD_NUKE_RADIUS;
+      EliRockets.burst(level, this, c.add(0.0, 1.0, 0.0));
+      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, c.x, c.y + 1.0, c.z, 8, 6.0, 1.0, 6.0, 0.0);
+      level.sendParticles(ParticleTypes.SCULK_SOUL, c.x, c.y + 1.0, c.z, 200, 3.0, 1.5, 3.0, 0.2);
+      level.playSound(null, c.x, c.y, c.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.HOSTILE, 8.0F, 0.5F);
+      AABB box = new AABB(c.x - r, c.y - r, c.z - r, c.x + r, c.y + r, c.z + r);
+      for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != this && e.isAlive() && !e.isSpectator() && !(e instanceof Player p && p.isCreative()))) {
+         if (e.distanceToSqr(c) <= r * r) {
+            e.hurtServer(level, ModDamage.slothBlast(level, this), 1.0E6F);
+         }
+      }
+      BlockPos center = this.blockPosition();
+      int ri = (int)Math.ceil(Tuning.HARD_SCULK_RADIUS);
+      java.util.List<BlockPos> cols = new java.util.ArrayList<>();
+      for (int dx = -ri; dx <= ri; dx++) {
+         for (int dz = -ri; dz <= ri; dz++) {
+            if (dx * dx + dz * dz <= ri * ri) {
+               cols.add(new BlockPos(center.getX() + dx, center.getY(), center.getZ() + dz));
+            }
+         }
+      }
+      // Spreads outward from the middle, a few hundred columns a tick, so the world does not stall.
+      cols.sort(java.util.Comparator.comparingInt(p -> (p.getX() - center.getX()) * (p.getX() - center.getX()) + (p.getZ() - center.getZ()) * (p.getZ() - center.getZ())));
+      sculkBatch(level, cols, 0, center);
+      this.discard();
+   }
+
+   private static void sculkBatch(ServerLevel level, java.util.List<BlockPos> cols, int from, BlockPos center) {
+      int to = Math.min(cols.size(), from + Tuning.HARD_SCULK_PER_TICK);
+      double r = Tuning.HARD_SCULK_RADIUS;
+      for (int i = from; i < to; i++) {
+         BlockPos col = cols.get(i);
+         double dx = col.getX() - center.getX();
+         double dz = col.getZ() - center.getZ();
+         if (level.getRandom().nextDouble() > 1.0 - 0.55 * Math.sqrt(dx * dx + dz * dz) / r) {
+            continue;
+         }
+         for (int y = center.getY() + 8; y >= center.getY() - 8; y--) {
+            BlockPos p = new BlockPos(col.getX(), y, col.getZ());
+            BlockState state = level.getBlockState(p);
+            if (state.isAir()) {
+               continue;
+            }
+            if (state.blocksMotion() && !state.hasBlockEntity() && state.getDestroySpeed(level, p) >= 0.0F && !state.is(Blocks.SCULK) && level.getBlockState(p.above()).isAir()) {
+               level.setBlock(p, Blocks.SCULK.defaultBlockState(), 3);
+            }
+            break;
+         }
+      }
+      if (to < cols.size()) {
+         EliSummon.schedule(1, () -> sculkBatch(level, cols, to, center));
+      }
    }
 
    /** For testing (/breathless enrage). */
@@ -973,6 +1245,26 @@ public class Stagnated extends Monster {
             this.swordHits = 0;
          }
          return;
+      }
+      if (this.hardFight) {
+         if (this.hardTicks >= 0) {
+            this.tickHard(level);
+            return;
+         }
+         if (this.hardStage() == 1 && this.getHealth() <= this.getMaxHealth() * Tuning.HARD_STAB_AT) {
+            this.beginStab(level);
+            return;
+         }
+         if (this.hardStage() == 3 && this.getHealth() <= this.getMaxHealth() * Tuning.HARD_ADRENALINE_AT) {
+            this.beginAdrenaline(level);
+            return;
+         }
+         if (this.hardStage() == 5) {
+            this.tickTimer(level);
+            if (this.hardTicks >= 0) {
+               return;
+            }
+         }
       }
       if (target instanceof ServerPlayer fighting) {
          this.lastPlayer = fighting;
@@ -1318,9 +1610,15 @@ public class Stagnated extends Monster {
    @Override
    public void die(DamageSource source) {
       // First lethal hit: no death, phase two instead (like a totem). /kill and the void still kill him.
-      if (this.sweaty && this.geared && !this.isEnraged() && this.enrageTicks <= 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
+      if (this.sweaty && this.geared && !this.isEnraged() && this.enrageTicks <= 0 && this.hardTicks < 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
          && this.level() instanceof ServerLevel enrageLevel) {
-         this.startEnrage(enrageLevel);
+         if (this.hardFight) {
+            // A hit that skipped past the stab: he still plunges the sword in, with what is left.
+            this.setHealth(1.0F);
+            this.beginStab(enrageLevel);
+         } else {
+            this.startEnrage(enrageLevel);
+         }
          return;
       }
       super.die(source);
@@ -1461,7 +1759,7 @@ public class Stagnated extends Monster {
          boolean shielded = e instanceof Player guard && guard.isBlocking();
          float before = e.getHealth() + e.getAbsorptionAmount();
          this.inStunSmash = stun;
-         boolean hurt = e.hurtServer(level, ModDamage.ethanMace(level, this), amount);
+         boolean hurt = e.hurtServer(level, ModDamage.ethanMace(level, this), amount * this.hardMult());
          this.inStunSmash = false;
          boolean lostHealth = e.getHealth() + e.getAbsorptionAmount() < before - 0.01F || !e.isAlive();
          if (lostHealth || (hurt && !shielded)) {
@@ -1963,7 +2261,7 @@ public class Stagnated extends Monster {
       } else if (event == 99 || event == 100) {
          this.xbKind = event == 99 ? 7 : 8;
          this.xbClock = 0;
-      } else if (event >= 101 && event <= 103) {
+      } else if (event >= 101 && event <= 105) {
          this.xbKind = event - 92;
          this.xbClock = 0;
       } else if (event == 97) {
@@ -1997,7 +2295,8 @@ public class Stagnated extends Monster {
 
    /** Client side: the blood wings are on while Elijah is out of the ground on Hard difficulty. */
    public boolean wantsBloodWings() {
-      return Tuning.BLOOD_WINGS_ON_HARD && this.isElijah() && this.isAlive() && this.emergeClock < 0 && this.level().getDifficulty() == net.minecraft.world.Difficulty.HARD;
+      return Tuning.BLOOD_WINGS_ON_HARD && this.isElijah() && this.isAlive() && this.emergeClock < 0 && this.level().getDifficulty() == net.minecraft.world.Difficulty.HARD
+         && (!Tuning.HARD_WINGS_AT_TAKEOVER || this.hardStage() >= 3);
    }
 
    /** Client side: make a star for every stocked rocket that does not have one. Each star is a single particle that follows him by itself (see StockStarParticle). */
@@ -2095,7 +2394,7 @@ public class Stagnated extends Monster {
       if (!heavy && target instanceof LivingEntity armored) {
          damage = ignoreArmor(level, armored, damage, Tuning.SWORD_ARMOR_IGNORE);
       }
-      boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), damage);
+      boolean hit = target.hurtServer(level, ModDamage.ethanSword(level, this), damage * this.hardMult());
       if (hit) {
          this.swordHits++;
          this.playSound(ModSounds.STAGNATED_HIT, 1.0F, 1.0F);
@@ -2119,9 +2418,10 @@ public class Stagnated extends Monster {
    /** Tells the players within earshot which phase the fight is in (music, boss bar). Phase 0 = it is over. */
    public void pingBoss(ServerLevel level, int phase) {
       float health = Math.max(0.0F, Math.min(1.0F, this.getHealth() / this.getMaxHealth()));
+      int timer = this.hardStage() >= 5 ? Math.max(0, this.hardTimer) : -1;
       for (ServerPlayer player : level.players()) {
          if (player.distanceToSqr(this) < 80.0 * 80.0) {
-            ServerPlayNetworking.send(player, new EliPayload(phase, health));
+            ServerPlayNetworking.send(player, new EliPayload(phase, health, timer));
          }
       }
    }
@@ -2321,7 +2621,7 @@ public class Stagnated extends Monster {
             this.setNoGravity(false);
          }
          if (target == null || this.diving || this.windTicks > 0 || this.swapTicks > 0 || this.eatTicks > 0 || this.action != 0 || this.comboWind > 0 || this.rageTicks > 0
-            || this.axeSwap || this.spotTicks > 0 || this.armoringTicks > 0 || this.emergeTicks > 0 || this.enrageTicks > 0 || this.fleeing || !this.onGround()
+            || this.axeSwap || this.spotTicks > 0 || this.armoringTicks > 0 || this.emergeTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0 || this.fleeing || !this.onGround()
             || !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
             return false;
          }
@@ -2549,7 +2849,7 @@ public class Stagnated extends Monster {
       }
       float back = Math.min(amount * Tuning.PARRY_REFLECT_MULT, Tuning.PARRY_REFLECT_CAP);
       boolean busy = this.xbState != XB_NONE || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.comboWind > 0
-         || this.parryStagger > 0 || this.spotTicks > 0 || this.armoringTicks > 0 || this.unarmTicks > 0 || this.shieldTicks > 0 || this.enrageTicks > 0
+         || this.parryStagger > 0 || this.spotTicks > 0 || this.armoringTicks > 0 || this.unarmTicks > 0 || this.shieldTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0
          || this.getMainHandItem().is(net.minecraft.world.item.Items.MACE);
       if (busy) {
          this.playSound(ModSounds.ELI_PARRY, 1.4F, 1.0F);
@@ -2857,7 +3157,7 @@ public class Stagnated extends Monster {
             continue;
          }
          // Not blockable and not parryable (the damage type bypasses shields), so there is no shield check here.
-         if (e.hurtServer(level, ModDamage.eliBarrage(level, this), Tuning.BARRAGE_DAMAGE)) {
+         if (e.hurtServer(level, ModDamage.eliBarrage(level, this), Tuning.BARRAGE_DAMAGE * this.hardMult())) {
             // Getting caught should cost you more than health: a short slowdown makes the next blasts hard to leave.
             e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS, Tuning.BARRAGE_SLOW_TICKS, 1));
             Vec3 push = e.position().subtract(at).multiply(1.0, 0.0, 1.0);
@@ -3218,7 +3518,7 @@ public class Stagnated extends Monster {
       ItemStack shield = player.isBlocking() ? player.getUseItem().copy() : ItemStack.EMPTY;
       if (this.sweaty) {
          // Elijah is not infected: his axe hit carries no spore exposure.
-         if (player.hurtServer(level, ModDamage.ethanSword(level, this), (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
+         if (player.hurtServer(level, ModDamage.ethanSword(level, this), (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * this.hardMult())) {
             this.playSound(ModSounds.STAGNATED_HIT, 1.0F, 1.0F);
          }
       } else {

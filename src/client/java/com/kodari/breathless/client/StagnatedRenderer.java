@@ -26,6 +26,10 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       this.addLayer(new StagnatedArmorLayer(this, armorModels, context.getEquipmentRenderer()));
    }
 
+   private static ItemStack parrySword;
+   /** Placeholder for the adrenaline syringe (no model yet): an end rod. */
+   private static ItemStack syringe;
+
    @Override
    public StagnatedRenderState createRenderState() {
       return new StagnatedRenderState();
@@ -47,7 +51,21 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
          state.rightHandItemStack = ItemStack.EMPTY;
          state.rightHandItemState.clear();
       }
-      if (entity.xbKind >= 9 && entity.xbKind <= 11 && !entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD)) {
+      boolean macePose = entity.xbKind >= 9 && entity.xbKind <= 11;
+      if (entity.isElijah() && entity.xbKind == 13) {
+         if (syringe == null) {
+            syringe = new ItemStack(net.minecraft.world.item.Items.END_ROD);
+         }
+         held = syringe;
+      }
+      if (entity.isElijah() && (macePose || entity.xbKind == 12 || entity.isParrying())) {
+         // Both parries are done with Eli's Sword, not the weapon he fights with.
+         if (parrySword == null) {
+            parrySword = new ItemStack(com.kodari.breathless.ModItems.ELI_SWORD);
+         }
+         held = parrySword;
+      }
+      if (macePose && !entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD)) {
          // The mace parry raises the RIGHT arm, so the sword is in that hand for the whole parry.
          state.rightHandItemStack = held;
          this.itemModelResolver.updateForLiving(state.rightHandItemState, held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, entity);

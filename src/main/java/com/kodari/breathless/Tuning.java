@@ -516,4 +516,36 @@ public final class Tuning {
    public static final double SILENCE_BUMP_MARGIN = 0.2;
    /** While Silence is on, the vanilla "silent" flag is set on the drinker so footsteps and the like stop making sound. */
    public static final boolean SILENCE_MUTES_SOUNDS = true;
+
+   // ---- Hard difficulty: Elijah, then SLOTH after the self-stab, then the adrenaline timer and the blast ----
+   /** Damage multipliers for Elijah (before the stab), SLOTH (after it) and SLOTH on adrenaline. Applied to his sword, mace, rockets and barrage. */
+   public static final float HARD_P1_DAMAGE = 1.15F;
+   public static final float HARD_P2_DAMAGE = 1.3F;
+   public static final float HARD_P3_DAMAGE = 1.5F;
+   /** Phase one ends early: at this share of his health Elijah plunges the sword into himself. */
+   public static final float HARD_STAB_AT = 0.6F;
+   /** The stabtransform animation (5.67 s): ticks in total, the first stab (hurts him) and the second stab (totem pop, Elijah is gone). */
+   public static final int HARD_STAB_TICKS = 114;
+   public static final int HARD_STAB_FIRST = 64;
+   public static final int HARD_STAB_SECOND = 78;
+   /** Share of his max health the first stab takes. */
+   public static final float HARD_STAB_DAMAGE = 0.05F;
+   /** SLOTH starts with this share of a full health bar, and injects the adrenaline when he is down to HARD_ADRENALINE_AT. */
+   public static final float HARD_SLOTH_HEALTH = 1.0F;
+   public static final float HARD_ADRENALINE_AT = 0.5F;
+   /** The adrenaline animation (2.79 s): ticks in total, the needle goes in, the glitch starts, the netherite goes on. */
+   public static final int HARD_ADRENALINE_TICKS = 56;
+   public static final int HARD_INJECT_AT = 8;
+   public static final int HARD_GLITCH_AT = 20;
+   public static final int HARD_ARMOR_AT = 53;
+   /** Phase three: how long you have (90 s) before the mass of SLOTH goes off, and how long the final charge takes. */
+   public static final int HARD_TIMER_TICKS = 1800;
+   public static final int HARD_CHARGE_TICKS = 40;
+   /** The blast kills everything within this many blocks (shields, armor, totems and effects do not help). The danger marker is a particle, drawn up to 32 blocks away, so this stays under that. */
+   public static final double HARD_NUKE_RADIUS = 30.0;
+   /** The sculk patch it leaves: radius and how many columns are turned per tick. */
+   public static final double HARD_SCULK_RADIUS = 22.0;
+   public static final int HARD_SCULK_PER_TICK = 250;
+   /** Blood wings appear when SLOTH takes over (false: from the start of a Hard fight). */
+   public static final boolean HARD_WINGS_AT_TAKEOVER = true;
 }

@@ -266,6 +266,11 @@ public final class EliSummon {
       }
    }
 
+   /** For other classes: run something after a number of server ticks. */
+   public static void schedule(int ticks, Runnable run) {
+      later(ticks, run);
+   }
+
    private static void later(int ticks, Runnable run) {
       LATER.add(new Object[] {new int[] {ticks}, run});
    }
@@ -401,6 +406,8 @@ public final class EliSummon {
       }
       eli.snapTo(x, surface, z, level.getRandom().nextFloat() * 360.0F, 0.0F);
       eli.makeSweaty();
+      // The difficulty is read once, when he is summoned: a Hard fight stays a Hard fight.
+      eli.setHardFight(level.getDifficulty() == net.minecraft.world.Difficulty.HARD);
       eli.setSummoned();
       if (Tuning.SUMMON_OPENER_SLAM) {
          eli.setOpenerSlam();
@@ -408,7 +415,7 @@ public final class EliSummon {
       level.addFreshEntity(eli);
       Achievements.awardNear(eli, 32.0, "here_burns_the_wicked");
       eli.startEmerging();
-      eli.pingBoss(level, 1);
+      eli.pingBoss(level, eli.bossPhase());
       level.playSound(null, x, y, z, ModSounds.ETHAN_SUMMON, SoundSource.HOSTILE, 3.0F, 1.0F);
       Component name = Component.literal("xX_ELIJ4H_Xx");
       level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("multiplayer.player.joined", name).withStyle(ChatFormatting.YELLOW), false);

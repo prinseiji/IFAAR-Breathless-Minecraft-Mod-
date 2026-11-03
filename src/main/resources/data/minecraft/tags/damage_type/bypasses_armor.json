@@ -1,1 +1,8 @@
-{"replace":false,"values":["breathless:spores","breathless:sear"]}
+{
+  "replace": false,
+  "values": [
+    "breathless:spores",
+    "breathless:sear",
+    "breathless:sloth_blast"
+  ]
+}
