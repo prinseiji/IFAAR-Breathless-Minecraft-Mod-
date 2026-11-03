@@ -538,8 +538,8 @@ public final class Tuning {
    public static final int HARD_INJECT_AT = 8;
    public static final int HARD_GLITCH_AT = 20;
    public static final int HARD_ARMOR_AT = 53;
-   /** Phase three: how long you have (90 s) before the mass of SLOTH goes off, and how long the final charge takes. */
-   public static final int HARD_TIMER_TICKS = 1800;
+   /** Phase three: how long you have (144.5 s, so the blast lands as the 146.5 s phase three song ends once the charge is counted) before the mass of SLOTH goes off, and how long the final charge takes. */
+   public static final int HARD_TIMER_TICKS = 2890;
    public static final int HARD_CHARGE_TICKS = 40;
    /** The blast kills everything within this many blocks (shields, armor, totems and effects do not help). The danger marker is a particle, drawn up to 32 blocks away, so this stays under that. */
    public static final double HARD_NUKE_RADIUS = 30.0;
