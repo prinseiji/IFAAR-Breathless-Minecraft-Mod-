@@ -964,6 +964,12 @@ public class Stagnated extends Monster {
       };
    }
 
+   /** Blood at his chest: dark red dust that bursts out and falls, plus a few drops. */
+   private void hardBlood(ServerLevel level, int count) {
+      level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0x8A0303, 1.8F), this.getX(), this.getY() + 1.2, this.getZ(), count, 0.35, 0.45, 0.35, 0.0);
+      level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, this.getX(), this.getY() + 1.2, this.getZ(), count / 6, 0.3, 0.4, 0.3, 0.1);
+   }
+
    private void hardChat(ServerLevel level, String line) {
       level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("chat.type.text", this.getDisplayName(), line), false);
    }
@@ -1025,10 +1031,10 @@ public class Stagnated extends Monster {
       this.getNavigation().stop();
       if (this.hardSeq == 1) {
          switch (t) {
-            case 8 -> this.hardChat(level, "wait.");
-            case 24 -> this.hardChat(level, "what are you doing");
-            case 40 -> this.hardChat(level, "that's my hand. that's MY hand");
-            case 54 -> this.hardChat(level, "stop it. STOP");
+            case 8 -> this.hardChat(level, "Wait, what?");
+            case 24 -> this.hardChat(level, "No, I didn't do that.");
+            case 40 -> this.hardChat(level, "Why is my hand moving?");
+            case 54 -> this.hardChat(level, "Stop. Stop it.");
             case Tuning.HARD_STAB_FIRST -> {
                this.playSound(ModSounds.SLOTH_STAB, 1.8F, 1.0F);
                float amount = Math.min(this.getMaxHealth() * Tuning.HARD_STAB_DAMAGE, this.getHealth() - 1.0F);
@@ -1038,18 +1044,18 @@ public class Stagnated extends Monster {
                   this.hurtServer(level, this.damageSources().generic(), amount);
                   this.hardSelfHit = false;
                }
-               level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xB01020, 1.6F), this.getX(), this.getY() + 1.2, this.getZ(), 18, 0.3, 0.4, 0.3, 0.0);
+               this.hardBlood(level, 36);
             }
-            case Tuning.HARD_STAB_FIRST + 6 -> this.hardChat(level, "no no no no");
+            case Tuning.HARD_STAB_FIRST + 6 -> this.hardChat(level, "I'M NOT DOING THIS.");
             case Tuning.HARD_STAB_SECOND -> {
                this.playSound(ModSounds.SLOTH_STAB, 2.0F, 0.85F);
+               this.hardBlood(level, 60);
                Component old = this.hardOldName;
                this.startEnrage(level, true);
                net.minecraft.server.players.PlayerList players = level.getServer().getPlayerList();
                players.broadcastSystemMessage(Component.literal(old.getString() + " was slain by " + this.getDisplayName().getString()), false);
                players.broadcastSystemMessage(Component.translatable("multiplayer.player.left", old).withStyle(net.minecraft.ChatFormatting.YELLOW), false);
             }
-            case Tuning.HARD_STAB_SECOND + 24 -> this.hardChat(level, "quiet now.");
             default -> { }
          }
          if (t >= Tuning.HARD_STAB_TICKS) {
@@ -1087,7 +1093,6 @@ public class Stagnated extends Monster {
          this.nukeMarker(level);
          if (t == 1) {
             this.playSound(ModSounds.SLOTH_GLITCH, 3.0F, 0.8F);
-            this.hardChat(level, "let go.");
          }
          if (t % 8 == 0) {
             this.playSound(ModSounds.STUN_WARNING, 3.0F, 1.0F + t * 0.01F);
@@ -1114,7 +1119,13 @@ public class Stagnated extends Monster {
    /** The rotating danger zone, as wide as the blast (the same marker as the stun slam). */
    private void nukeMarker(ServerLevel level) {
       if (this.tickCount % 2 == 0) {
-         level.sendParticles(ModParticles.STUN_MARK, this.getX(), this.getY() + 0.1, this.getZ(), 0, Tuning.HARD_NUKE_RADIUS * 1.7, 0.0, 0.0, 1.0);
+         double reach = Tuning.HARD_NUKE_RADIUS + 64.0;
+         for (net.minecraft.server.level.ServerPlayer sp : level.players()) {
+            if (sp.distanceToSqr(this) < reach * reach) {
+               // overrideLimiter = true: without it a player more than 32 blocks from the middle never gets the particle, so the ring vanished at its edge.
+               level.sendParticles(sp, ModParticles.STUN_MARK, true, this.getX(), this.getY() + 0.1, this.getZ(), 0, Tuning.HARD_NUKE_RADIUS * 1.7, 0.0, 0.0, 1.0);
+            }
+         }
       }
    }
 

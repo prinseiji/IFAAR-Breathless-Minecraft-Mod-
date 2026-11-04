@@ -519,9 +519,9 @@ public final class Tuning {
 
    // ---- Hard difficulty: Elijah, then SLOTH after the self-stab, then the adrenaline timer and the blast ----
    /** Damage multipliers for Elijah (before the stab), SLOTH (after it) and SLOTH on adrenaline. Applied to his sword, mace, rockets and barrage. */
-   public static final float HARD_P1_DAMAGE = 1.15F;
-   public static final float HARD_P2_DAMAGE = 1.3F;
-   public static final float HARD_P3_DAMAGE = 1.5F;
+   public static final float HARD_P1_DAMAGE = 1.05F;
+   public static final float HARD_P2_DAMAGE = 1.15F;
+   public static final float HARD_P3_DAMAGE = 1.25F;
    /** Phase one ends early: at this share of his health Elijah plunges the sword into himself. */
    public static final float HARD_STAB_AT = 0.6F;
    /** The stabtransform animation (5.67 s): ticks in total, the first stab (hurts him) and the second stab (totem pop, Elijah is gone). */
@@ -538,8 +538,8 @@ public final class Tuning {
    public static final int HARD_INJECT_AT = 8;
    public static final int HARD_GLITCH_AT = 20;
    public static final int HARD_ARMOR_AT = 53;
-   /** Phase three: how long you have (144.5 s, so the blast lands as the 146.5 s phase three song ends once the charge is counted) before the mass of SLOTH goes off, and how long the final charge takes. */
-   public static final int HARD_TIMER_TICKS = 2890;
+   /** Phase three: how long you have (90 s) before the mass of SLOTH goes off, and how long the final charge takes. */
+   public static final int HARD_TIMER_TICKS = 1800;
    public static final int HARD_CHARGE_TICKS = 40;
    /** The blast kills everything within this many blocks (shields, armor, totems and effects do not help). The danger marker is a particle, drawn up to 32 blocks away, so this stays under that. */
    public static final double HARD_NUKE_RADIUS = 30.0;

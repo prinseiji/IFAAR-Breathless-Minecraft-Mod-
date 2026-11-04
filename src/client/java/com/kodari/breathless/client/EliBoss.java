@@ -7,6 +7,9 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.Style;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundEvent;
@@ -30,6 +33,15 @@ final class EliBoss {
    private static final int RAIL_W = 65;
    private static final int RAIL_Y = 20;
    private static final int RAIL_H = 6;
+
+   /** Phase three clock: the loading-window picture (542 x 83) drawn at 140 x 21, and its dotted track in drawn pixels. */
+   private static final Identifier TIMER_BAR = Breathless.id("textures/gui/hard_timer_bar.png");
+   private static final int TIMER_W = 140;
+   private static final int TIMER_H = 21;
+   private static final int TRACK_X = 16;
+   private static final int TRACK_W = 120;
+   private static final int TRACK_Y = 11;
+   private static final int TRACK_H = 3;
 
    private static int phase;
    /** Hard fight: its own three themes, and the clock of the last phase (ticks left, -1 = none). */
@@ -265,15 +277,22 @@ final class EliBoss {
       }
       g.blit(RenderPipelines.GUI_TEXTURED, BAR, x, y, 0.0F, 0.0F, BAR_W, BAR_H, 233, 73, 233, 73, (al << 24) | 0xFFFFFF);
       if (hard && phase == 3 && timer >= 0) {
-         // Phase three: the clock. It drains, and flashes in the last ten seconds.
+         // Phase three: the clock, drawn as a loading window that fills up as the time runs out.
          Minecraft mc = Minecraft.getInstance();
          float frac = Math.max(0.0F, Math.min(1.0F, timer / (float)Tuning.HARD_TIMER_TICKS));
+         boolean urgent = timer < 200 && (fxTicks / 3) % 2 == 0;
          int by = y + BAR_H + 2;
-         int color = (timer < 200 && (fxTicks / 3) % 2 == 0) ? 0xFFFFFFFF : 0xFFE02020;
-         g.fill(x, by, x + BAR_W, by + 4, 0xAA000000);
-         g.fill(x, by, x + Math.round(BAR_W * frac), by + 4, color);
+         int tx = (g.guiWidth() - TIMER_W) / 2;
+         g.blit(RenderPipelines.GUI_TEXTURED, TIMER_BAR, tx, by, 0.0F, 0.0F, TIMER_W, TIMER_H, 542, 83, 542, 83, 0xFFFFFFFF);
+         // The dotted track inside the window is filled from the left as the nuke gets closer (1 - frac).
+         int fillW = Math.round(TRACK_W * (1.0F - frac));
+         if (fillW > 0) {
+            g.fill(tx + TRACK_X, by + TRACK_Y, tx + TRACK_X + fillW, by + TRACK_Y + TRACK_H, urgent ? 0xFFFFFFFF : 0xFF800000);
+         }
          String text = String.format("%.1f", timer / 20.0F);
-         g.text(mc.font, text, (g.guiWidth() - mc.font.width(text)) / 2, by + 7, color);
+         // The numbers use the VCR font; the plain Minecraft font is used if it fails to load.
+         Component number = Component.literal(text).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Breathless.id("vcr"))));
+         g.text(mc.font, number, (g.guiWidth() - mc.font.width(number)) / 2, by + TIMER_H + 3, urgent ? 0xFFFFFFFF : 0xFFE02020);
       }
    }
 
