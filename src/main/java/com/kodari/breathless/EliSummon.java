@@ -78,11 +78,11 @@ public final class EliSummon {
             }
             summon(level, item.blockPosition());
          }
-         for (Iterator<Object[]> l = LATER.iterator(); l.hasNext();) {
-            Object[] task = l.next();
+         // Work on a copy: a task may schedule another task (the sculk spread does), and adding to LATER while looping over it crashed the game.
+         for (Object[] task : new ArrayList<>(LATER)) {
             if (--((int[])task[0])[0] <= 0) {
+               LATER.remove(task);
                ((Runnable)task[1]).run();
-               l.remove();
             }
          }
       });

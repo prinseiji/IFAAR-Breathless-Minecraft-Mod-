@@ -29,7 +29,11 @@ public final class ModParticles {
    /** The blood wings behind Elijah on Hard (flat pictures that turn with his body, see WingsParticle). */
    public static SimpleParticleType BLOOD_WINGS;
 
+   /** The small error pop-up window that bursts out of SLOTH when he glitches (see ErrorWindowParticle). */
+   public static SimpleParticleType ERROR_WINDOW;
+
    public static void register() {
+      ERROR_WINDOW = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("error_window"), FabricParticleTypes.simple());
       SPORE_EYE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye"), FabricParticleTypes.simple());
       SPORE_EYE_SURGE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye_surge"), FabricParticleTypes.simple());
       STUN_MARK = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("stun_mark"), FabricParticleTypes.simple());

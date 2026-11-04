@@ -1,0 +1,25 @@
+# Batch 53 — hard mode fixes and polish (combines Batches 52 and 53)
+
+Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
+
+## Fixes
+- **Nuke crash (ConcurrentModificationException).** `EliSummon`'s scheduler ran tasks while looping over its own list, and the sculk spread schedules a new task each batch. It now loops over a copy. (Batch 50 fix, kept here.)
+- **Stab sound was silent.** `sloth_stab.ogg` contained a hidden video track, which Minecraft refuses to play. Re-encoded as audio only. (Batch 50 fix, kept here.)
+- **Build error.** `ServerLevel.sendParticles(ServerPlayer, ...)` takes both `overrideLimiter` and `alwaysShow` in this version. The ring call now passes `true, false`.
+- **Radius ring vanished.** Particles are only sent to players within 32 blocks, so the 30 block ring disappeared at its edge. `nukeMarker` now sends it to every player within 94 blocks of SLOTH.
+
+## Hard mode
+- Eli's lines before the stab now read: "Wait, what?" / "No, I didn't do that." / "Why is my hand moving?" / "Stop. Stop it." / "I'M NOT DOING THIS."
+- SLOTH no longer talks in chat (the "quiet now." and "let go." lines are removed).
+- Damage multipliers lowered: `HARD_P1_DAMAGE` 1.05, `HARD_P2_DAMAGE` 1.15, `HARD_P3_DAMAGE` 1.25.
+- Pacing: the self-stab starts at 45% of Elijah's health (`HARD_STAB_AT`, was 60%). SLOTH injects the adrenaline at 30% (`HARD_ADRENALINE_AT`, was 50%), so phase 2 is longer.
+- Both stabs now spray blood (`hardBlood`).
+- The sword turns to point at him from 3 s into the stab animation (`eli_sword_down` item model, switched in `StagnatedRenderer`). **If it looks wrong in game, edit the `rotation` and `translation` numbers in `models/item/eli_sword_down.json`.**
+- The adrenaline shot is shown in his left hand during the injection (item model `adrenaline_shot`, carried by an end rod stack).
+- New particle **error_window**: a burst of 36 when he glitches on injection, then one every ~2 s during phase 3 that gets faster and bigger in groups as the timer runs out, and a swarm (6 per tick) during the final 2 s charge. Registered in `ModParticles` and `BreathlessClient`, class `ErrorWindowParticle`.
+
+## Assets
+- Phase 2 theme replaced (`sloth_hard_2.ogg`, converted from Opus to Vorbis).
+- Phase 3 clock is now the loading-window picture `textures/gui/hard_timer_bar.png`, with the dotted track filling as the nuke gets closer, and the number in the VCR font (`font/vcr.json`, `font/vcr_osd_mono.ttf`). If the build fails on the `withFont` line in `EliBoss`, replace that line with a plain `Component.literal(text)`.
+- New radius ring picture `textures/particle/stun_mark.png` (also used by the stun slam).
+- Adrenaline shot icon `textures/item/adrenaline_shot.png`.

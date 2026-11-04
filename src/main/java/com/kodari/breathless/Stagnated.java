@@ -964,6 +964,11 @@ public class Stagnated extends Monster {
       };
    }
 
+   /** SLOTH glitching: error windows scattered around his body (see ErrorWindowParticle). */
+   private void hardErrors(ServerLevel level, int count) {
+      level.sendParticles(ModParticles.ERROR_WINDOW, this.getX(), this.getY() + 1.1, this.getZ(), count, 1.0, 0.9, 1.0, 0.0);
+   }
+
    /** Blood at his chest: dark red dust that bursts out and falls, plus a few drops. */
    private void hardBlood(ServerLevel level, int count) {
       level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0x8A0303, 1.8F), this.getX(), this.getY() + 1.2, this.getZ(), count, 0.35, 0.45, 0.35, 0.0);
@@ -1070,6 +1075,8 @@ public class Stagnated extends Monster {
                this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 24000, Tuning.SWEATY_STRENGTH));
                this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, 24000, Tuning.SWEATY_SPEED));
                level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 40, 0.4, 0.8, 0.4, 0.08);
+               // The glitch: a big burst of error windows around him.
+               this.hardErrors(level, 36);
             }
             case Tuning.HARD_ARMOR_AT -> {
                this.setItemSlot(EquipmentSlot.HEAD, this.protectedPiece(Items.NETHERITE_HELMET));
@@ -1098,6 +1105,8 @@ public class Stagnated extends Monster {
             this.playSound(ModSounds.STUN_WARNING, 3.0F, 1.0F + t * 0.01F);
          }
          level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 6, 0.5, 0.9, 0.5, 0.1);
+         // The last sequence: he is swarmed by error windows.
+         this.hardErrors(level, 6);
          if (t >= Tuning.HARD_CHARGE_TICKS) {
             this.detonate(level);
          }
@@ -1111,7 +1120,15 @@ public class Stagnated extends Monster {
       this.nukeMarker(level);
       if (--this.hardTimer <= 0) {
          this.hardBegin(level, 6, 3, 0);
-      } else if (this.hardTimer <= 200 && this.hardTimer % 20 == 0) {
+         return;
+      }
+      // Error windows: one every ~2 s at the start, one every ~4 ticks at the end, and more of them at a time as the clock runs down.
+      float left = Math.max(0.0F, Math.min(1.0F, this.hardTimer / (float)Tuning.HARD_TIMER_TICKS));
+      int every = 4 + Math.round(36.0F * left);
+      if (this.hardTimer % every == 0) {
+         this.hardErrors(level, 1 + Math.round((1.0F - left) * 4.0F));
+      }
+      if (this.hardTimer <= 200 && this.hardTimer % 20 == 0) {
          this.playSound(ModSounds.STUN_WARNING, 2.5F, 1.0F);
       }
    }
@@ -1123,7 +1140,7 @@ public class Stagnated extends Monster {
          for (net.minecraft.server.level.ServerPlayer sp : level.players()) {
             if (sp.distanceToSqr(this) < reach * reach) {
                // overrideLimiter = true: without it a player more than 32 blocks from the middle never gets the particle, so the ring vanished at its edge.
-               level.sendParticles(sp, ModParticles.STUN_MARK, true, this.getX(), this.getY() + 0.1, this.getZ(), 0, Tuning.HARD_NUKE_RADIUS * 1.7, 0.0, 0.0, 1.0);
+               level.sendParticles(sp, ModParticles.STUN_MARK, true, false, this.getX(), this.getY() + 0.1, this.getZ(), 0, Tuning.HARD_NUKE_RADIUS * 1.7, 0.0, 0.0, 1.0);
             }
          }
       }

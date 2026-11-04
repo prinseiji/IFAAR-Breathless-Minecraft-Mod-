@@ -29,6 +29,7 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
    private static ItemStack parrySword;
    /** Placeholder for the adrenaline syringe (no model yet): an end rod. */
    private static ItemStack syringe;
+   private static ItemStack swordDown;
 
    @Override
    public StagnatedRenderState createRenderState() {
@@ -54,7 +55,9 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
       boolean macePose = entity.xbKind >= 9 && entity.xbKind <= 11;
       if (entity.isElijah() && entity.xbKind == 13) {
          if (syringe == null) {
+            // END_ROD is only the carrier: the item_model component swaps in the adrenaline shot picture (assets/breathless/items/adrenaline_shot.json).
             syringe = new ItemStack(net.minecraft.world.item.Items.END_ROD);
+            syringe.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, com.kodari.breathless.Breathless.id("adrenaline_shot"));
          }
          held = syringe;
       }
@@ -64,6 +67,14 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
             parrySword = new ItemStack(com.kodari.breathless.ModItems.ELI_SWORD);
          }
          held = parrySword;
+         if (entity.xbKind == 12 && entity.xbClock >= 60) {
+            // From 3 s into the stab the blade turns around to point at him (same sword, another model, see items/eli_sword_down.json).
+            if (swordDown == null) {
+               swordDown = new ItemStack(com.kodari.breathless.ModItems.ELI_SWORD);
+               swordDown.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, com.kodari.breathless.Breathless.id("eli_sword_down"));
+            }
+            held = swordDown;
+         }
       }
       if (macePose && !entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD)) {
          // The mace parry raises the RIGHT arm, so the sword is in that hand for the whole parry.

@@ -523,7 +523,7 @@ public final class Tuning {
    public static final float HARD_P2_DAMAGE = 1.15F;
    public static final float HARD_P3_DAMAGE = 1.25F;
    /** Phase one ends early: at this share of his health Elijah plunges the sword into himself. */
-   public static final float HARD_STAB_AT = 0.6F;
+   public static final float HARD_STAB_AT = 0.45F;
    /** The stabtransform animation (5.67 s): ticks in total, the first stab (hurts him) and the second stab (totem pop, Elijah is gone). */
    public static final int HARD_STAB_TICKS = 114;
    public static final int HARD_STAB_FIRST = 64;
@@ -532,7 +532,7 @@ public final class Tuning {
    public static final float HARD_STAB_DAMAGE = 0.05F;
    /** SLOTH starts with this share of a full health bar, and injects the adrenaline when he is down to HARD_ADRENALINE_AT. */
    public static final float HARD_SLOTH_HEALTH = 1.0F;
-   public static final float HARD_ADRENALINE_AT = 0.5F;
+   public static final float HARD_ADRENALINE_AT = 0.3F;
    /** The adrenaline animation (2.79 s): ticks in total, the needle goes in, the glitch starts, the netherite goes on. */
    public static final int HARD_ADRENALINE_TICKS = 56;
    public static final int HARD_INJECT_AT = 8;
