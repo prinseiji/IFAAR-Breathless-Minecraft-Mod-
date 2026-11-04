@@ -18,6 +18,10 @@ public final class ModSounds {
    public static SoundEvent SLOTH_STAB;
    public static SoundEvent SLOTH_INJECT;
    public static SoundEvent SLOTH_GLITCH;
+   /** SLOTH's voicelines in the hard fight: the stab, the start of his phase, the adrenaline shout (one of each group is picked). */
+   public static SoundEvent[] HARD_VOICE_STAB = new SoundEvent[3];
+   public static SoundEvent[] HARD_VOICE_START = new SoundEvent[4];
+   public static SoundEvent[] HARD_VOICE_RAGE = new SoundEvent[3];
    public static SoundEvent HARD_MUSIC_1;
    public static SoundEvent HARD_MUSIC_2;
    public static SoundEvent HARD_MUSIC_3;
@@ -77,6 +81,15 @@ public final class ModSounds {
       SLOTH_STAB = reg("sloth_stab");
       SLOTH_INJECT = reg("sloth_inject");
       SLOTH_GLITCH = reg("sloth_glitch");
+      for (int i = 0; i < HARD_VOICE_STAB.length; i++) {
+         HARD_VOICE_STAB[i] = reg("sloth_hard_stab_" + (i + 1));
+      }
+      for (int i = 0; i < HARD_VOICE_START.length; i++) {
+         HARD_VOICE_START[i] = reg("sloth_hard_start_" + (i + 1));
+      }
+      for (int i = 0; i < HARD_VOICE_RAGE.length; i++) {
+         HARD_VOICE_RAGE[i] = reg("sloth_hard_rage_" + (i + 1));
+      }
       HARD_MUSIC_1 = reg("sloth_hard_1");
       HARD_MUSIC_2 = reg("sloth_hard_2");
       HARD_MUSIC_3 = reg("sloth_hard_3");

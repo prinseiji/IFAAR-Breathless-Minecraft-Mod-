@@ -18,6 +18,13 @@ Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
 - The adrenaline shot is shown in his left hand during the injection (item model `adrenaline_shot`, carried by an end rod stack).
 - New particle **error_window**: a burst of 36 when he glitches on injection, then one every ~2 s during phase 3 that gets faster and bigger in groups as the timer runs out, and a swarm (6 per tick) during the final 2 s charge. Registered in `ModParticles` and `BreathlessClient`, class `ErrorWindowParticle`.
 
+## Voicelines
+- SLOTH's ten voice clips (converted from your mp4 files to mono Vorbis) are in the hard fight, one picked at random per moment, each with an on-screen caption:
+  - **stab** (3 lines, at 3 s into the self-stab, as the sword turns): "You've outlasted your usefulness." / "I've been patient long enough." / "I will take it from here."
+  - **start of his phase** (4 lines, when the stab sequence ends): "The fight's between you and me now." / "You are mine now." / "Let's really start this now." / "Show me what you've got."
+  - **adrenaline shout** (3 lines, when the adrenaline sequence ends and phase 3 begins): "LET'S DIE TOGETHER" / "I'M DRAGGING YOU TO HELL WITH ME." / "YOU WANT IT?! YOU COME AND GET IT."
+- Files: `sloth_hard_stab_1..3.ogg`, `sloth_hard_start_1..4.ogg`, `sloth_hard_rage_1..3.ogg`. Registered in `ModSounds` and `sounds.json`.
+
 ## Assets
 - Phase 2 theme replaced (`sloth_hard_2.ogg`, converted from Opus to Vorbis).
 - Phase 3 clock is now the loading-window picture `textures/gui/hard_timer_bar.png`, with the dotted track filling as the nuke gets closer, and the number in the VCR font (`font/vcr.json`, `font/vcr_osd_mono.ttf`). If the build fails on the `withFont` line in `EliBoss`, replace that line with a plain `Component.literal(text)`.

@@ -964,6 +964,21 @@ public class Stagnated extends Monster {
       };
    }
 
+   private static final String[] HARD_TEXT_STAB = {"You've outlasted your usefulness.", "I've been patient long enough.", "I will take it from here."};
+   private static final String[] HARD_TEXT_START = {"The fight's between you and me now.", "You are mine now.", "Let's really start this now.", "Show me what you've got."};
+   private static final String[] HARD_TEXT_RAGE = {"LET'S DIE TOGETHER", "I'M DRAGGING YOU TO HELL WITH ME.", "YOU WANT IT?! YOU COME AND GET IT."};
+
+   /** One of SLOTH's voicelines, picked at random, with its caption for the players nearby. */
+   private void hardVoice(ServerLevel level, net.minecraft.sounds.SoundEvent[] sounds, String[] texts) {
+      int pick = this.random.nextInt(sounds.length);
+      this.playSound(sounds[pick], 3.0F, 1.0F);
+      for (ServerPlayer player : level.players()) {
+         if (player.distanceToSqr(this) < 48.0 * 48.0) {
+            ServerPlayNetworking.send(player, new CaptionPayload(texts[pick], 70));
+         }
+      }
+   }
+
    /** SLOTH glitching: error windows scattered around his body (see ErrorWindowParticle). */
    private void hardErrors(ServerLevel level, int count) {
       level.sendParticles(ModParticles.ERROR_WINDOW, this.getX(), this.getY() + 1.1, this.getZ(), count, 1.0, 0.9, 1.0, 0.0);
@@ -1014,8 +1029,14 @@ public class Stagnated extends Monster {
    }
 
    private void hardEnd(ServerLevel level) {
+      int endedSeq = this.hardSeq;
       this.hardTicks = -1;
       this.hardSeq = 0;
+      if (endedSeq == 1) {
+         this.hardVoice(level, ModSounds.HARD_VOICE_START, HARD_TEXT_START);
+      } else if (endedSeq == 2) {
+         this.hardVoice(level, ModSounds.HARD_VOICE_RAGE, HARD_TEXT_RAGE);
+      }
       level.broadcastEntityEvent(this, (byte)97);
       this.refreshStats();
    }
@@ -1040,6 +1061,7 @@ public class Stagnated extends Monster {
             case 24 -> this.hardChat(level, "No, I didn't do that.");
             case 40 -> this.hardChat(level, "Why is my hand moving?");
             case 54 -> this.hardChat(level, "Stop. Stop it.");
+            case 60 -> this.hardVoice(level, ModSounds.HARD_VOICE_STAB, HARD_TEXT_STAB);
             case Tuning.HARD_STAB_FIRST -> {
                this.playSound(ModSounds.SLOTH_STAB, 1.8F, 1.0F);
                float amount = Math.min(this.getMaxHealth() * Tuning.HARD_STAB_DAMAGE, this.getHealth() - 1.0F);

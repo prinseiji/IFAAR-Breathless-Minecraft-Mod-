@@ -1207,5 +1207,85 @@
         "stream": true
       }
     ]
+  },
+  "sloth_hard_stab_1": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_stab_1",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_stab_2": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_stab_2",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_stab_3": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_stab_3",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_start_1": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_start_1",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_start_2": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_start_2",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_start_3": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_start_3",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_start_4": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_start_4",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_rage_1": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_rage_1",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_rage_2": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_rage_2",
+        "stream": false
+      }
+    ]
+  },
+  "sloth_hard_rage_3": {
+    "sounds": [
+      {
+        "name": "breathless:sloth_hard_rage_3",
+        "stream": false
+      }
+    ]
   }
 }
