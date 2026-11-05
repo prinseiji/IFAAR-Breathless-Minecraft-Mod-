@@ -94,6 +94,11 @@ public class Stagnated extends Monster {
    private int placed;
    /** Can it walk to its target? Refreshed every 5 ticks. Also how long it has been standing still while chasing. */
    private boolean unreachable;
+   // Anti-stuck teleport: ticks spent unable to reach the target, cooldown, wind-up ticks left (-1 = none) and the spot he will appear at.
+   private int tpStuck;
+   private int tpCooldown;
+   private int tpWind = -1;
+   private net.minecraft.world.phys.Vec3 tpSpot;
    private int stuckTicks;
    private Vec3 lastPos = Vec3.ZERO;
    /** Client-side clocks for the looping mining / placing animations, -1 when not doing it. */
@@ -549,7 +554,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE || this.tpWind >= 0;
    }
 
    @Override
@@ -557,6 +562,12 @@ public class Stagnated extends Monster {
       super.aiStep();
       if (this.swordSince < 200) {
          this.swordSince++;
+      }
+      if (this.pearlTicks > 0) {
+         this.pearlTicks--;
+      }
+      if (!this.level().isClientSide() && this.isAlive()) {
+         this.tickTeleport((ServerLevel)this.level());
       }
       if (!this.level().isClientSide()) {
          if (this.maceParryTalk > 0) {
@@ -977,6 +988,112 @@ public class Stagnated extends Monster {
             ServerPlayNetworking.send(player, new CaptionPayload(texts[pick], 70));
          }
       }
+   }
+
+   /**
+    * Anti-bug failsafe: if he cannot get to his target (no path for about 3 seconds, stuck in place, or more than 28 blocks away) he pulls out an ender pearl and
+    * teleports next to it. The landing spot is always free, on solid ground, 3 to 8 blocks from the target and in its line of sight, so he never lands inside a wall
+    * or behind one. If the target is sealed in where no such spot exists he does not teleport and tries again later.
+    */
+   private void tickTeleport(ServerLevel level) {
+      if (this.tpCooldown > 0) {
+         this.tpCooldown--;
+      }
+      LivingEntity target = this.getTarget();
+      if (this.tpWind >= 0) {
+         if (target == null || !target.isAlive()) {
+            this.tpWind = -1;
+            return;
+         }
+         if (--this.tpWind < 0) {
+            this.firePearlTeleport(level);
+         }
+         return;
+      }
+      if (target == null || !target.isAlive() || this.isImmobile() || this.hardTicks >= 0) {
+         this.tpStuck = 0;
+         return;
+      }
+      double dist = this.distanceTo(target);
+      boolean cannotReach = (this.unreachable && dist > 5.0) || this.stuckTicks >= 80 || dist > 28.0;
+      if (!cannotReach) {
+         this.tpStuck = Math.max(0, this.tpStuck - 2);
+         return;
+      }
+      if (++this.tpStuck < 60 || this.tpCooldown > 0) {
+         return;
+      }
+      this.tpStuck = 0;
+      net.minecraft.world.phys.Vec3 spot = this.findTeleportSpot(level, target);
+      if (spot == null) {
+         this.tpCooldown = 100;
+         return;
+      }
+      this.tpSpot = spot;
+      this.tpWind = 12;
+      this.getNavigation().stop();
+      this.playSound(net.minecraft.sounds.SoundEvents.ENDER_PEARL_THROW, 1.2F, 1.0F);
+      level.broadcastEntityEvent(this, (byte)106);
+   }
+
+   private void firePearlTeleport(ServerLevel level) {
+      net.minecraft.world.phys.Vec3 spot = this.tpSpot;
+      this.tpSpot = null;
+      this.tpCooldown = 160;
+      if (spot == null || !this.spotIsFree(level, spot.x, spot.y, spot.z)) {
+         return;
+      }
+      level.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.4, 0.9, 0.4, 0.7);
+      this.playSound(net.minecraft.sounds.SoundEvents.PLAYER_TELEPORT, 1.2F, 1.0F);
+      this.randomTeleport(spot.x, spot.y, spot.z, false);
+      this.getNavigation().stop();
+      this.stuckTicks = 0;
+      this.unreachable = false;
+      level.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.4, 0.9, 0.4, 0.7);
+      this.playSound(net.minecraft.sounds.SoundEvents.PLAYER_TELEPORT, 1.2F, 1.0F);
+   }
+
+   /** Room for his body, solid ground under it and no liquid. */
+   private boolean spotIsFree(ServerLevel level, double x, double y, double z) {
+      net.minecraft.world.phys.AABB box = this.getDimensions(this.getPose()).makeBoundingBox(x, y, z);
+      if (!level.noCollision(this, box)) {
+         return false;
+      }
+      net.minecraft.core.BlockPos feet = net.minecraft.core.BlockPos.containing(x, y, z);
+      net.minecraft.core.BlockPos below = feet.below();
+      return level.getFluidState(feet).isEmpty()
+         && level.getFluidState(below).isEmpty()
+         && level.getBlockState(below).isFaceSturdy(level, below, net.minecraft.core.Direction.UP);
+   }
+
+   /** A free spot 3 to 8 blocks from the target that has a clear line to it, nearest ring first, random within the ring. Null if there is none. */
+   private net.minecraft.world.phys.Vec3 findTeleportSpot(ServerLevel level, LivingEntity target) {
+      net.minecraft.world.phys.Vec3 targetEye = target.getEyePosition();
+      int baseY = net.minecraft.util.Mth.floor(target.getY());
+      for (int radius : new int[] {3, 4, 5, 6, 8}) {
+         java.util.List<net.minecraft.world.phys.Vec3> spots = new java.util.ArrayList<>();
+         for (int a = 0; a < 12; a++) {
+            double angle = (a + (radius % 2) * 0.5) * (Math.PI / 6.0);
+            double x = net.minecraft.util.Mth.floor(target.getX() + Math.cos(angle) * radius) + 0.5;
+            double z = net.minecraft.util.Mth.floor(target.getZ() + Math.sin(angle) * radius) + 0.5;
+            for (int dy : new int[] {0, 1, -1, 2, -2, 3, -3, 4, -4}) {
+               double y = baseY + dy;
+               if (!this.spotIsFree(level, x, y, z)) {
+                  continue;
+               }
+               net.minecraft.world.phys.Vec3 eye = new net.minecraft.world.phys.Vec3(x, y + this.getEyeHeight(), z);
+               boolean clear = level.clip(new net.minecraft.world.level.ClipContext(eye, targetEye, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+               if (clear) {
+                  spots.add(new net.minecraft.world.phys.Vec3(x, y, z));
+               }
+               break;
+            }
+         }
+         if (!spots.isEmpty()) {
+            return spots.get(this.random.nextInt(spots.size()));
+         }
+      }
+      return null;
    }
 
    /** SLOTH glitching: error windows scattered around his body (see ErrorWindowParticle). */
@@ -2314,6 +2431,8 @@ public class Stagnated extends Monster {
       } else if (event >= 101 && event <= 105) {
          this.xbKind = event - 92;
          this.xbClock = 0;
+      } else if (event == 106) {
+         this.pearlTicks = 14;
       } else if (event == 97) {
          this.xbKind = -1;
          this.xbClock = -1;
@@ -2580,6 +2699,8 @@ public class Stagnated extends Monster {
    /** Client side: which crossbow clip is playing (-1 none) and its clock. 0/1 reload (ground normal/fast), 2/3 the same in the air, 4 aim pose, 5/6 shot (ground/air). */
    public int xbKind = -1;
    public int xbClock = -1;
+   /** Client: ticks left that he holds an ender pearl (set by entity event 106). */
+   public int pearlTicks;
    /** Client side: how many stocked rockets the stars above his head show, and the last tick each star (one per rocket) was alive, so a missing one gets made again. */
    public int stockShown;
    /** Client side: the last tick the enrage ring's particle was alive (it is one particle that follows him; a new one is made only if it is gone). */

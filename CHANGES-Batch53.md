@@ -18,6 +18,12 @@ Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
 - The adrenaline shot is shown in his left hand during the injection (item model `adrenaline_shot`, carried by an end rod stack).
 - New particle **error_window**: a burst of 36 when he glitches on injection, then one every ~2 s during phase 3 that gets faster and bigger in groups as the timer runs out, and a swarm (6 per tick) during the final 2 s charge. Registered in `ModParticles` and `BreathlessClient`, class `ErrorWindowParticle`.
 
+## Anti-stuck teleport (every fight, not only hard mode)
+- If Elijah or SLOTH cannot reach the target (no path for about 3 s, stuck in place for 4 s, or more than 28 blocks away) he holds an ender pearl in his left hand for 0.6 s, then teleports next to the target. Portal particles and the teleport sound play where he leaves and where he lands.
+- The landing spot is free, on solid ground, 3 to 8 blocks from the target (nearest ring first) and in its line of sight, so he never lands inside a wall or behind one. If the target is sealed in with no such spot, he does not teleport and checks again 5 s later.
+- 8 s cooldown after a teleport. It never starts during the hard-mode stab, injection or charge, or any other action that already stops him moving. Code: `tickTeleport`, `findTeleportSpot`, `firePearlTeleport` in `Stagnated.java`; entity event 106 shows the pearl on the client.
+- Numbers to tune: 60 ticks (3 s) stuck, 28 blocks, 160 tick cooldown.
+
 ## Voicelines
 - SLOTH's ten voice clips (converted from your mp4 files to mono Vorbis) are in the hard fight, one picked at random per moment, each with an on-screen caption:
   - **stab** (3 lines, at 3 s into the self-stab, as the sword turns): "You've outlasted your usefulness." / "I've been patient long enough." / "I will take it from here."

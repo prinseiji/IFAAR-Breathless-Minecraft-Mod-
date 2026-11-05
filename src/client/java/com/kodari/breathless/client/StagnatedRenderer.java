@@ -30,6 +30,7 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
    /** Placeholder for the adrenaline syringe (no model yet): an end rod. */
    private static ItemStack syringe;
    private static ItemStack swordDown;
+   private static ItemStack pearl;
 
    @Override
    public StagnatedRenderState createRenderState() {
@@ -75,6 +76,13 @@ public class StagnatedRenderer extends MobRenderer<Stagnated, StagnatedRenderSta
             }
             held = swordDown;
          }
+      }
+      if (entity.pearlTicks > 0) {
+         // The anti-stuck teleport: he holds an ender pearl in his left hand while he winds up.
+         if (pearl == null) {
+            pearl = new ItemStack(net.minecraft.world.item.Items.ENDER_PEARL);
+         }
+         held = pearl;
       }
       if (macePose && !entity.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD)) {
          // The mace parry raises the RIGHT arm, so the sword is in that hand for the whole parry.
