@@ -24,6 +24,9 @@ Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
 - 8 s cooldown after a teleport. It never starts during the hard-mode stab, injection or charge, or any other action that already stops him moving. Code: `tickTeleport`, `findTeleportSpot`, `firePearlTeleport` in `Stagnated.java`; entity event 106 shows the pearl on the client.
 - Numbers to tune: 60 ticks (3 s) stuck, 28 blocks, 160 tick cooldown.
 
+## Mace smash no longer goes through walls
+- The plain mace smash now needs a clear line from his body to the victim (feet, middle or eyes, `smashReaches`). A wall in between means no damage. The **stun slam still goes through walls** on purpose. Before, the smash hit everything in its radius with no line check, which is why you were hit through walls in normal fights.
+
 ## Voicelines
 - SLOTH's ten voice clips (converted from your mp4 files to mono Vorbis) are in the hard fight, one picked at random per moment, each with an on-screen caption:
   - **stab** (3 lines, at 3 s into the self-stab, as the sword turns): "You've outlasted your usefulness." / "I've been patient long enough." / "I will take it from here."

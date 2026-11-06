@@ -1901,6 +1901,20 @@ public class Stagnated extends Monster {
     * The landing: damage grows with the fall (capped), everything close is thrown back. The sound and the particles only
     * happen if it really hurt someone. A stun slam breaks a raised shield first so the hit lands. Returns whether it connected.
     */
+   /** Is there a clear line from his body to the victim (feet, middle or eyes)? A wall in between means the smash cannot hurt it. */
+   private boolean smashReaches(ServerLevel level, LivingEntity victim) {
+      net.minecraft.world.phys.Vec3 from = new net.minecraft.world.phys.Vec3(this.getX(), this.getY() + 0.9, this.getZ());
+      double[] heights = {victim.getBbHeight() * 0.5, victim.getEyeHeight(), 0.2};
+      for (double h : heights) {
+         net.minecraft.world.phys.Vec3 to = new net.minecraft.world.phys.Vec3(victim.getX(), victim.getY() + h, victim.getZ());
+         net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+         if (hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS) {
+            return true;
+         }
+      }
+      return false;
+   }
+
    private boolean smash(ServerLevel level, float fall, boolean stun) {
       float damage = Mth.clamp(Tuning.SWEATY_SMASH_BASE + fall * Tuning.SWEATY_SMASH_PER_BLOCK, 0.0F, stun ? Tuning.SWEATY_STUN_MAX : Tuning.SWEATY_SMASH_MAX);
       boolean connected = false;
@@ -1909,6 +1923,10 @@ public class Stagnated extends Monster {
             continue;
          }
          if (e instanceof Player player && (player.isCreative() || player.isSpectator())) {
+            continue;
+         }
+         // Walls stop the plain mace smash. Only the stun slam goes through them.
+         if (!stun && !this.smashReaches(level, e)) {
             continue;
          }
          if (stun && e instanceof Player player && player.isBlocking()) {
