@@ -32,7 +32,11 @@ public final class ModParticles {
    /** The small error pop-up window that bursts out of SLOTH when he glitches (see ErrorWindowParticle). */
    public static SimpleParticleType ERROR_WINDOW;
 
+   /** The turning mark in the left eye of Elijah during the stun slam burst (uses the stock star picture). */
+   public static SimpleParticleType EYE_MARK;
+
    public static void register() {
+      EYE_MARK = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("eye_mark"), FabricParticleTypes.simple());
       ERROR_WINDOW = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("error_window"), FabricParticleTypes.simple());
       SPORE_EYE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye"), FabricParticleTypes.simple());
       SPORE_EYE_SURGE = Registry.register(BuiltInRegistries.PARTICLE_TYPE, Breathless.id("spore_eye_surge"), FabricParticleTypes.simple());

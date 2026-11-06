@@ -202,6 +202,16 @@ public class StagnatedModel extends EntityModel<StagnatedRenderState> implements
             case 11 -> this.apply(StagnatedAnims.PARRY_POSE, 0.0F);
             case 12 -> this.apply(StagnatedAnims.STAB_TRANSFORM, state.xbTime);
             case 13 -> this.apply(StagnatedAnims.ADRENALINE, state.xbTime);
+            case 14 -> this.apply(BurstAnims.BURST_IMPENDING, state.xbTime);
+            // Burnout (1.5 s), then the held pose until the recovery event comes.
+            case 15 -> {
+               if (state.xbTime < BurstAnims.BURNOUT.length()) {
+                  this.apply(BurstAnims.BURNOUT, state.xbTime);
+               } else {
+                  this.apply(BurstAnims.BURNOUT_HOLD, BurstAnims.BURNOUT_HOLD.length());
+               }
+            }
+            case 16 -> this.apply(BurstAnims.BURNOUT_RECOVERY, state.xbTime);
             default -> this.apply(StagnatedAnims.XB_AIM, 0.0F);
          }
       } else if (state.smash >= 0.0F) {

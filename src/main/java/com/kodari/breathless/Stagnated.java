@@ -98,6 +98,13 @@ public class Stagnated extends Monster {
    private ServerPlayer fightTarget;
    private int tpStuck;
    private int tpIdle;
+   // Stun slam burst: three slams in a row, then he is burnt out for a while.
+   private boolean burstActive;
+   private int burstLeft;
+   private int windTotal = Tuning.SWEATY_WIND_TICKS;
+   private int launchAt = Tuning.SWEATY_LAUNCH_AT;
+   private int exhaustTicks;
+   private int burstAge;
    private int tpCooldown;
    private int tpWind = -1;
    private net.minecraft.world.phys.Vec3 tpSpot;
@@ -208,15 +215,20 @@ public class Stagnated extends Monster {
    }
    /** Client-side: red glow while it is about to stun slam. */
    public boolean stunning;
+   /** Client-side: orange outline while he is burnt out after a stun slam burst. */
+   public boolean exhausted;
 
    /** The stun slam telegraph: a red outline like a spectral arrow's (client-side only, since only the client sets stunning). In phase two he also glows dark sculk teal the whole time. */
    @Override
    public boolean isCurrentlyGlowing() {
-      return this.stunning || this.isEnraged() || super.isCurrentlyGlowing();
+      return this.stunning || this.exhausted || this.isEnraged() || super.isCurrentlyGlowing();
    }
 
    @Override
    public int getTeamColor() {
+      if (this.exhausted) {
+         return 0xFF8C00;
+      }
       if (this.stunning) {
          return 0xFF2020;
       }
@@ -388,11 +400,11 @@ public class Stagnated extends Monster {
          return false;
       }
       // A mace attack from a player is parried with his sword: no damage at all.
-      if (this.sweaty && source.getEntity() instanceof Player maceUser && source.getDirectEntity() == maceUser && maceUser.getMainHandItem().is(net.minecraft.world.item.Items.MACE)) {
+      if (this.sweaty && source.getEntity() instanceof Player maceUser && source.getDirectEntity() == maceUser && maceUser.getMainHandItem().is(net.minecraft.world.item.Items.MACE) && this.exhaustTicks <= 0) {
          this.maceParry(level, maceUser, amount);
          return false;
       }
-      if (this.sweaty && this.guardUp && this.blocksShield(source)) {
+      if (this.sweaty && this.guardUp && this.exhaustTicks <= 0 && this.blocksShield(source)) {
          if (source.getEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(net.minecraft.tags.ItemTags.AXES)) {
             // An axe breaks the shield: it goes down for a while and he cannot raise it again until the cooldown is over.
             this.dropGuard();
@@ -412,7 +424,7 @@ public class Stagnated extends Monster {
          }
          return false;
       }
-      boolean hurt = super.hurtServer(level, source, amount);
+      boolean hurt = super.hurtServer(level, source, amount * this.takenMultiplier());
       if (this.sweaty && hurt && source.getEntity() instanceof LivingEntity foe && !(foe instanceof Player) && !(foe instanceof Stagnated) && !(foe instanceof Warden)) {
          this.foes.put(foe, this.tickCount);
       }
@@ -562,7 +574,7 @@ public class Stagnated extends Monster {
 
    @Override
    protected boolean isImmobile() {
-      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE || this.tpWind >= 0;
+      return super.isImmobile() || this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0 || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0 || this.comboWind > 0 || this.parryStagger > 0 || this.xbState != XB_NONE || this.tpWind >= 0 || this.exhaustTicks > 0;
    }
 
    @Override
@@ -576,6 +588,7 @@ public class Stagnated extends Monster {
       }
       if (!this.level().isClientSide() && this.isAlive()) {
          this.tickTeleport((ServerLevel)this.level());
+         this.burstFx((ServerLevel)this.level());
       }
       if (!this.level().isClientSide()) {
          if (this.maceParryTalk > 0) {
@@ -1096,7 +1109,7 @@ public class Stagnated extends Monster {
    private boolean tpBusy() {
       return this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0
          || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0
-         || this.comboWind > 0 || this.parryStagger > 0;
+         || this.comboWind > 0 || this.parryStagger > 0 || this.exhaustTicks > 0;
    }
 
    private void firePearlTeleport(ServerLevel level) {
@@ -1183,6 +1196,107 @@ public class Stagnated extends Monster {
          }
       }
       return null;
+   }
+
+   private static final String[] BURST_TEXT_IN_P1 = {"Watch this, I'm finna lock in.", "Ready up those ender pearls."};
+   private static final String[] BURST_TEXT_IN_P2 = {"*laughs*", "*laughs*"};
+   private static final String[] BURST_TEXT_EX_P1 = {"Hold up... give me a sec..", "Man that was not worth it.."};
+   private static final String[] BURST_TEXT_EX_P2 = {"WEAK BODY", "DAMNIT"};
+
+   /** How much damage he takes: a bit less than normal (tanky), less again on Hard, and a lot more while he is burnt out. */
+   private float takenMultiplier() {
+      if (!this.sweaty) {
+         return 1.0F;
+      }
+      float base = this.hardStage() > 0 ? Tuning.ELI_TAKEN_HARD : Tuning.ELI_TAKEN_NORMAL;
+      return this.exhaustTicks > 0 ? base * Tuning.ELI_EXHAUST_TAKEN : base;
+   }
+
+   /** Phase two voices: the enraged fight, or SLOTH on Hard. */
+   private boolean phaseTwoVoice() {
+      return this.hardStage() > 0 ? this.hardStage() >= 3 : this.isEnraged();
+   }
+
+   /** The telegraph of a stun slam burst: the 2 s clip, the warning, the red outline and the line. The first slam launches at the end of it. */
+   private void startBurst(ServerLevel level) {
+      this.burstActive = true;
+      this.burstLeft = Tuning.BURST_SLAMS;
+      this.windTicks = Tuning.BURST_WIND_TICKS;
+      this.windTotal = Tuning.BURST_WIND_TICKS;
+      this.launchAt = Tuning.BURST_LAUNCH_AT;
+      level.broadcastEntityEvent(this, (byte)81);
+      level.broadcastEntityEvent(this, (byte)107);
+      this.holdTemp(null);
+      this.burstAge = 0;
+      this.playSound(ModSounds.BURST_WARNING, 3.0F, 1.0F);
+      if (this.phaseTwoVoice()) {
+         this.hardVoice(level, ModSounds.BURST_IN_P2, BURST_TEXT_IN_P2);
+      } else {
+         this.hardVoice(level, ModSounds.BURST_IN_P1, BURST_TEXT_IN_P1);
+      }
+   }
+
+   /** After each slam lands: the next one after a short crouch, or burnout after the last. */
+   private void burstNext(ServerLevel level) {
+      if (--this.burstLeft > 0) {
+         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_AXE));
+         this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+         this.stunPlan = true;
+         this.windTicks = Tuning.BURST_WIND_TICKS - Tuning.BURST_FOLLOW_CLOCK;
+         this.windTotal = this.windTicks;
+         this.launchAt = this.windTicks - 2;
+         this.getNavigation().stop();
+         this.holdTemp(Items.WIND_CHARGE);
+         level.broadcastEntityEvent(this, (byte)77);
+         level.broadcastEntityEvent(this, (byte)81);
+         level.broadcastEntityEvent(this, (byte)110);
+         return;
+      }
+      this.burstActive = false;
+      this.windTotal = Tuning.SWEATY_WIND_TICKS;
+      this.launchAt = Tuning.SWEATY_LAUNCH_AT;
+      this.exhaustTicks = this.hardStage() > 0 ? Tuning.EXHAUST_TICKS_HARD : Tuning.EXHAUST_TICKS;
+      this.getNavigation().stop();
+      level.broadcastEntityEvent(this, (byte)108);
+      this.playSound(ModSounds.BURST_BURNOUT, 3.0F, 1.0F);
+      if (this.phaseTwoVoice()) {
+         this.hardVoice(level, ModSounds.BURST_EX_P2, BURST_TEXT_EX_P2);
+      } else {
+         this.hardVoice(level, ModSounds.BURST_EX_P1, BURST_TEXT_EX_P1);
+      }
+   }
+
+   /** Burnt out: he stands still, takes extra damage and cannot parry or guard. The recovery clip plays in the last 23 ticks. */
+   private void tickExhaust(ServerLevel level) {
+      this.getNavigation().stop();
+      this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+      this.exhaustTicks--;
+      if (this.exhaustTicks == 23) {
+         level.broadcastEntityEvent(this, (byte)109);
+      } else if (this.exhaustTicks <= 0) {
+         this.exhaustTicks = 0;
+         level.broadcastEntityEvent(this, (byte)97);
+         this.startSwap(false);
+      }
+   }
+
+   /** The left eye during a burst: the turning mark and red sparks (same spot as the parry rage eye). */
+   private void burstFx(ServerLevel level) {
+      if (!this.burstActive) {
+         return;
+      }
+      // Safety: if a burst never finishes (the dive was cancelled), end it so it cannot stay on.
+      if (++this.burstAge > 400) {
+         this.burstActive = false;
+         this.windTotal = Tuning.SWEATY_WIND_TICKS;
+         this.launchAt = Tuning.SWEATY_LAUNCH_AT;
+         return;
+      }
+      double hr = Math.toRadians(this.getYHeadRot());
+      double ex = this.getX() + Math.cos(hr) * 0.125 - Math.sin(hr) * 0.28;
+      double ez = this.getZ() + Math.sin(hr) * 0.125 + Math.cos(hr) * 0.28;
+      level.sendParticles(ModParticles.EYE_MARK, ex, this.getY() + 1.73, ez, 0, 0.4, 0.0, 0.0, 1.0);
+      level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF1010, 0.8F), ex, this.getY() + 1.73, ez, 4, 0.08, 0.08, 0.08, 0.0);
    }
 
    /** SLOTH glitching: error windows scattered around his body (see ErrorWindowParticle). */
@@ -1462,6 +1576,10 @@ public class Stagnated extends Monster {
    }
 
    private void tickSweaty(ServerLevel level) {
+      if (this.exhaustTicks > 0) {
+         this.tickExhaust(level);
+         return;
+      }
       if (!this.geared) {
          this.gear();
       }
@@ -1639,14 +1757,20 @@ public class Stagnated extends Monster {
                this.getNavigation().stop();
                this.holdTemp(Items.WIND_CHARGE);
                this.level().broadcastEntityEvent(this, (byte)77);
-               if (this.stunPlan) {
-                  this.level().broadcastEntityEvent(this, (byte)81);
-                  this.playSound(ModSounds.STUN_WARNING, 3.0F, 1.0F);
-               }
-               if (this.isEnraged()) {
-                  this.sloth(this.stunPlan ? SlothLines.STUN : SlothLines.MACE);
+               this.windTotal = Tuning.SWEATY_WIND_TICKS;
+               this.launchAt = Tuning.SWEATY_LAUNCH_AT;
+               if (this.stunPlan && this.random.nextFloat() < (this.hardStage() > 0 ? Tuning.BURST_CHANCE_HARD : Tuning.BURST_CHANCE)) {
+                  this.startBurst(level);
                } else {
-                  this.say(this.stunPlan ? ModSounds.ETHAN_STUN : ModSounds.ETHAN_WIND);
+                  if (this.stunPlan) {
+                     this.level().broadcastEntityEvent(this, (byte)81);
+                     this.playSound(ModSounds.STUN_WARNING, 3.0F, 1.0F);
+                  }
+                  if (this.isEnraged()) {
+                     this.sloth(this.stunPlan ? SlothLines.STUN : SlothLines.MACE);
+                  } else {
+                     this.say(this.stunPlan ? ModSounds.ETHAN_STUN : ModSounds.ETHAN_WIND);
+                  }
                }
             } else if (++this.maceStuck >= 40) {
                this.startSwap(false);
@@ -1656,7 +1780,11 @@ public class Stagnated extends Monster {
       if (this.windTicks > 0) {
          this.windTicks--;
          this.faceTarget();
-         if (Tuning.SWEATY_WIND_TICKS - this.windTicks == Tuning.SWEATY_LAUNCH_AT) {
+         if (this.burstActive && this.windTotal == Tuning.BURST_WIND_TICKS && this.windTotal - this.windTicks == this.launchAt - 2) {
+            // The clip raises his right hand for the wind charge at 1.83 s.
+            this.holdTemp(Items.WIND_CHARGE);
+         }
+         if (this.windTotal - this.windTicks == this.launchAt) {
             this.launch(target);
          }
       }
@@ -1926,6 +2054,9 @@ public class Stagnated extends Monster {
    }
 
    private void launch(LivingEntity target) {
+      if (this.burstActive) {
+         this.playSound(ModSounds.BURST_ALERT, 3.0F, 1.0F);
+      }
       this.holdTemp(null);
       this.diving = true;
       this.smashing = target != null && !this.fleeing;
@@ -1977,12 +2108,15 @@ public class Stagnated extends Monster {
          this.setItemSlot(EquipmentSlot.MAINHAND, this.ethansMace());
       }
       this.fleeing = false;
-      if (!this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
+      if (!(stun && this.burstActive) && !this.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.NETHERITE_SWORD)) {
          this.startSwap(false);
       }
       if (smash && !this.smash(level, fall, stun) && (!stun || Tuning.STUN_WHIFF_FALL_DAMAGE)) {
          // The smash did nothing (a shield soaked it, or you dodged): the fall is its own to take. Stun slams skip this unless Tuning says otherwise.
          this.hurtServer(level, this.damageSources().fall(), Math.max(0.0F, (float)Math.ceil(fall - 3.0F)));
+      }
+      if (stun && this.burstActive) {
+         this.burstNext(level);
       }
    }
 
@@ -2540,9 +2674,19 @@ public class Stagnated extends Monster {
          this.xbClock = 0;
       } else if (event == 106) {
          this.pearlTicks = 14;
+      } else if (event >= 107 && event <= 109) {
+         // 107 the burst telegraph, 108 burnout (orange outline), 109 recovery.
+         this.xbKind = event - 93;
+         this.xbClock = 0;
+         this.exhausted = event == 108;
+      } else if (event == 110) {
+         // The follow-up slams of a burst start from the crouch (0.85 s into the clip).
+         this.xbKind = 14;
+         this.xbClock = 17;
       } else if (event == 97) {
          this.xbKind = -1;
          this.xbClock = -1;
+         this.exhausted = false;
       } else if (event == 98) {
          this.flying = true;
          this.flyTicks = 0;

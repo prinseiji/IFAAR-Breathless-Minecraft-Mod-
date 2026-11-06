@@ -33,6 +33,15 @@ Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
 ## Mace smash no longer goes through walls
 - The plain mace smash now needs a clear line from his body to the victim (feet, middle or eyes, `smashReaches`). A wall in between means no damage. The **stun slam still goes through walls** on purpose. Before, the smash hit everything in its radius with no line check, which is why you were hit through walls in normal fights.
 
+## Stun slam burst and burnout
+- A stun slam now has a chance (30% normal, 40% Hard, `BURST_CHANCE`) to become a **burst of three slams**. The telegraph is the new 2 s clip (mace out, crouch, wind charge raised at 1.83 s, thrown at 1.92 s) with the warning sound, an incoming line and his red outline. Each slam gets the alert sound. The 2nd and 3rd slams start from the crouch (about 1.15 s of delay each).
+- **Left eye:** during the burst the stock star picture turns in his left eye (new particle `eye_mark`) with red sparks. If it is off the eye, change the offsets in `burstFx` (same numbers as the parry rage eye).
+- **Burnout** after the third slam: 1.5 s burnout clip, a held pose, then the 1.125 s recovery clip. 5 s (4 s on Hard). Orange outline. He stands still and cannot attack, guard or **parry**, so mace hits land, and he takes 1.75x damage (`ELI_EXHAUST_TAKEN`).
+- Voice: Phase one incoming "Watch this, I'm finna lock in." / "Ready up those ender pearls."; exhausted "Hold up... give me a sec.." / "Man that was not worth it..". Phase two (enraged, or SLOTH on Hard) incoming: two laughs; exhausted "WEAK BODY" / "DAMNIT". Sound effects: `eli_burst_warning` (telegraph), `eli_burst_alert` (each slam), `eli_burst_burnout`.
+- **Tankier Elijah:** damage taken is multiplied by 0.8 normally and 0.65 on Hard (`ELI_TAKEN_NORMAL`, `ELI_TAKEN_HARD`).
+- New clips live in `BurstAnims.java` (converted from ElijahTheZenithNEW.bbmodel) so `StagnatedAnims.java` is untouched. `StagnatedModel.java` has three new cases (14, 15, 16).
+- Entity events: 107 telegraph, 108 burnout, 109 recovery, 110 follow-up slam.
+
 ## Voicelines
 - SLOTH's ten voice clips (converted from your mp4 files to mono Vorbis) are in the hard fight, one picked at random per moment, each with an on-screen caption:
   - **stab** (3 lines, at 3 s into the self-stab, as the sword turns): "You've outlasted your usefulness." / "I've been patient long enough." / "I will take it from here."

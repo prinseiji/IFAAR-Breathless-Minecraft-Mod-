@@ -19,6 +19,14 @@ public final class ModSounds {
    public static SoundEvent SLOTH_INJECT;
    public static SoundEvent SLOTH_GLITCH;
    /** SLOTH's voicelines in the hard fight: the stab, the start of his phase, the adrenaline shout (one of each group is picked). */
+   /** The stun slam burst: Elijah's lines (incoming and exhausted, phase one and two), the warning, the alert on every slam and the burnout. */
+   public static SoundEvent[] BURST_IN_P1 = new SoundEvent[2];
+   public static SoundEvent[] BURST_IN_P2 = new SoundEvent[2];
+   public static SoundEvent[] BURST_EX_P1 = new SoundEvent[2];
+   public static SoundEvent[] BURST_EX_P2 = new SoundEvent[2];
+   public static SoundEvent BURST_WARNING;
+   public static SoundEvent BURST_ALERT;
+   public static SoundEvent BURST_BURNOUT;
    public static SoundEvent[] HARD_VOICE_STAB = new SoundEvent[3];
    public static SoundEvent[] HARD_VOICE_START = new SoundEvent[4];
    public static SoundEvent[] HARD_VOICE_RAGE = new SoundEvent[3];
@@ -81,6 +89,15 @@ public final class ModSounds {
       SLOTH_STAB = reg("sloth_stab");
       SLOTH_INJECT = reg("sloth_inject");
       SLOTH_GLITCH = reg("sloth_glitch");
+      for (int i = 0; i < 2; i++) {
+         BURST_IN_P1[i] = reg("eli_burst_in_p1_" + (i + 1));
+         BURST_IN_P2[i] = reg("eli_burst_in_p2_" + (i + 1));
+         BURST_EX_P1[i] = reg("eli_burst_ex_p1_" + (i + 1));
+         BURST_EX_P2[i] = reg("eli_burst_ex_p2_" + (i + 1));
+      }
+      BURST_WARNING = reg("eli_burst_warning");
+      BURST_ALERT = reg("eli_burst_alert");
+      BURST_BURNOUT = reg("eli_burst_burnout");
       for (int i = 0; i < HARD_VOICE_STAB.length; i++) {
          HARD_VOICE_STAB[i] = reg("sloth_hard_stab_" + (i + 1));
       }

@@ -1287,5 +1287,93 @@
         "stream": false
       }
     ]
+  },
+  "eli_burst_in_p1_1": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_in_p1_1",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_in_p1_2": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_in_p1_2",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_in_p2_1": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_in_p2_1",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_in_p2_2": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_in_p2_2",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_ex_p1_1": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_ex_p1_1",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_ex_p1_2": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_ex_p1_2",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_ex_p2_1": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_ex_p2_1",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_ex_p2_2": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_ex_p2_2",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_warning": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_warning",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_alert": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_alert",
+        "stream": false
+      }
+    ]
+  },
+  "eli_burst_burnout": {
+    "sounds": [
+      {
+        "name": "breathless:eli_burst_burnout",
+        "stream": false
+      }
+    ]
   }
 }

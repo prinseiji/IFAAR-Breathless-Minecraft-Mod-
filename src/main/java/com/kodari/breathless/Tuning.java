@@ -548,4 +548,19 @@ public final class Tuning {
    public static final int HARD_SCULK_PER_TICK = 250;
    /** Blood wings appear when SLOTH takes over (false: from the start of a Hard fight). */
    public static final boolean HARD_WINGS_AT_TAKEOVER = true;
+
+   // Stun slam burst: three slams in a row (a 2 s telegraph, then a short crouch before each next one), then he is burnt out and takes extra damage.
+   public static final float BURST_CHANCE = 0.3F;
+   public static final float BURST_CHANCE_HARD = 0.4F;
+   public static final int BURST_SLAMS = 3;
+   public static final int BURST_WIND_TICKS = 40;
+   public static final int BURST_LAUNCH_AT = 38;
+   /** The follow-up slams start this far into the 2 s clip (0.85 s: the crouch). */
+   public static final int BURST_FOLLOW_CLOCK = 17;
+   public static final int EXHAUST_TICKS = 100;
+   public static final int EXHAUST_TICKS_HARD = 80;
+   // Elijah's damage taken: 0.8 = 20% less than normal. Burnt out, it is multiplied by ELI_EXHAUST_TAKEN.
+   public static final float ELI_TAKEN_NORMAL = 0.8F;
+   public static final float ELI_TAKEN_HARD = 0.65F;
+   public static final float ELI_EXHAUST_TAKEN = 1.75F;
 }
