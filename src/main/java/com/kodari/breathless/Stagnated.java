@@ -99,6 +99,8 @@ public class Stagnated extends Monster {
    private int tpCooldown;
    private int tpWind = -1;
    private net.minecraft.world.phys.Vec3 tpSpot;
+   /** True if the chosen landing spot has no ground (the target is up on a pillar): he drifts down slowly after landing. */
+   private boolean tpAir;
    private int stuckTicks;
    private Vec3 lastPos = Vec3.ZERO;
    /** Client-side clocks for the looping mining / placing animations, -1 when not doing it. */
@@ -1015,7 +1017,7 @@ public class Stagnated extends Monster {
          return;
       }
       double dist = this.distanceTo(target);
-      boolean cannotReach = (this.unreachable && dist > 5.0) || this.stuckTicks >= 80 || dist > 28.0;
+      boolean cannotReach = (this.unreachable && dist > 2.0) || this.stuckTicks >= 80 || dist > 28.0;
       if (!cannotReach) {
          this.tpStuck = Math.max(0, this.tpStuck - 2);
          return;
@@ -1024,7 +1026,13 @@ public class Stagnated extends Monster {
          return;
       }
       this.tpStuck = 0;
-      net.minecraft.world.phys.Vec3 spot = this.findTeleportSpot(level, target);
+      this.tpAir = false;
+      net.minecraft.world.phys.Vec3 spot = this.findTeleportSpot(level, target, true);
+      if (spot == null) {
+         // No ground next to the target (a pillar, a tower): land beside it in the air and drift down.
+         spot = this.findTeleportSpot(level, target, false);
+         this.tpAir = spot != null;
+      }
       if (spot == null) {
          this.tpCooldown = 100;
          return;
@@ -1040,7 +1048,7 @@ public class Stagnated extends Monster {
       net.minecraft.world.phys.Vec3 spot = this.tpSpot;
       this.tpSpot = null;
       this.tpCooldown = 160;
-      if (spot == null || !this.spotIsFree(level, spot.x, spot.y, spot.z)) {
+      if (spot == null || !this.spotIsFree(level, spot.x, spot.y, spot.z, !this.tpAir)) {
          return;
       }
       level.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.4, 0.9, 0.4, 0.7);
@@ -1049,36 +1057,41 @@ public class Stagnated extends Monster {
       this.getNavigation().stop();
       this.stuckTicks = 0;
       this.unreachable = false;
+      if (this.tpAir) {
+         this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 100, 0, false, false));
+         this.fallDistance = 0.0;
+      }
       level.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.4, 0.9, 0.4, 0.7);
       this.playSound(net.minecraft.sounds.SoundEvents.PLAYER_TELEPORT, 1.2F, 1.0F);
    }
 
    /** Room for his body, solid ground under it and no liquid. */
-   private boolean spotIsFree(ServerLevel level, double x, double y, double z) {
+   private boolean spotIsFree(ServerLevel level, double x, double y, double z, boolean needGround) {
       net.minecraft.world.phys.AABB box = this.getDimensions(this.getPose()).makeBoundingBox(x, y, z);
       if (!level.noCollision(this, box)) {
          return false;
       }
       net.minecraft.core.BlockPos feet = net.minecraft.core.BlockPos.containing(x, y, z);
       net.minecraft.core.BlockPos below = feet.below();
-      return level.getFluidState(feet).isEmpty()
-         && level.getFluidState(below).isEmpty()
-         && level.getBlockState(below).isFaceSturdy(level, below, net.minecraft.core.Direction.UP);
+      if (!level.getFluidState(feet).isEmpty() || !level.getFluidState(below).isEmpty()) {
+         return false;
+      }
+      return !needGround || level.getBlockState(below).isFaceSturdy(level, below, net.minecraft.core.Direction.UP);
    }
 
-   /** A free spot 3 to 8 blocks from the target that has a clear line to it, nearest ring first, random within the ring. Null if there is none. */
-   private net.minecraft.world.phys.Vec3 findTeleportSpot(ServerLevel level, LivingEntity target) {
+   /** A free spot 2 to 8 blocks from the target that has a clear line to it, nearest ring first, random within the ring. Null if there is none. */
+   private net.minecraft.world.phys.Vec3 findTeleportSpot(ServerLevel level, LivingEntity target, boolean needGround) {
       net.minecraft.world.phys.Vec3 targetEye = target.getEyePosition();
       int baseY = net.minecraft.util.Mth.floor(target.getY());
-      for (int radius : new int[] {3, 4, 5, 6, 8}) {
+      for (int radius : needGround ? new int[] {2, 3, 4, 5, 6, 8} : new int[] {2, 3, 4}) {
          java.util.List<net.minecraft.world.phys.Vec3> spots = new java.util.ArrayList<>();
          for (int a = 0; a < 12; a++) {
             double angle = (a + (radius % 2) * 0.5) * (Math.PI / 6.0);
             double x = net.minecraft.util.Mth.floor(target.getX() + Math.cos(angle) * radius) + 0.5;
             double z = net.minecraft.util.Mth.floor(target.getZ() + Math.sin(angle) * radius) + 0.5;
-            for (int dy : new int[] {0, 1, -1, 2, -2, 3, -3, 4, -4}) {
+            for (int dy : needGround ? new int[] {0, 1, -1, 2, -2, 3, -3, 4, -4} : new int[] {0, -1, 1}) {
                double y = baseY + dy;
-               if (!this.spotIsFree(level, x, y, z)) {
+               if (!this.spotIsFree(level, x, y, z, needGround)) {
                   continue;
                }
                net.minecraft.world.phys.Vec3 eye = new net.minecraft.world.phys.Vec3(x, y + this.getEyeHeight(), z);

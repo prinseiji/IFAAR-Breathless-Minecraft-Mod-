@@ -21,6 +21,8 @@ Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
 ## Anti-stuck teleport (every fight, not only hard mode)
 - If Elijah or SLOTH cannot reach the target (no path for about 3 s, stuck in place for 4 s, or more than 28 blocks away) he holds an ender pearl in his left hand for 0.6 s, then teleports next to the target. Portal particles and the teleport sound play where he leaves and where he lands.
 - The landing spot is free, on solid ground, 3 to 8 blocks from the target (nearest ring first) and in its line of sight, so he never lands inside a wall or behind one. If the target is sealed in with no such spot, he does not teleport and checks again 5 s later.
+- Fix after testing: the stuck timer used to ignore him when he was within 5 blocks of an unreachable target (standing right outside your box). It now counts at any distance beyond melee. Landing spots now start 2 blocks from the target, so small rooms work.
+- Pillars: if the target stands where there is no ground next to it, he lands beside it in the air and gets Slow Falling for 5 s so he drifts down and can still fight.
 - 8 s cooldown after a teleport. It never starts during the hard-mode stab, injection or charge, or any other action that already stops him moving. Code: `tickTeleport`, `findTeleportSpot`, `firePearlTeleport` in `Stagnated.java`; entity event 106 shows the pearl on the client.
 - Numbers to tune: 60 ticks (3 s) stuck, 28 blocks, 160 tick cooldown.
 
