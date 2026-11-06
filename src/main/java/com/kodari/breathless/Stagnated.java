@@ -97,6 +97,7 @@ public class Stagnated extends Monster {
    // Anti-stuck teleport: ticks spent unable to reach the target, cooldown, wind-up ticks left (-1 = none) and the spot he will appear at.
    private ServerPlayer fightTarget;
    private int tpStuck;
+   private int tpIdle;
    private int tpCooldown;
    private int tpWind = -1;
    private net.minecraft.world.phys.Vec3 tpSpot;
@@ -1037,27 +1038,28 @@ public class Stagnated extends Monster {
          return;
       }
       double dist = this.distanceTo(target);
-      boolean cannotReach = (this.unreachable && dist > 2.0) || this.stuckTicks >= 80 || dist > 28.0;
+      // Time since he last attacked (a smash, a combo, the crossbow or a parry): after about 8 s of nothing he pearls to the player.
+      if (this.action != 0 || this.xbState != XB_NONE || this.comboWind > 0 || this.maceParryTicks >= 0) {
+         this.tpIdle = 0;
+      } else if (this.tpIdle < 1000) {
+         this.tpIdle++;
+      }
+      boolean cannotReach = (this.unreachable && dist > 2.0) || this.stuckTicks >= 80 || dist > 24.0
+         || (target.getY() - this.getY() > 3.5 && dist > 2.0) || (this.tpIdle >= 160 && dist > 6.0);
       if (!cannotReach) {
          this.tpStuck = Math.max(0, this.tpStuck - 2);
          return;
       }
-      int needed = dist > 48.0 ? 20 : 60;
+      int needed = this.tpIdle >= 160 ? 10 : (dist > 40.0 ? 15 : (dist > 24.0 ? 40 : 60));
       if (this.tpStuck < needed) {
          this.tpStuck++;
       }
       // The 3 s keep counting while he shoots or smashes; the windup starts as soon as he is between attacks.
-      if (this.tpStuck < needed || this.tpCooldown > 0 || this.isImmobile()) {
+      if (this.tpStuck < needed || this.tpCooldown > 0 || this.tpBusy()) {
          return;
       }
       this.tpStuck = 0;
-      this.tpAir = false;
-      net.minecraft.world.phys.Vec3 spot = this.findTeleportSpot(level, target, true);
-      if (spot == null) {
-         // No ground next to the target (a pillar, a tower): land beside it in the air and drift down.
-         spot = this.findTeleportSpot(level, target, false);
-         this.tpAir = spot != null;
-      }
+      net.minecraft.world.phys.Vec3 spot = this.pickTeleportSpot(level, target);
       if (spot == null) {
          this.tpCooldown = 100;
          return;
@@ -1069,22 +1071,48 @@ public class Stagnated extends Monster {
       level.broadcastEntityEvent(this, (byte)106);
    }
 
+   /**
+    * Where he lands: ground beside the target first, then in the air beside it (pillars), and as a last resort on the target's own spot, so there is nearly
+    * always somewhere. Sets tpAir when the spot has no ground under it.
+    */
+   private net.minecraft.world.phys.Vec3 pickTeleportSpot(ServerLevel level, LivingEntity target) {
+      this.tpAir = false;
+      net.minecraft.world.phys.Vec3 spot = this.findTeleportSpot(level, target, true);
+      if (spot == null) {
+         spot = this.findTeleportSpot(level, target, false);
+         this.tpAir = spot != null;
+      }
+      if (spot == null) {
+         net.minecraft.world.phys.Vec3 own = target.position();
+         if (this.spotIsFree(level, own.x, own.y, own.z, false)) {
+            spot = own;
+            this.tpAir = !this.spotIsFree(level, own.x, own.y, own.z, true);
+         }
+      }
+      return spot;
+   }
+
+   /** Anything that should not be cut off by the pearl (he may keep shooting, which is not in this list). */
+   private boolean tpBusy() {
+      return this.spotTicks > 0 || this.emergeTicks > 0 || this.armoringTicks > 0 || this.shieldTicks > 0 || this.unarmTicks > 0 || this.maceParryTicks >= 0
+         || this.action != 0 || this.windTicks > 0 || this.diving || this.swapTicks > 0 || this.eatTicks > 0 || this.enrageTicks > 0 || this.hardTicks >= 0
+         || this.comboWind > 0 || this.parryStagger > 0;
+   }
+
    private void firePearlTeleport(ServerLevel level) {
       net.minecraft.world.phys.Vec3 spot = this.tpSpot;
       this.tpSpot = null;
-      this.tpCooldown = 160;
+      this.tpCooldown = 100;
+      this.tpIdle = 0;
       LivingEntity target = this.getTarget();
       if (target != null) {
          // The target has moved during the windup: look again.
-         net.minecraft.world.phys.Vec3 fresh = this.findTeleportSpot(level, target, true);
-         boolean freshAir = false;
-         if (fresh == null) {
-            fresh = this.findTeleportSpot(level, target, false);
-            freshAir = fresh != null;
-         }
+         boolean oldAir = this.tpAir;
+         net.minecraft.world.phys.Vec3 fresh = this.pickTeleportSpot(level, target);
          if (fresh != null) {
             spot = fresh;
-            this.tpAir = freshAir;
+         } else {
+            this.tpAir = oldAir;
          }
       }
       if (spot == null || !this.spotIsFree(level, spot.x, spot.y, spot.z, !this.tpAir)) {
