@@ -95,6 +95,7 @@ public class Stagnated extends Monster {
    /** Can it walk to its target? Refreshed every 5 ticks. Also how long it has been standing still while chasing. */
    private boolean unreachable;
    // Anti-stuck teleport: ticks spent unable to reach the target, cooldown, wind-up ticks left (-1 = none) and the spot he will appear at.
+   private ServerPlayer fightTarget;
    private int tpStuck;
    private int tpCooldown;
    private int tpWind = -1;
@@ -305,6 +306,10 @@ public class Stagnated extends Monster {
    /** How close a target must be before the Stagnated notices it. */
    private boolean canSense(LivingEntity target) {
       if (target == this.wardenGrudge && target.isAlive()) {
+         return true;
+      }
+      // Elijah does not lose the player he is fighting (the regular Stagnated still does): while the fight is on he keeps sensing them at any distance and height.
+      if (this.isElijah() && target == this.getTarget() && target instanceof Player fighting && fighting.isAlive() && !fighting.isCreative() && !fighting.isSpectator()) {
          return true;
       }
       if (target instanceof Stagnated || target instanceof Warden || !target.isAlive()) {
@@ -1002,6 +1007,21 @@ public class Stagnated extends Monster {
          this.tpCooldown--;
       }
       LivingEntity target = this.getTarget();
+      if (this.isElijah()) {
+         // Insistent: the target goals drop a player who is out of their follow range, so Elijah puts the player he was fighting back as his target.
+         // super.setTarget on purpose: setTarget plays the spotted pose and sound again when the target comes back from nothing.
+         if (target instanceof ServerPlayer fighting && fighting.isAlive() && !fighting.isCreative() && !fighting.isSpectator()) {
+            this.fightTarget = fighting;
+         } else if (target == null && this.fightTarget != null) {
+            ServerPlayer back = this.fightTarget;
+            if (back.isAlive() && !back.isRemoved() && !back.isCreative() && !back.isSpectator() && back.level() == this.level()) {
+               super.setTarget(back);
+               target = back;
+            } else {
+               this.fightTarget = null;
+            }
+         }
+      }
       if (this.tpWind >= 0) {
          if (target == null || !target.isAlive()) {
             this.tpWind = -1;
@@ -1012,7 +1032,7 @@ public class Stagnated extends Monster {
          }
          return;
       }
-      if (target == null || !target.isAlive() || this.isImmobile() || this.hardTicks >= 0) {
+      if (target == null || !target.isAlive() || this.hardTicks >= 0) {
          this.tpStuck = 0;
          return;
       }
@@ -1022,7 +1042,12 @@ public class Stagnated extends Monster {
          this.tpStuck = Math.max(0, this.tpStuck - 2);
          return;
       }
-      if (++this.tpStuck < 60 || this.tpCooldown > 0) {
+      int needed = dist > 48.0 ? 20 : 60;
+      if (this.tpStuck < needed) {
+         this.tpStuck++;
+      }
+      // The 3 s keep counting while he shoots or smashes; the windup starts as soon as he is between attacks.
+      if (this.tpStuck < needed || this.tpCooldown > 0 || this.isImmobile()) {
          return;
       }
       this.tpStuck = 0;
@@ -1048,12 +1073,32 @@ public class Stagnated extends Monster {
       net.minecraft.world.phys.Vec3 spot = this.tpSpot;
       this.tpSpot = null;
       this.tpCooldown = 160;
+      LivingEntity target = this.getTarget();
+      if (target != null) {
+         // The target has moved during the windup: look again.
+         net.minecraft.world.phys.Vec3 fresh = this.findTeleportSpot(level, target, true);
+         boolean freshAir = false;
+         if (fresh == null) {
+            fresh = this.findTeleportSpot(level, target, false);
+            freshAir = fresh != null;
+         }
+         if (fresh != null) {
+            spot = fresh;
+            this.tpAir = freshAir;
+         }
+      }
       if (spot == null || !this.spotIsFree(level, spot.x, spot.y, spot.z, !this.tpAir)) {
+         // Nowhere to land: the pearl fizzles (smoke and a hiss) and he tries again soon.
+         level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 1.0, this.getZ(), 14, 0.3, 0.5, 0.3, 0.02);
+         this.playSound(net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH, 1.0F, 1.0F);
+         this.tpCooldown = 40;
          return;
       }
       level.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + 1.0, this.getZ(), 50, 0.4, 0.9, 0.4, 0.7);
       this.playSound(net.minecraft.sounds.SoundEvents.PLAYER_TELEPORT, 1.2F, 1.0F);
-      this.randomTeleport(spot.x, spot.y, spot.z, false);
+      if (!this.randomTeleport(spot.x, spot.y, spot.z, false)) {
+         this.setPos(spot.x, spot.y, spot.z);
+      }
       this.getNavigation().stop();
       this.stuckTicks = 0;
       this.unreachable = false;
@@ -1083,12 +1128,15 @@ public class Stagnated extends Monster {
    private net.minecraft.world.phys.Vec3 findTeleportSpot(ServerLevel level, LivingEntity target, boolean needGround) {
       net.minecraft.world.phys.Vec3 targetEye = target.getEyePosition();
       int baseY = net.minecraft.util.Mth.floor(target.getY());
-      for (int radius : needGround ? new int[] {2, 3, 4, 5, 6, 8} : new int[] {2, 3, 4}) {
+      for (int radius : needGround ? new int[] {1, 2, 3, 4, 5, 6, 8} : new int[] {2, 3, 4}) {
          java.util.List<net.minecraft.world.phys.Vec3> spots = new java.util.ArrayList<>();
          for (int a = 0; a < 12; a++) {
             double angle = (a + (radius % 2) * 0.5) * (Math.PI / 6.0);
             double x = net.minecraft.util.Mth.floor(target.getX() + Math.cos(angle) * radius) + 0.5;
             double z = net.minecraft.util.Mth.floor(target.getZ() + Math.sin(angle) * radius) + 0.5;
+            if (Math.hypot(x - target.getX(), z - target.getZ()) < 1.3) {
+               continue;
+            }
             for (int dy : needGround ? new int[] {0, 1, -1, 2, -2, 3, -3, 4, -4} : new int[] {0, -1, 1}) {
                double y = baseY + dy;
                if (!this.spotIsFree(level, x, y, z, needGround)) {
@@ -3768,6 +3816,7 @@ public class Stagnated extends Monster {
 
    @Override
    public boolean removeWhenFarAway(double distance) {
-      return true;
+      // Elijah is a boss: he stays when the player runs far away.
+      return !this.isElijah();
    }
 }
