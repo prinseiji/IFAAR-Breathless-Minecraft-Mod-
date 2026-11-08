@@ -325,7 +325,7 @@ public class Stagnated extends Monster {
       if (this.isElijah() && target == this.getTarget() && target instanceof Player fighting && fighting.isAlive() && !fighting.isCreative() && !fighting.isSpectator()) {
          return true;
       }
-      if (target instanceof Stagnated || target instanceof Warden || !target.isAlive()) {
+      if (target instanceof Stagnated || target instanceof Anathema || target instanceof Warden || !target.isAlive()) {
          return false;
       }
       if (this.emergeTicks > 0 || Math.abs(target.getY() - this.getY()) > Tuning.STAGNATED_VERTICAL) {

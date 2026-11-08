@@ -20,6 +20,10 @@ public final class ModSounds {
    public static SoundEvent SLOTH_GLITCH;
    /** SLOTH's voicelines in the hard fight: the stab, the start of his phase, the adrenaline shout (one of each group is picked). */
    /** The stun slam burst: Elijah's lines (incoming and exhausted, phase one and two), the warning, the alert on every slam and the burnout. */
+   /** The Sculk Anathema: idle, hit and death sounds. */
+   public static SoundEvent[] ANATHEMA_IDLE = new SoundEvent[2];
+   public static SoundEvent[] ANATHEMA_HIT = new SoundEvent[3];
+   public static SoundEvent ANATHEMA_DEATH;
    public static SoundEvent[] BURST_IN_P1 = new SoundEvent[2];
    public static SoundEvent[] BURST_IN_P2 = new SoundEvent[2];
    public static SoundEvent[] BURST_EX_P1 = new SoundEvent[2];
@@ -89,6 +93,13 @@ public final class ModSounds {
       SLOTH_STAB = reg("sloth_stab");
       SLOTH_INJECT = reg("sloth_inject");
       SLOTH_GLITCH = reg("sloth_glitch");
+      for (int i = 0; i < ANATHEMA_IDLE.length; i++) {
+         ANATHEMA_IDLE[i] = reg("anathema_idle_" + (i + 1));
+      }
+      for (int i = 0; i < ANATHEMA_HIT.length; i++) {
+         ANATHEMA_HIT[i] = reg("anathema_hit_" + (i + 1));
+      }
+      ANATHEMA_DEATH = reg("anathema_death");
       for (int i = 0; i < 2; i++) {
          BURST_IN_P1[i] = reg("eli_burst_in_p1_" + (i + 1));
          BURST_IN_P2[i] = reg("eli_burst_in_p2_" + (i + 1));

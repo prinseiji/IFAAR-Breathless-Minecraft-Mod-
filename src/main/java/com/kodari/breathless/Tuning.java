@@ -563,4 +563,9 @@ public final class Tuning {
    public static final float ELI_TAKEN_NORMAL = 0.8F;
    public static final float ELI_TAKEN_HARD = 0.65F;
    public static final float ELI_EXHAUST_TAKEN = 1.75F;
+
+   // Sculk Anathema (the entity that replaced the Nidus block).
+   public static final float ANATHEMA_HEALTH = 30.0F;
+   /** Death clip 3 s plus a held pose of 1 s, then it bursts. */
+   public static final int ANATHEMA_DEATH_TICKS = 80;
 }

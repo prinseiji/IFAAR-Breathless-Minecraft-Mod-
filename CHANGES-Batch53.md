@@ -42,6 +42,16 @@ Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
 - New clips live in `BurstAnims.java` (converted from ElijahTheZenithNEW.bbmodel) so `StagnatedAnims.java` is untouched. `StagnatedModel.java` has three new cases (14, 15, 16).
 - Entity events: 107 telegraph, 108 burnout, 109 recovery, 110 follow-up slam.
 
+## Sculk Anathema is now an entity (batch 1)
+- New entity `Anathema` (model, renderer, clips from Anathema.bbmodel: idle, hit, death, death pose). It stands still, 30 health (`ANATHEMA_HEALTH`), cannot be pushed, never despawns and is immune to the spores.
+- The old block `sculk_nidus` is now only a marker: the caves and the old pocket feature still place it, and the first time it ticks it turns into the entity (facing the same way, keeping its wake count). Nothing in the cave files had to change.
+- It keeps the old behaviour: heartbeat, spore eyes drifting around it and waking Stagnateds for the nearest player underground, up to `NIDUS_WAKES`, then it goes quiet. Stagnateds do not attack it.
+- Dying: the 3 s death clip (its own hit at 0.25 s), then the held pose for 1 s (`ANATHEMA_DEATH_TICKS` = 80), then it bursts into sculk particles with the sound of the rotting heart burning. It does not fall over.
+- Drops **three** Rotting Hearts (`loot_table/entities/anathema.json`) and the same experience as before. The old block loot table is left in place.
+- Sounds: `anathema_idle_1/2`, `anathema_hit_1/2/3`, `anathema_death`.
+- Needs one line added to `lang/en_us.json`: `"entity.breathless.anathema": "Sculk Anathema"`.
+- Not done yet: the bigger caves (batch 2). The dead texture is a copy of the alive one (`anathema_dead.png`): replace that file with your dead version.
+
 ## Voicelines
 - SLOTH's ten voice clips (converted from your mp4 files to mono Vorbis) are in the hard fight, one picked at random per moment, each with an on-screen caption:
   - **stab** (3 lines, at 3 s into the self-stab, as the sword turns): "You've outlasted your usefulness." / "I've been patient long enough." / "I will take it from here."

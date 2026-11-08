@@ -1375,5 +1375,53 @@
         "stream": false
       }
     ]
+  },
+  "anathema_idle_1": {
+    "sounds": [
+      {
+        "name": "breathless:anathema_idle_1",
+        "stream": false
+      }
+    ]
+  },
+  "anathema_idle_2": {
+    "sounds": [
+      {
+        "name": "breathless:anathema_idle_2",
+        "stream": false
+      }
+    ]
+  },
+  "anathema_hit_1": {
+    "sounds": [
+      {
+        "name": "breathless:anathema_hit_1",
+        "stream": false
+      }
+    ]
+  },
+  "anathema_hit_2": {
+    "sounds": [
+      {
+        "name": "breathless:anathema_hit_2",
+        "stream": false
+      }
+    ]
+  },
+  "anathema_hit_3": {
+    "sounds": [
+      {
+        "name": "breathless:anathema_hit_3",
+        "stream": false
+      }
+    ]
+  },
+  "anathema_death": {
+    "sounds": [
+      {
+        "name": "breathless:anathema_death",
+        "stream": false
+      }
+    ]
   }
 }

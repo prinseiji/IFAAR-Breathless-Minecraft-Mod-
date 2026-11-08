@@ -10,6 +10,7 @@ import net.minecraft.world.entity.MobCategory;
 
 public final class ModEntities {
    public static EntityType<Stagnated> STAGNATED;
+   public static EntityType<Anathema> ANATHEMA;
 
    private ModEntities() {
    }
@@ -19,5 +20,9 @@ public final class ModEntities {
       STAGNATED = Registry.register(BuiltInRegistries.ENTITY_TYPE, key,
          EntityType.Builder.of(Stagnated::new, MobCategory.MONSTER).sized(0.6F, 1.95F).eyeHeight(1.7F).clientTrackingRange(8).build(key));
       FabricDefaultAttributeRegistry.register(STAGNATED, Stagnated.createAttributes());
+      ResourceKey<EntityType<?>> anathemaKey = ResourceKey.create(Registries.ENTITY_TYPE, Breathless.id("anathema"));
+      ANATHEMA = Registry.register(BuiltInRegistries.ENTITY_TYPE, anathemaKey,
+         EntityType.Builder.of(Anathema::new, MobCategory.MISC).sized(1.6F, 2.6F).eyeHeight(2.0F).clientTrackingRange(10).build(anathemaKey));
+      FabricDefaultAttributeRegistry.register(ANATHEMA, Anathema.createAttributes());
    }
 }

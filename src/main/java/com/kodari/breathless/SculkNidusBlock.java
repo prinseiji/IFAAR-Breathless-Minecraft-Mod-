@@ -68,33 +68,24 @@ public class SculkNidusBlock extends Block {
 
    @Override
    protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-      level.scheduleTick(pos, this, BEAT);
+      this.convert(state, level, pos);
+   }
+
+   /** The block is now only a marker (the caves still contain it): the first time it ticks it becomes the Sculk Anathema entity, facing the way the block did. */
+   private void convert(BlockState state, ServerLevel level, BlockPos pos) {
+      Anathema anathema = ModEntities.ANATHEMA.create(level, net.minecraft.world.entity.EntitySpawnReason.STRUCTURE);
+      if (anathema == null) {
+         return;
+      }
+      anathema.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, state.getValue(FACING).toYRot(), 0.0F);
+      anathema.setWakes(state.getValue(WAKES));
+      level.removeBlock(pos, false);
+      level.addFreshEntity(anathema);
    }
 
    @Override
    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-      level.scheduleTick(pos, this, BEAT);
-      Vec3 centre = Vec3.atCenterOf(pos);
-      ServerPlayer nearest = null;
-      double best = Tuning.NIDUS_RANGE * Tuning.NIDUS_RANGE;
-      for (ServerPlayer player : level.players()) {
-         double d = player.distanceToSqr(centre);
-         if (d < best) {
-            best = d;
-            nearest = player;
-         }
-      }
-      if (nearest == null) {
-         return;
-      }
-      level.playSound(null, pos, ModSounds.NIDUS_HEARTBEAT, SoundSource.BLOCKS, 1.2F, 1.0F);
-      int wakes = state.getValue(WAKES);
-      if (wakes >= Tuning.NIDUS_WAKES || nearest.isCreative() || nearest.isSpectator() || !Masks.isUnderground(nearest)) {
-         return;
-      }
-      if (random.nextInt(Tuning.NIDUS_SPAWN_ODDS) == 0 && StagnatedSpawner.trySpawn(nearest)) {
-         level.setBlock(pos, state.setValue(WAKES, wakes + 1), 3);
-      }
+      this.convert(state, level, pos);
    }
 
    /** Spore eyes drifting around it, not too many. (The game calls this now and then for blocks near the player.) */
