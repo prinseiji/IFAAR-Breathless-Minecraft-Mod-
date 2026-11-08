@@ -21,6 +21,8 @@ public class AnathemaModel extends EntityModel<AnathemaRenderState> {
 
    public AnathemaModel(ModelPart root) {
       super(root);
+      ModelPart m_stalkfoldy = root.getChild("stalkfoldy");
+      this.bones.put("stalkfoldy", m_stalkfoldy);
       ModelPart m_waist = root.getChild("waist");
       this.bones.put("waist", m_waist);
       ModelPart m_head = m_waist.getChild("head");
@@ -74,6 +76,10 @@ public class AnathemaModel extends EntityModel<AnathemaRenderState> {
    public static LayerDefinition createBodyLayer() {
       MeshDefinition mesh = new MeshDefinition();
       PartDefinition root = mesh.getRoot();
+      PartDefinition g_stalkfoldy = root.addOrReplaceChild("stalkfoldy", CubeListBuilder.create(), PartPose.offsetAndRotation(-3F, 16F, -1F, 0F, 0F, 0F));
+      g_stalkfoldy.addOrReplaceChild("stalkfoldy_c1", CubeListBuilder.create().texOffs(34, 34).addBox(0F, 4F, -13F, 5F, 24F, 6F, new CubeDeformation(0F)), PartPose.offsetAndRotation(6F, 4F, 11F, 0F, 0F, -3.14159F));
+      g_stalkfoldy.addOrReplaceChild("stalkfoldy_c2", CubeListBuilder.create().texOffs(16, 33).addBox(0F, 4F, -13F, 6F, 24F, 7F, new CubeDeformation(0F)), PartPose.offsetAndRotation(6F, 9F, 11F, 0F, 0F, -3.14159F));
+      g_stalkfoldy.addOrReplaceChild("stalkfoldy_c3", CubeListBuilder.create().texOffs(19, 33).addBox(0F, 4F, -13F, 6F, 24F, 7F, new CubeDeformation(0F)), PartPose.offsetAndRotation(6F, 12F, 11F, 0F, 0F, -3.14159F));
       PartDefinition g_waist = root.addOrReplaceChild("waist", CubeListBuilder.create(), PartPose.offsetAndRotation(0F, 11F, 0F, 0F, 0F, 0F));
       PartDefinition g_head = g_waist.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.offsetAndRotation(-3F, 5F, -1F, -0.3098F, 1.41423F, -0.666F));
       g_head.addOrReplaceChild("head_c1", CubeListBuilder.create().texOffs(5, 3).addBox(-2F, -31F, -1F, 6F, 5F, 5F, new CubeDeformation(0F)), PartPose.offsetAndRotation(0F, 24F, 0F, 0F, 0F, 0F));
@@ -112,12 +118,12 @@ public class AnathemaModel extends EntityModel<AnathemaRenderState> {
       g_right_arm2.addOrReplaceChild("right_arm2_c1", CubeListBuilder.create().texOffs(38, 32).addBox(-8F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0F)), PartPose.offsetAndRotation(5F, 22F, 0F, 0F, 0F, 0F));
       g_right_arm2.addOrReplaceChild("right_arm2_c2", CubeListBuilder.create().texOffs(38, 48).addBox(-8F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(5F, 22F, 0F, 0F, 0F, 0F));
       PartDefinition g_left_arm = g_waist.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.offsetAndRotation(3F, -18F, 2F, 0.54078F, 0.17626F, -2.14809F));
-      g_left_arm.addOrReplaceChild("left_arm_c1", CubeListBuilder.create().texOffs(32, 48).addBox(4F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
-      g_left_arm.addOrReplaceChild("left_arm_c2", CubeListBuilder.create().texOffs(48, 48).addBox(4F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
-      PartDefinition g_left_arm2 = g_waist.addOrReplaceChild("left_arm2", CubeListBuilder.create(), PartPose.offsetAndRotation(3F, -17F, -4F, -0.32797F, 0.09072F, -2.01785F));
+      g_left_arm.addOrReplaceChild("left_arm_c1", CubeListBuilder.create().texOffs(36, 36).addBox(4F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
+      g_left_arm.addOrReplaceChild("left_arm_c2", CubeListBuilder.create().texOffs(39, 35).addBox(4F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
+      PartDefinition g_left_arm2 = g_waist.addOrReplaceChild("left_arm2", CubeListBuilder.create(), PartPose.offsetAndRotation(4F, -17F, -3F, -0.6334F, 0.09072F, -2.01785F));
       g_left_arm2.addOrReplaceChild("left_arm2_c1", CubeListBuilder.create().texOffs(32, 48).addBox(4F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
-      g_left_arm2.addOrReplaceChild("left_arm2_c2", CubeListBuilder.create().texOffs(48, 48).addBox(4F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
-      PartDefinition g_left_arm3 = g_waist.addOrReplaceChild("left_arm3", CubeListBuilder.create(), PartPose.offsetAndRotation(12F, -21F, -7F, -0.33981F, 0.00448F, -2.2654F));
+      g_left_arm2.addOrReplaceChild("left_arm2_c2", CubeListBuilder.create().texOffs(34, 36).addBox(4F, -24F, -2F, 4F, 12F, 4F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
+      PartDefinition g_left_arm3 = g_waist.addOrReplaceChild("left_arm3", CubeListBuilder.create(), PartPose.offsetAndRotation(12F, -20F, -8F, -0.33981F, 0.00448F, -2.2654F));
       g_left_arm3.addOrReplaceChild("left_arm3_c1", CubeListBuilder.create().texOffs(36, 51).addBox(5F, -24F, -1F, 2F, 12F, 1F, new CubeDeformation(0F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
       g_left_arm3.addOrReplaceChild("left_arm3_c2", CubeListBuilder.create().texOffs(52, 51).addBox(5F, -24F, -1F, 2F, 12F, 1F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(-5F, 22F, 0F, 0F, 0F, 0F));
       PartDefinition g_root = g_waist.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offsetAndRotation(6F, 11F, -7F, -0.51486F, 0.28285F, -1.38166F));
