@@ -24,6 +24,7 @@ public final class ModSounds {
    public static SoundEvent[] ANATHEMA_IDLE = new SoundEvent[2];
    public static SoundEvent[] ANATHEMA_HIT = new SoundEvent[3];
    public static SoundEvent ANATHEMA_DEATH;
+   public static SoundEvent ANATHEMA_BURST;
    public static SoundEvent[] BURST_IN_P1 = new SoundEvent[2];
    public static SoundEvent[] BURST_IN_P2 = new SoundEvent[2];
    public static SoundEvent[] BURST_EX_P1 = new SoundEvent[2];
@@ -100,6 +101,7 @@ public final class ModSounds {
          ANATHEMA_HIT[i] = reg("anathema_hit_" + (i + 1));
       }
       ANATHEMA_DEATH = reg("anathema_death");
+      ANATHEMA_BURST = reg("anathema_burst");
       for (int i = 0; i < 2; i++) {
          BURST_IN_P1[i] = reg("eli_burst_in_p1_" + (i + 1));
          BURST_IN_P2[i] = reg("eli_burst_in_p2_" + (i + 1));

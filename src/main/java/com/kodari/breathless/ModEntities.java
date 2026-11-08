@@ -22,7 +22,7 @@ public final class ModEntities {
       FabricDefaultAttributeRegistry.register(STAGNATED, Stagnated.createAttributes());
       ResourceKey<EntityType<?>> anathemaKey = ResourceKey.create(Registries.ENTITY_TYPE, Breathless.id("anathema"));
       ANATHEMA = Registry.register(BuiltInRegistries.ENTITY_TYPE, anathemaKey,
-         EntityType.Builder.of(Anathema::new, MobCategory.MISC).sized(1.6F, 2.6F).eyeHeight(2.0F).clientTrackingRange(10).build(anathemaKey));
+         EntityType.Builder.of(Anathema::new, MobCategory.MISC).sized(1.2F, 2.0F).eyeHeight(1.7F).clientTrackingRange(10).build(anathemaKey));
       FabricDefaultAttributeRegistry.register(ANATHEMA, Anathema.createAttributes());
    }
 }

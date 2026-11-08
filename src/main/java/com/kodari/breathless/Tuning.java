@@ -568,4 +568,6 @@ public final class Tuning {
    public static final float ANATHEMA_HEALTH = 30.0F;
    /** Death clip 3 s plus a held pose of 1 s, then it bursts. */
    public static final int ANATHEMA_DEATH_TICKS = 80;
+   /** How much bigger than the model it is drawn and how big its hitbox is (1.0 = as modelled). */
+   public static final double ANATHEMA_SCALE = 1.75;
 }

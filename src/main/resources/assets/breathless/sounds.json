@@ -1423,5 +1423,13 @@
         "stream": false
       }
     ]
+  },
+  "anathema_burst": {
+    "sounds": [
+      {
+        "name": "breathless:anathema_burst",
+        "stream": false
+      }
+    ]
   }
 }

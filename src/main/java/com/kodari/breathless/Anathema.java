@@ -38,6 +38,7 @@ public class Anathema extends Mob {
       return Mob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, Tuning.ANATHEMA_HEALTH)
          .add(Attributes.MOVEMENT_SPEED, 0.0)
+         .add(Attributes.SCALE, Tuning.ANATHEMA_SCALE)
          .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
    }
 
@@ -115,12 +116,21 @@ public class Anathema extends Mob {
    @Override
    protected void tickDeath() {
       this.deathTime++;
+      if (this.level() instanceof ServerLevel dying && this.deathTime % 2 == 0 && this.deathTime < Tuning.ANATHEMA_DEATH_TICKS) {
+         // It crumbles while the death clip plays: sculk chips and the floating spore eyes drifting off it.
+         double h = this.getBbHeight();
+         dying.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SCULK.defaultBlockState()), this.getX(), this.getY() + h * 0.5, this.getZ(), 8, this.getBbWidth() * 0.4, h * 0.35, this.getBbWidth() * 0.4, 0.05);
+         dying.sendParticles(ModParticles.SPORE_EYE, this.getX(), this.getY() + h * 0.5, this.getZ(), 5, this.getBbWidth() * 0.6, h * 0.4, this.getBbWidth() * 0.6, 0.02);
+      }
       if (this.deathTime >= Tuning.ANATHEMA_DEATH_TICKS && !this.level().isClientSide() && !this.isRemoved()) {
          if (this.level() instanceof ServerLevel level) {
             double y = this.getY() + this.getBbHeight() * 0.5;
-            level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SCULK.defaultBlockState()), this.getX(), y, this.getZ(), 80, 0.7, 0.9, 0.7, 0.12);
-            level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), y, this.getZ(), 30, 0.6, 0.9, 0.6, 0.06);
-            level.playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.HEART_DESTROYED, SoundSource.HOSTILE, 2.0F, 1.0F);
+            double w = this.getBbWidth();
+            level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SCULK.defaultBlockState()), this.getX(), y, this.getZ(), 200, w * 0.5, this.getBbHeight() * 0.4, w * 0.5, 0.2);
+            level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), y, this.getZ(), 60, w * 0.4, this.getBbHeight() * 0.4, w * 0.4, 0.1);
+            // The spore eyes scatter in every direction and drift away: the air around it disperses.
+            level.sendParticles(ModParticles.SPORE_EYE, this.getX(), y, this.getZ(), 120, w * 0.8, this.getBbHeight() * 0.5, w * 0.8, 0.06);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.ANATHEMA_BURST, SoundSource.HOSTILE, 2.5F, 1.0F);
          }
          this.remove(Entity.RemovalReason.KILLED);
       }

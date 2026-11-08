@@ -52,6 +52,12 @@ Paste this at the top of CHANGES.md. Batches 34 to 51 were never written up.
 - Needs one line added to `lang/en_us.json`: `"entity.breathless.anathema": "Sculk Anathema"`.
 - Not done yet: the bigger caves (batch 2). The dead texture is a copy of the alive one (`anathema_dead.png`): replace that file with your dead version.
 
+## Anathema fixes (batch 62 follow-up)
+- **Language file:** `death.attack.breathless_sloth_blast` was missing its comma, so the whole `en_us.json` failed to load and every name showed as a raw key. Fixed, and the Anathema name is in.
+- **Size:** it is drawn 1.75x bigger and its hitbox matches (`ANATHEMA_SCALE` in `Tuning.java`, through the vanilla scale attribute). Base hitbox 1.2 by 2.0.
+- **New model** (`Anathema_1.bbmodel`): bones, clips and texture regenerated.
+- **Death:** no red flash while dying (hits still flash). Sculk chips and spore eyes pour off it while the death clip plays, and the burst is much bigger (200 sculk chips, 60 sculk souls, 120 spore eyes scattering outward) with the new `anathema_burst` sound. The unused dead texture and the texture swap are gone (delete `textures/entity/anathema_dead.png` from the repo if you uploaded it).
+
 ## Voicelines
 - SLOTH's ten voice clips (converted from your mp4 files to mono Vorbis) are in the hard fight, one picked at random per moment, each with an on-screen caption:
   - **stab** (3 lines, at 3 s into the self-stab, as the sword turns): "You've outlasted your usefulness." / "I've been patient long enough." / "I will take it from here."
