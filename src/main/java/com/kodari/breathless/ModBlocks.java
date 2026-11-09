@@ -1,10 +1,12 @@
 package com.kodari.breathless;
 
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -23,5 +25,7 @@ public final class ModBlocks {
       SCULK_NIDUS = Registry.register(BuiltInRegistries.BLOCK, blockKey, new SculkNidusBlock(BlockBehaviour.Properties.of().setId(blockKey).strength(3.0F, 3.0F).sound(SoundType.SCULK_CATALYST)));
       ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Breathless.id("sculk_nidus"));
       Registry.register(BuiltInRegistries.ITEM, itemKey, new BlockItem(SCULK_NIDUS, new Item.Properties().setId(itemKey).useBlockDescriptionPrefix()));
+      // In the creative menu (Functional Blocks). Placing it makes it turn into the Sculk Anathema.
+      ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(entries -> entries.accept(SCULK_NIDUS));
    }
 }

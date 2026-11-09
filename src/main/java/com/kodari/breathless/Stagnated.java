@@ -105,6 +105,8 @@ public class Stagnated extends Monster {
    private int launchAt = Tuning.SWEATY_LAUNCH_AT;
    private int exhaustTicks;
    private int burstAge;
+   /** Client: ticks left of the eye star during a burst (set by event 107, cleared by 108). */
+   private int burstEyeTicks;
    private int tpCooldown;
    private int tpWind = -1;
    private net.minecraft.world.phys.Vec3 tpSpot;
@@ -586,7 +588,21 @@ public class Stagnated extends Monster {
       if (this.pearlTicks > 0) {
          this.pearlTicks--;
       }
-      if (!this.level().isClientSide() && this.isAlive()) {
+      if (this.burstEyeTicks > 0) {
+         this.burstEyeTicks--;
+         if (this.level().isClientSide() && this.isAlive()) {
+            // The turning star in the left eye (it follows him, see EyeMarkParticle) and a few red sparks.
+            this.level().addParticle(ModParticles.EYE_MARK, this.getX(), this.getY() + Tuning.EYE_MARK_UP, this.getZ(), this.getId(), 0.4, 0.0);
+            double hr = Math.toRadians(this.getYHeadRot());
+            double ex = this.getX() + Math.cos(hr) * Tuning.EYE_MARK_SIDE - Math.sin(hr) * Tuning.EYE_MARK_FORWARD;
+            double ez = this.getZ() + Math.sin(hr) * Tuning.EYE_MARK_SIDE + Math.cos(hr) * Tuning.EYE_MARK_FORWARD;
+            for (int i = 0; i < 2; i++) {
+               this.level().addParticle(new net.minecraft.core.particles.DustParticleOptions(0xFF1010, 0.6F), ex + (this.random.nextDouble() - 0.5) * 0.06, this.getY() + Tuning.EYE_MARK_UP + (this.random.nextDouble() - 0.5) * 0.06, ez + (this.random.nextDouble() - 0.5) * 0.06, 0.0, 0.0, 0.0);
+            }
+         }
+      }
+      if (!this.level().isClientSide() && this.isAlive() && this.isElijah()) {
+         // The pearl teleport is Elijah's (and SLOTH's on Hard), not the regular Stagnated's.
          this.tickTeleport((ServerLevel)this.level());
          this.burstFx((ServerLevel)this.level());
       }
@@ -1004,9 +1020,13 @@ public class Stagnated extends Monster {
    private void hardVoice(ServerLevel level, net.minecraft.sounds.SoundEvent[] sounds, String[] texts) {
       int pick = this.random.nextInt(sounds.length);
       this.playSound(sounds[pick], 3.0F, 1.0F);
+      if (texts == null) {
+         return;
+      }
       for (ServerPlayer player : level.players()) {
          if (player.distanceToSqr(this) < 48.0 * 48.0) {
-            ServerPlayNetworking.send(player, new CaptionPayload(texts[pick], 70));
+            // The leading \u0001 asks the client for the plain black and white caption (see EliBoss.caption).
+            ServerPlayNetworking.send(player, new CaptionPayload("\u0001" + texts[pick], 70));
          }
       }
    }
@@ -1230,9 +1250,9 @@ public class Stagnated extends Monster {
       this.burstAge = 0;
       this.playSound(ModSounds.BURST_WARNING, 3.0F, 1.0F);
       if (this.phaseTwoVoice()) {
-         this.hardVoice(level, ModSounds.BURST_IN_P2, BURST_TEXT_IN_P2);
+         this.hardVoice(level, ModSounds.BURST_IN_P2, null);
       } else {
-         this.hardVoice(level, ModSounds.BURST_IN_P1, BURST_TEXT_IN_P1);
+         this.hardVoice(level, ModSounds.BURST_IN_P1, null);
       }
    }
 
@@ -1247,9 +1267,10 @@ public class Stagnated extends Monster {
          this.launchAt = this.windTicks - 2;
          this.getNavigation().stop();
          this.holdTemp(Items.WIND_CHARGE);
+         // Between slams: no clip of its own, the usual windburst clip (77) and then the airborne pose.
+         level.broadcastEntityEvent(this, (byte)97);
          level.broadcastEntityEvent(this, (byte)77);
          level.broadcastEntityEvent(this, (byte)81);
-         level.broadcastEntityEvent(this, (byte)110);
          return;
       }
       this.burstActive = false;
@@ -1262,7 +1283,7 @@ public class Stagnated extends Monster {
       if (this.phaseTwoVoice()) {
          this.hardVoice(level, ModSounds.BURST_EX_P2, BURST_TEXT_EX_P2);
       } else {
-         this.hardVoice(level, ModSounds.BURST_EX_P1, BURST_TEXT_EX_P1);
+         this.hardVoice(level, ModSounds.BURST_EX_P1, null);
       }
    }
 
@@ -1292,11 +1313,7 @@ public class Stagnated extends Monster {
          this.launchAt = Tuning.SWEATY_LAUNCH_AT;
          return;
       }
-      double hr = Math.toRadians(this.getYHeadRot());
-      double ex = this.getX() + Math.cos(hr) * 0.125 - Math.sin(hr) * 0.28;
-      double ez = this.getZ() + Math.sin(hr) * 0.125 + Math.cos(hr) * 0.28;
-      level.sendParticles(ModParticles.EYE_MARK, ex, this.getY() + 1.73, ez, 0, 0.4, 0.0, 0.0, 1.0);
-      level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF1010, 0.8F), ex, this.getY() + 1.73, ez, 4, 0.08, 0.08, 0.08, 0.0);
+
    }
 
    /** SLOTH glitching: error windows scattered around his body (see ErrorWindowParticle). */
@@ -1780,8 +1797,8 @@ public class Stagnated extends Monster {
       if (this.windTicks > 0) {
          this.windTicks--;
          this.faceTarget();
-         if (this.burstActive && this.windTotal == Tuning.BURST_WIND_TICKS && this.windTotal - this.windTicks == this.launchAt - 2) {
-            // The clip raises his right hand for the wind charge at 1.83 s.
+         if (this.burstActive && this.windTotal == Tuning.BURST_WIND_TICKS && this.windTotal - this.windTicks == 14) {
+            // The new clip pulls the wind charge out at 0.71 s.
             this.holdTemp(Items.WIND_CHARGE);
          }
          if (this.windTotal - this.windTicks == this.launchAt) {
@@ -1856,7 +1873,7 @@ public class Stagnated extends Monster {
       } else if (this.stunPlan && !this.locked && !this.landed && !this.fleeing && target != null && this.airTicks % 2 == 0) {
          // On the way up the ring already follows his target, so it never appears out of nowhere.
          double rg = target.getY();
-         this.stunRing(level, target.getX(), rg + 0.1, target.getZ());
+         this.stunRing(level, target.getX(), rg + 0.1, target.getZ(), this.stunRadius(), true, target.getId());
       }
       // On the way down: the smash swing, or (with no one to smash) the water bucket clutch.
       if (motion.y < -0.2 && this.airTicks > 8 && !this.landed) {
@@ -2042,20 +2059,30 @@ public class Stagnated extends Monster {
 
    /** haze = false leaves out the red dust drifting over the marker (the barrage has many markers, and the haze hides them). */
    private void stunRing(ServerLevel level, double x, double y, double z, double r, boolean haze) {
-      // The rotating target on the ground (its size travels as the particle's velocity), with red dust drifting up from it.
-      level.sendParticles(ModParticles.STUN_MARK, x, y, z, 0, r * 1.7, 0.0, 0.0, 1.0);
+      this.stunRing(level, x, y, z, r, haze, 0);
+   }
+
+   /** followId is the entity the marker slides along with (0 = it stays where it is), so it never trails behind a moving target. */
+   private void stunRing(ServerLevel level, double x, double y, double z, double r, boolean haze, int followId) {
+      // The rotating target on the ground (its size and the entity to follow travel as the particle's velocity), with red dust drifting up from it.
+      level.sendParticles(ModParticles.STUN_MARK, x, y, z, 0, r * 1.7, followId, 0.0, 1.0);
       if (haze) {
          level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 1.2F), x, y + 0.3, z, 8, r * 0.7, 0.35, r * 0.7, 0.0);
       }
-      for (int i = 0; i < 28; i++) {
-         double a = i * Math.PI * 2.0 / 28.0;
-         level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, 2.5F), x + Math.cos(a) * r, y, z + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
+      // The barrage has many markers at once: a few small dots instead of the full red ring, so you can see.
+      int dots = haze ? 28 : 6;
+      float dotSize = haze ? 2.5F : 0.9F;
+      for (int i = 0; i < dots; i++) {
+         double a = i * Math.PI * 2.0 / dots;
+         level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xFF2020, dotSize), x + Math.cos(a) * r, y, z + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
       }
    }
 
    private void launch(LivingEntity target) {
       if (this.burstActive) {
          this.playSound(ModSounds.BURST_ALERT, 3.0F, 1.0F);
+         // The telegraph clip ends here: from now on the normal airborne pose shows.
+         this.level().broadcastEntityEvent(this, (byte)97);
       }
       this.holdTemp(null);
       this.diving = true;
@@ -2678,11 +2705,12 @@ public class Stagnated extends Monster {
          // 107 the burst telegraph, 108 burnout (orange outline), 109 recovery.
          this.xbKind = event - 93;
          this.xbClock = 0;
+         if (event == 107) {
+            this.burstEyeTicks = 400;
+         } else if (event == 108) {
+            this.burstEyeTicks = 0;
+         }
          this.exhausted = event == 108;
-      } else if (event == 110) {
-         // The follow-up slams of a burst start from the crouch (0.85 s into the clip).
-         this.xbKind = 14;
-         this.xbClock = 17;
       } else if (event == 97) {
          this.xbKind = -1;
          this.xbClock = -1;

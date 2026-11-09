@@ -8,11 +8,19 @@ import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 
 /** The stun slam's target: a picture lying flat on the ground that turns slowly. The server sends it again every tick or two, so it stays where the slam will land. */
 final class StunMarkParticle extends SingleQuadParticle {
-   private StunMarkParticle(ClientLevel level, double x, double y, double z, float size, TextureAtlasSprite sprite) {
+   /** The entity this marker slides along with (0 = none) and its height above that entity's feet. */
+   private final int followId;
+   private final double followDy;
+
+   private StunMarkParticle(ClientLevel level, double x, double y, double z, float size, int followId, TextureAtlasSprite sprite) {
       super(level, x, y, z, sprite);
+      this.followId = followId;
+      Entity followed = followId > 0 ? level.getEntity(followId) : null;
+      this.followDy = followed != null ? y - followed.getY() : 0.0D;
       this.hasPhysics = false;
       this.xd = 0.0D;
       this.yd = 0.0D;
@@ -52,6 +60,14 @@ final class StunMarkParticle extends SingleQuadParticle {
       this.zo = this.z;
       this.oRoll = this.roll;
       this.roll = spin(this.level);
+      if (this.followId > 0) {
+         Entity followed = this.level.getEntity(this.followId);
+         if (followed != null && !followed.isRemoved()) {
+            this.x = followed.getX();
+            this.y = followed.getY() + this.followDy;
+            this.z = followed.getZ();
+         }
+      }
       if (this.age++ >= this.lifetime) {
          this.remove();
       }
@@ -66,7 +82,7 @@ final class StunMarkParticle extends SingleQuadParticle {
 
       @Override
       public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, RandomSource random) {
-         return new StunMarkParticle(level, x, y, z, (float)xd, this.sprites.get(random));
+         return new StunMarkParticle(level, x, y, z, (float)xd, (int)yd, this.sprites.get(random));
       }
    }
 }

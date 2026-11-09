@@ -189,7 +189,14 @@ final class EliBoss {
    private static int captionLeft;
    private static int captionTotal;
 
+   /** True for the plain caption (white with a black outline, no cyan): SLOTH's lines. The server marks them with a leading \u0001. */
+   private static boolean plainCaption;
+
    static void caption(String text, int ticks) {
+      plainCaption = text.startsWith("\u0001");
+      if (plainCaption) {
+         text = text.substring(1);
+      }
       caption = text;
       captionLeft = ticks;
       captionTotal = ticks;
@@ -213,7 +220,7 @@ final class EliBoss {
          return;
       }
       float fade = Math.min(1.0F, captionLeft / 10.0F);
-      float progress = Math.min(1.0F, p2ticks / 200.0F);
+      float progress = plainCaption ? 1.0F : Math.min(1.0F, p2ticks / 200.0F);
       int rgb = lerpColor(0x0F9F98, 0xFFFFFF, progress);
       int al = Math.round(fade * 255.0F);
       int color = (al << 24) | rgb;

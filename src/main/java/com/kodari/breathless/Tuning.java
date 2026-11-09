@@ -570,4 +570,8 @@ public final class Tuning {
    public static final int ANATHEMA_DEATH_TICKS = 80;
    /** How much bigger than the model it is drawn and how big its hitbox is (1.0 = as modelled). */
    public static final double ANATHEMA_SCALE = 1.75;
+   // Where the burst star sits on his head: forward from the middle of the head, to his left, and the height above his feet. Flip the sign of FORWARD if it shows up behind him.
+   public static final double EYE_MARK_FORWARD = 0.28;
+   public static final double EYE_MARK_SIDE = 0.125;
+   public static final double EYE_MARK_UP = 1.73;
 }

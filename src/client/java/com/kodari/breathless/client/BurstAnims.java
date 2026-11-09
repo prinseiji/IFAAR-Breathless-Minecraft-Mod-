@@ -3,32 +3,32 @@ package com.kodari.breathless.client;
 import com.kodari.breathless.client.StagnatedAnims.Clip;
 import com.kodari.breathless.client.StagnatedAnims.Track;
 
-/** The stun slam burst clips, converted from ElijahTheZenithNEW.bbmodel (same format as StagnatedAnims). Kept in its own file so StagnatedAnims is not touched. */
+/** The stun slam burst clips, converted from ElijahTheZenithUpdated.bbmodel (same format as StagnatedAnims). Kept in its own file so StagnatedAnims is not touched. */
 public final class BurstAnims {
    private BurstAnims() {
    }
 
    public static final Clip BURST_IMPENDING = new Clip(2F, false,
-         new Track("waist", 0, new float[]{0.66667F, 0.875F}, new float[]{0F, 0F, 0F, 0.82903F, 0F, 0F}),
+         new Track("waist", 0, new float[]{0.66667F}, new float[]{0F, 0F, 0F}),
          new Track("waist", 1, new float[]{0.66667F}, new float[]{0F, 0F, 0F}),
          new Track("waist", 2, new float[]{0.66667F}, new float[]{1F, 1F, 1F}),
-         new Track("head", 0, new float[]{0F, 0.25F, 0.5F, 0.66667F, 0.875F, 1.33333F, 1.45833F}, new float[]{-0.0839F, -0.13065F, -0.30436F, -0.56387F, -0.13065F, -0.30436F, -0.8693F, -0.13065F, -0.30436F, -0.86935F, -0.13073F, -0.30439F, -1.43658F, -0.13073F, -0.30439F, -1.73824F, -0.13073F, -0.30439F, -1.72032F, -0.0317F, -0.15949F}),
+         new Track("head", 0, new float[]{0F, 0.25F, 0.5F, 0.66667F, 1.58333F}, new float[]{-0.0839F, -0.13065F, -0.30436F, -0.56387F, -0.13065F, -0.30436F, -0.8693F, -0.13065F, -0.30436F, -0.86935F, -0.13073F, -0.30439F, -0.85982F, -0.18655F, -0.09731F}),
          new Track("head", 1, new float[]{0.66667F}, new float[]{0F, 0F, 0F}),
          new Track("head", 2, new float[]{0.66667F}, new float[]{1F, 1F, 1F}),
          new Track("body", 0, new float[]{0.66667F}, new float[]{0F, 0F, 0F}),
          new Track("body", 1, new float[]{0.66667F}, new float[]{0F, 0F, 0F}),
          new Track("body", 2, new float[]{0.66667F}, new float[]{1F, 1F, 1F}),
-         new Track("right_arm", 0, new float[]{0F, 0.66667F, 0.875F, 1.83333F, 1.91667F}, new float[]{0F, 0F, 0F, 0.05201F, 0F, 0F, -1.13446F, 0F, 0F, 0.66222F, 0.8189F, 2.47617F, -1.11933F, 0.22606F, 0.13318F}),
+         new Track("right_arm", 0, new float[]{0F, 0.66667F, 1.83333F, 1.91667F}, new float[]{0F, 0F, 0F, 0.05201F, 0F, 0F, -0.1817F, -0.10254F, 2.31742F, 0.04565F, -0.04176F, 0.30266F}),
          new Track("right_arm", 1, new float[]{0.66667F}, new float[]{0F, 0F, 0F}),
          new Track("right_arm", 2, new float[]{0.66667F}, new float[]{1F, 1F, 1F}),
          new Track("left_arm", 0, new float[]{0F, 0.25F, 0.375F, 0.66667F}, new float[]{0F, 0F, 0F, -0.47429F, 0.45349F, 0.71802F, -1.79885F, -1.42271F, 0.73777F, -1.79891F, -1.42279F, 0.73775F}),
          new Track("left_arm", 1, new float[]{0F, 0.25F, 0.375F, 0.66667F}, new float[]{0F, 0F, 0F, 1F, 0F, -3F, 1F, 0F, -1F, 1F, 0F, -1F}),
          new Track("left_arm", 2, new float[]{0.66667F}, new float[]{1F, 1F, 1F}),
          new Track("right_leg", 0, new float[]{0F, 0.66667F}, new float[]{-0.43633F, 0F, 0F, -0.43633F, 0F, 0F}),
-         new Track("right_leg", 1, new float[]{0F, 0.66667F, 0.875F}, new float[]{0F, -2F, 0F, 0F, -2F, 0F, 0F, -2F, 3F}),
+         new Track("right_leg", 1, new float[]{0F, 0.66667F}, new float[]{0F, -2F, 0F, 0F, -2F, 0F}),
          new Track("right_leg", 2, new float[]{0.66667F}, new float[]{1F, 1F, 1F}),
-         new Track("left_leg", 0, new float[]{0.66667F, 0.875F}, new float[]{0F, 0F, 0F, -0.21817F, 0F, 0F}),
-         new Track("left_leg", 1, new float[]{0F, 0.66667F, 0.875F}, new float[]{0F, 0F, 0F, 0F, 0F, 0F, 0F, 0F, -4F}),
+         new Track("left_leg", 0, new float[]{0.66667F, 1.58333F}, new float[]{0F, 0F, 0F, -0.04363F, 0F, 0F}),
+         new Track("left_leg", 1, new float[]{0F, 0.66667F, 1.58333F}, new float[]{0F, 0F, 0F, 0F, 0F, 0F, 0F, 0F, -2F}),
          new Track("left_leg", 2, new float[]{0F, 0.66667F}, new float[]{1F, 0.9F, 1F, 1F, 0.9F, 1F}));
 
    public static final Clip BURNOUT = new Clip(1.5F, false,
