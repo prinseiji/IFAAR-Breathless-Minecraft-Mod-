@@ -11,6 +11,7 @@ import net.minecraft.world.entity.MobCategory;
 public final class ModEntities {
    public static EntityType<Stagnated> STAGNATED;
    public static EntityType<Anathema> ANATHEMA;
+   public static EntityType<Carrion> CARRION;
 
    private ModEntities() {
    }
@@ -24,5 +25,11 @@ public final class ModEntities {
       ANATHEMA = Registry.register(BuiltInRegistries.ENTITY_TYPE, anathemaKey,
          EntityType.Builder.of(Anathema::new, MobCategory.MISC).sized(1.8F, 2.4F).eyeHeight(1.9F).clientTrackingRange(10).build(anathemaKey));
       FabricDefaultAttributeRegistry.register(ANATHEMA, Anathema.createAttributes());
+      ResourceKey<EntityType<?>> carrionKey = ResourceKey.create(Registries.ENTITY_TYPE, Breathless.id("carrion"));
+      CARRION = Registry.register(BuiltInRegistries.ENTITY_TYPE, carrionKey,
+         EntityType.Builder.of(Carrion::new, MobCategory.MISC).sized(1.4F, 1.7F).eyeHeight(1.2F).clientTrackingRange(10).build(carrionKey));
+      FabricDefaultAttributeRegistry.register(CARRION, Carrion.createAttributes());
+      // The gas clouds and sculk spread that Carrions leave behind tick on the server.
+      GasClouds.init();
    }
 }

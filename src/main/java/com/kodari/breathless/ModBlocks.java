@@ -17,11 +17,15 @@ public final class ModBlocks {
 
    /** The Sculk Nidus: wakes Stagnateds nearby, and drops Rotting Hearts when broken. */
    public static Block SCULK_NIDUS;
+   /** Placed by world generation where a Carrion belongs; turns into the Carrion entity when it ticks. Has no item. */
+   public static Block CARRION_MARKER;
 
    public static void register() {
       ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Breathless.id("sculk_nidus"));
       SCULK_NIDUS = Registry.register(BuiltInRegistries.BLOCK, blockKey, new SculkNidusBlock(BlockBehaviour.Properties.of().setId(blockKey).strength(3.0F, 3.0F).sound(SoundType.SCULK_CATALYST)));
       ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Breathless.id("sculk_nidus"));
       Registry.register(BuiltInRegistries.ITEM, itemKey, new BlockItem(SCULK_NIDUS, new Item.Properties().setId(itemKey).useBlockDescriptionPrefix()));
+      ResourceKey<Block> markerKey = ResourceKey.create(Registries.BLOCK, Breathless.id("carrion_marker"));
+      CARRION_MARKER = Registry.register(BuiltInRegistries.BLOCK, markerKey, new CarrionMarkerBlock(BlockBehaviour.Properties.of().setId(markerKey).strength(0.6F).sound(SoundType.SCULK).noOcclusion()));
    }
 }

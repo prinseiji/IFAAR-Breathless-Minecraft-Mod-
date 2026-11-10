@@ -23,7 +23,8 @@ import java.util.Set;
  * It looks for the edge of an open cavern, then hollows out a wide dome of rock behind it with a short passage back to the cavern. The inside is lined with sculk,
  * with tendrils hanging from the ceiling and tendons (thin sculk columns) joining floor and ceiling. Three Anathemas stand far apart, each with shriekers, catalysts and sensors around it.
  * Rarity: the world is cut into regions of REGION_CHUNKS chunks; each region has a REGION_CHANCE chance of trying once, in one chosen chunk. If no cavern wall is found, nothing is placed.
- * A feature may only touch its own chunk and the ones around it, so the cave is limited to about 44 blocks across.
+ * A feature may only touch its own chunk and the ones around it, so the cave is limited to about 44 blocks across (this one is about 42 wide and 32 deep).
+ * The cavern edge is searched at 3 sideways offsets, 4 directions and several heights, so a spot is much easier to find.
  * "forceHere" is the test version (/place feature breathless:nidus_cave_here): it skips the region lottery and tries the chunk it is placed in.
  */
 public class NidusCaveFeature extends Feature<NoneFeatureConfiguration> {
@@ -31,14 +32,14 @@ public class NidusCaveFeature extends Feature<NoneFeatureConfiguration> {
    static final int REGION_CHUNKS = 12;
    static final double REGION_CHANCE = 0.4;
    /** Half the width along the wall, how far it goes into the rock, and how tall the dome is. */
-   static final int HALF_WIDTH = 18;
-   static final int DEPTH = 13;
-   static final int HEIGHT = 12;
+   static final int HALF_WIDTH = 21;
+   static final int DEPTH = 15;
+   static final int HEIGHT = 14;
    /** Distance from the cave middle to the cavern edge it opens onto. */
-   static final int EDGE = 16;
+   static final int EDGE = 19;
    static final int ANATHEMAS = 3;
-   static final int ANATHEMA_SPACING = 12;
-   static final int TENDONS = 8;
+   static final int ANATHEMA_SPACING = 15;
+   static final int TENDONS = 10;
    /** Around each Anathema, and scattered anywhere in the cave. */
    static final int SHRIEKERS_EACH = 2;
    static final int CATALYSTS_EACH = 2;
@@ -79,34 +80,40 @@ public class NidusCaveFeature extends Feature<NoneFeatureConfiguration> {
          dirs.add(d);
       }
       Collections.shuffle(dirs, new java.util.Random(random.nextLong()));
+      int[] shifts = {0, -7, 7};
       for (Direction d : dirs) {
-         if (this.tryDirection(level, origin, random, cx, cz, d)) {
-            return true;
+         for (int shift : shifts) {
+            if (this.tryDirection(level, origin, random, cx, cz, d, shift)) {
+               return true;
+            }
+         }
+      }
+      return false;
+   }
+
+   /** Looks for cavern floors at the mouth (up to 3 heights) and tries to build from each. shift moves the mouth sideways. */
+   private boolean tryDirection(WorldGenLevel level, BlockPos origin, RandomSource random, int cx, int cz, Direction d, int shift) {
+      int sx = d.getStepX();
+      int sz = d.getStepZ();
+      int mx = cx - sx * EDGE + (sx != 0 ? 0 : shift);
+      int mz = cz - sz * EDGE + (sx != 0 ? shift : 0);
+      int tried = 0;
+      for (int y = -12; y >= -58 && tried < 3; y--) {
+         BlockPos p = new BlockPos(mx, y, mz);
+         if (isFloor(level, p) && roomAt(level, origin, p)) {
+            tried++;
+            if (this.tryMouth(level, origin, random, cx, cz, d, shift, p)) {
+               return true;
+            }
          }
       }
       return false;
    }
 
    /** d points from the cavern into the rock. The cavern edge ("mouth") is EDGE blocks behind the cave middle. */
-   private boolean tryDirection(WorldGenLevel level, BlockPos origin, RandomSource random, int cx, int cz, Direction d) {
+   private boolean tryMouth(WorldGenLevel level, BlockPos origin, RandomSource random, int cx, int cz, Direction d, int shift, BlockPos mouth) {
       int sx = d.getStepX();
       int sz = d.getStepZ();
-      int mx = cx - sx * EDGE;
-      int mz = cz - sz * EDGE;
-      // 1. A cavern floor at the mouth, with open room above it.
-      BlockPos mouth = null;
-      for (int y = origin.getY() + 10; y >= origin.getY() - 14 && mouth == null; y--) {
-         if (y > -10 || y < -60) {
-            continue;
-         }
-         BlockPos p = new BlockPos(mx, y, mz);
-         if (isFloor(level, p) && roomAt(level, origin, p)) {
-            mouth = p;
-         }
-      }
-      if (mouth == null) {
-         return false;
-      }
       int floorY = mouth.getY();
       // 2. Work out the shape without changing anything. Give up if it hits water, lava, or the reinforced deepslate of a city.
       double ph1 = random.nextDouble() * 6.28;
@@ -115,15 +122,15 @@ public class NidusCaveFeature extends Feature<NoneFeatureConfiguration> {
       Set<BlockPos> open = new HashSet<>();
       List<BlockPos> toCarve = new ArrayList<>();
       int air = 0;
-      for (int x = cx - 21; x <= cx + 21; x++) {
-         for (int z = cz - 21; z <= cz + 21; z++) {
+      for (int x = cx - 22; x <= cx + 22; x++) {
+         for (int z = cz - 22; z <= cz + 22; z++) {
             if (!inRegion(origin, x, z)) {
                continue;
             }
             double u = (x - cx) * sx + (z - cz) * sz;
             double p = sx != 0 ? (z - cz) : (x - cx);
             double base = (u / DEPTH) * (u / DEPTH) + (p / HALF_WIDTH) * (p / HALF_WIDTH);
-            boolean tunnel = u <= -DEPTH + 5 && u >= -EDGE && Math.abs(p) <= 3.0;
+            boolean tunnel = u <= -DEPTH + 5 && u >= -EDGE && Math.abs(p - shift) <= 3.0;
             if (base > 1.4 && !tunnel) {
                continue;
             }

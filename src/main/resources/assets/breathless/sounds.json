@@ -1431,5 +1431,37 @@
         "stream": false
       }
     ]
+  },
+  "carrion_idle_1": {
+    "sounds": [
+      {
+        "name": "breathless:carrion_idle_1",
+        "stream": false
+      }
+    ]
+  },
+  "carrion_idle_2": {
+    "sounds": [
+      {
+        "name": "breathless:carrion_idle_2",
+        "stream": false
+      }
+    ]
+  },
+  "carrion_idle_3": {
+    "sounds": [
+      {
+        "name": "breathless:carrion_idle_3",
+        "stream": false
+      }
+    ]
+  },
+  "carrion_explode": {
+    "sounds": [
+      {
+        "name": "breathless:carrion_explode",
+        "stream": false
+      }
+    ]
   }
 }

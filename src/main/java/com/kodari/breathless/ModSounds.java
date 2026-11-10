@@ -25,6 +25,9 @@ public final class ModSounds {
    public static SoundEvent[] ANATHEMA_HIT = new SoundEvent[3];
    public static SoundEvent ANATHEMA_DEATH;
    public static SoundEvent ANATHEMA_BURST;
+   /** The Carrion: three idle sounds and the explosion (a 1.8 s build-up, then the boom). */
+   public static SoundEvent[] CARRION_IDLE = new SoundEvent[3];
+   public static SoundEvent CARRION_EXPLODE;
    public static SoundEvent[] BURST_IN_P1 = new SoundEvent[2];
    public static SoundEvent[] BURST_IN_P2 = new SoundEvent[2];
    public static SoundEvent[] BURST_EX_P1 = new SoundEvent[2];
@@ -102,6 +105,10 @@ public final class ModSounds {
       }
       ANATHEMA_DEATH = reg("anathema_death");
       ANATHEMA_BURST = reg("anathema_burst");
+      for (int i = 0; i < CARRION_IDLE.length; i++) {
+         CARRION_IDLE[i] = reg("carrion_idle_" + (i + 1));
+      }
+      CARRION_EXPLODE = reg("carrion_explode");
       for (int i = 0; i < 2; i++) {
          BURST_IN_P1[i] = reg("eli_burst_in_p1_" + (i + 1));
          BURST_IN_P2[i] = reg("eli_burst_in_p2_" + (i + 1));
