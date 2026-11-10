@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -23,7 +24,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The Carrion: a stationary sculk growth that sits on patches of sculk. It swells (the death clip, 2.9 s) and bursts when a player walks or runs near it (sneaking is silent),
- * when a sculk sensor nearby goes off, when a player gets too close, or when anything hurts it (so an arrow from far away sets it off far away).
+ * when a sculk sensor nearby goes off, when a player gets too close, or when something attacks or burns it (so an arrow from far away sets it off far away).
+ * Silence makes you as quiet as sneaking; Silence together with Invisibility makes it ignore you unless you touch it.
  * The burst does not break blocks: it turns the natural blocks around it into sculk (GasClouds) and leaves a gas cloud that wears filters down fast for a while.
  * Fire puts the gas out: a Carrion that is burning when it bursts leaves only a thin short cloud, and burning things or fire blocks inside a cloud burn it away quickly.
  */
@@ -108,9 +110,16 @@ public class Carrion extends Mob {
       }
    }
 
-   /** Anything hurting it sets it off, but it takes almost no damage, so it cannot die before the burst. */
+   /**
+    * Something hitting it, shooting it or burning it sets it off, but it takes almost no damage, so it cannot die before the burst.
+    * Damage with no one behind it (the spores, suffocating, drowning...) is ignored: that used to set it off by itself.
+    */
    @Override
    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+      boolean attacked = source.getEntity() != null || source.getDirectEntity() != null || source.is(DamageTypeTags.IS_FIRE) || source.is(DamageTypeTags.IS_EXPLOSION);
+      if (!attacked) {
+         return false;
+      }
       this.startSwell();
       return super.hurtServer(level, source, Math.min(amount, 0.5F));
    }
@@ -133,8 +142,19 @@ public class Carrion extends Mob {
             continue;
          }
          now.put(player.getUUID(), player.position());
+         // Silence and Invisibility together: it does not notice you at all unless you actually bump into it.
+         if (Silence.ghost(player)) {
+            if (player.getBoundingBox().intersects(this.getBoundingBox())) {
+               go = true;
+            }
+            continue;
+         }
          if (player.distanceToSqr(this) < CLOSE_RANGE * CLOSE_RANGE) {
             go = true;
+            continue;
+         }
+         // Silence alone makes no noise, like sneaking (it still notices you when you get close).
+         if (Silence.silenced(player)) {
             continue;
          }
          Vec3 before = this.lastSeen.get(player.getUUID());

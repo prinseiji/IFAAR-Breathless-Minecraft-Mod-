@@ -107,7 +107,7 @@ public final class MobRules {
    private static final java.util.Map<Mob, Integer> SPORE_HURT = new java.util.WeakHashMap<>();
 
    private static boolean immune(String type, Entity entity) {
-      return entity instanceof Stagnated || entity instanceof Anathema || type.equals("minecraft:skeleton") || type.equals("minecraft:stray") || type.equals("minecraft:wither_skeleton")
+      return entity instanceof Stagnated || entity instanceof Anathema || entity instanceof Carrion || type.equals("minecraft:skeleton") || type.equals("minecraft:stray") || type.equals("minecraft:wither_skeleton")
          || type.equals("minecraft:bogged") || type.equals("minecraft:skeleton_horse") || type.equals("minecraft:warden") || type.equals("minecraft:ender_dragon")
          || type.equals("minecraft:wither") || type.equals("minecraft:creaking");
    }
