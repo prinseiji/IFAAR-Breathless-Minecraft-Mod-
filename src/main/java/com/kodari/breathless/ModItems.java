@@ -41,6 +41,10 @@ public final class ModItems {
    public static Item GAS_MASK_FILTER_REINFORCED;
 
    public static Item STAGNATED_HEAD;
+   public static Item STAGNATED_EGG;
+   public static Item CARRION_EGG;
+   public static Item ANATHEMA_EGG;
+   public static Item ODIUM_EGG;
    public static Item ROTTING_HEART;
    public static Item ELI_SWORD;
    public static Item AMETHYST_DUST;
@@ -71,6 +75,11 @@ public final class ModItems {
          maskKey,
          new Item(new Item.Properties().setId(maskKey).stacksTo(1).component(DataComponents.EQUIPPABLE, headEquippable()))
       );
+   }
+
+   private static Item registerEgg(String name, net.minecraft.world.entity.EntityType<?> type) {
+      ResourceKey<Item> eggKey = key(name);
+      return Registry.register(BuiltInRegistries.ITEM, eggKey, new net.minecraft.world.item.SpawnEggItem(new Item.Properties().setId(eggKey).spawnEgg(type)));
    }
 
    private static Item registerPlain(String name) {
@@ -122,6 +131,16 @@ public final class ModItems {
 
       ResourceKey<Item> headKey = key("stagnated_head");
       STAGNATED_HEAD = Registry.register(BuiltInRegistries.ITEM, headKey, new StagnatedHeadItem(new Item.Properties().setId(headKey)));
+      STAGNATED_EGG = registerEgg("stagnated_spawn_egg", ModEntities.STAGNATED);
+      CARRION_EGG = registerEgg("carrion_spawn_egg", ModEntities.CARRION);
+      ANATHEMA_EGG = registerEgg("anathema_spawn_egg", ModEntities.ANATHEMA);
+      ODIUM_EGG = registerEgg("odium_spawn_egg", ModEntities.ODIUM);
+      net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents.modifyOutputEvent(net.minecraft.world.item.CreativeModeTabs.SPAWN_EGGS).register(entries -> {
+         entries.accept(STAGNATED_EGG);
+         entries.accept(CARRION_EGG);
+         entries.accept(ANATHEMA_EGG);
+         entries.accept(ODIUM_EGG);
+      });
       ResourceKey<Item> heartKey = key("rotting_heart");
       ROTTING_HEART = Registry.register(BuiltInRegistries.ITEM, heartKey, new Item(new Item.Properties().setId(heartKey).stacksTo(16).fireResistant()
          .rarity(net.minecraft.world.item.Rarity.EPIC)));

@@ -30,6 +30,8 @@ public final class SporeHud {
    private static final Identifier MASK_CRACKS_1 = Breathless.id("textures/misc/gas_mask_cracks_1.png");
    private static final Identifier MASK_CRACKS_2 = Breathless.id("textures/misc/gas_mask_cracks_2.png");
    private static final Identifier GAUGE = Breathless.id("textures/gui/gauge.png");
+   private static final Identifier SPACE_IN = Breathless.id("textures/gui/spacebar_in.png");
+   private static final Identifier SPACE_OUT = Breathless.id("textures/gui/spacebar_out.png");
    private static final Identifier[] POPUPS = new Identifier[6];
    private static final Identifier POPUP_FINAL = Breathless.id("textures/gui/popup_final.png");
 
@@ -117,13 +119,14 @@ public final class SporeHud {
       // Punishment: now and then the vision goes milky, closing in from the edges. Faster and stronger as exposure climbs.
       if (exposure >= Tuning.BLUR_START) {
          float strength = Math.min(1.0F, (exposure - Tuning.BLUR_START) / (100.0F - Tuning.BLUR_START));
-         int period = (int)(Tuning.BLUR_PERIOD_TICKS * (1.8F - 0.8F * strength));
+         int period = Math.max(240, (int)(Tuning.BLUR_PERIOD_TICKS * (1.8F - 0.8F * strength)));
          float phase = (ClientState.clock % period) / (float)period;
          float pulse = phase < 0.4F ? (float)Math.sin(Math.PI * phase / 0.4F) : 0.0F;
          if (pulse > 0.0F) {
             float amount = pulse * (0.35F + 0.65F * strength);
-            g.fill(0, 0, w, h, argb((int)(amount * 70.0F), 0xB9E6F2));
-            drawVignette(g, w, h, 0xCFEFF6, amount * 0.85F, 0.5F);
+            // Photosensitivity: no bright flashes. The pulse is a soft, dim blue-grey darkening that fades in and out slowly (it used to be a pale white-blue wash).
+            g.fill(0, 0, w, h, argb((int)(amount * 22.0F), 0x2A3F55));
+            drawVignette(g, w, h, 0x2A3F55, amount * 0.45F, 0.5F);
          }
       }
 
@@ -140,7 +143,7 @@ public final class SporeHud {
          }
          if (ClientState.crackAnim > 0) {
             // A quick white flash as the glass gives.
-            g.fill(0, 0, w, h, argb(ClientState.crackAnim * 9, 0xE8F8FF));
+            g.fill(0, 0, w, h, argb(ClientState.crackAnim * 2, 0x6E8FA3));
          }
       }
    }
@@ -262,8 +265,9 @@ public final class SporeHud {
          int gr = (int)(0xD0 + (0x48 - 0xD0) * f);
          int b = (int)(0xD8 + (0x7A - 0xD8) * f);
          int color = fa(0xE6000000 | (r << 16) | (gr << 8) | b, mf);
-         if (exposure >= 99.99F && (mc.player.tickCount / 5) % 2 == 0) {
-            color = fa(0xE6E8FFFF, mf);
+         // At 100 the bar is a steady, slightly brighter blue. It used to blink bright white every quarter second.
+         if (exposure >= 99.99F) {
+            color = fa(0xE67AA8C8, mf);
          }
          g.fill(tx, ty + th - filled, tx + tw, ty + th, color);
       }
@@ -348,7 +352,7 @@ public final class SporeHud {
       if (ft >= 0) {
          if (ft < Tuning.FLASH_TICKS) {
             float k = 1.0F - ft / (float)Tuning.FLASH_TICKS;
-            g.fill(0, 0, w, h, argb((int)(190.0F * k), 0xC01020));
+            g.fill(0, 0, w, h, argb((int)(80.0F * k), 0xC01020));
          }
          float red = 0.0F;
          if (ft < Tuning.POPUP_CLEAR_TICK + Tuning.VIGNETTE_FADEOUT_TICKS) {
@@ -406,6 +410,28 @@ public final class SporeHud {
          g.fill(o, h - o - th, w - o, h - o, c);
          g.fill(o, o + th, o + th, h - o - th, c);
          g.fill(w - o - th, o + th, w - o, h - o - th, c);
+      }
+   }
+
+   /** Held by an Odium: a spacebar icon that presses in with each tap of the jump key, and a bar above the hotbar that fills with each tap and drains when you stop. */
+   static void renderStruggle(GuiGraphicsExtractor g, DeltaTracker tracker) {
+      com.kodari.breathless.Odium holder = Struggle.holder();
+      if (holder == null) {
+         return;
+      }
+      int w = g.guiWidth();
+      int h = g.guiHeight();
+      int barW = 90;
+      int barH = 8;
+      int x = (w - barW) / 2;
+      int y = h - 80;
+      float p = Math.max(0.0F, Math.min(1.0F, holder.getStruggle()));
+      g.blit(RenderPipelines.GUI_TEXTURED, Struggle.pressed() ? SPACE_IN : SPACE_OUT, w / 2 - 18, y - 40, 0.0F, 0.0F, 36, 36, 36, 36);
+      g.fill(x - 1, y - 1, x + barW + 1, y + barH + 1, 0xFF000000);
+      g.fill(x, y, x + barW, y + barH, 0xFF1C2230);
+      int fw = Math.round(barW * p);
+      if (fw > 0) {
+         g.fill(x, y, x + fw, y + barH, 0xFF4FB8E0);
       }
    }
 }

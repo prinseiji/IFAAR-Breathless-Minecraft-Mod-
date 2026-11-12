@@ -8,6 +8,7 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -51,8 +52,15 @@ public class Odium extends Monster {
    public static final int FAIL = 7;
    public static final int TRAPPED = 8;
    public static final int ESCAPE = 9;
+   /** Not a real state: the renderer uses it for the half-buried fake (OdiumHusk). */
+   public static final int HUSK = 10;
+   /** The lunge clip is played this many times slower than it was animated, so there is time to see it coming and get out of the way. */
+   public static final float ATTEMPT_SLOW = 1.6F;
 
    private static final EntityDataAccessor<Integer> STATE = SynchedEntityData.defineId(Odium.class, EntityDataSerializers.INT);
+   /** Entity id of the player it is holding, or -1, and how far along the spacebar struggle is (0 to 1). The client draws the bar from these. */
+   private static final EntityDataAccessor<Integer> HELD_ID = SynchedEntityData.defineId(Odium.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Float> STRUGGLE = SynchedEntityData.defineId(Odium.class, EntityDataSerializers.FLOAT);
 
    // Numbers to tune. Times are in ticks (20 per second) and match the clip lengths.
    static final double HEALTH = 24.0;
@@ -64,9 +72,9 @@ public class Odium extends Monster {
    static final int EMERGE_TICKS = 158;
    /** The spot clip is 0.83 s. */
    static final int SPOT_TICKS = 17;
-   /** Lunge clip (0.71 s): it springs at 0.33 s and decides at 0.63 s whether it caught you. */
-   static final int LUNGE_AT = 7;
-   static final int DECIDE_AT = 13;
+   /** Lunge clip (0.71 s, played 1.6 times slower): it turns to you for 4 ticks, then stops turning and aims, springs at tick 11 and decides at tick 21 whether it caught you. Moving away after it aims makes it miss. */
+   static final int LUNGE_AT = 11;
+   static final int DECIDE_AT = 21;
    /** Success clip (0.79 s): the catch lands at 0.13 s. */
    static final int CATCH_AT = 3;
    static final int SUCCESS_TICKS = 16;
@@ -77,13 +85,15 @@ public class Odium extends Monster {
    /** Escape clip (1.04 s): you are let go at 0.67 s. */
    static final int RELEASE_AT = 13;
    static final int ESCAPE_TICKS = 21;
-   /** Damage you must deal to it while held to break free. */
-   static final float ESCAPE_DAMAGE = 8.0F;
+   /** Breaking free: each tap of the jump key adds this much to the bar (1.0 is free), the bar drains this much every tick, and each hit you land on it adds a little too. */
+   static final float STRUGGLE_PER_PRESS = 0.12F;
+   static final float STRUGGLE_DRAIN = 0.01F;
+   static final float STRUGGLE_PER_HIT = 0.15F;
    /** Ticks into the hold when it calls a Stagnated (the shriek sound peaks near 1.5 s and 7.5 s). */
    static final int[] SUMMON_AT = {30, 150};
    /** It lunges from this close, and catches you if you are within GRAB_RANGE when the lunge lands. */
-   static final double ATTEMPT_RANGE = 3.4;
-   static final double GRAB_RANGE = 2.5;
+   static final double ATTEMPT_RANGE = 3.0;
+   static final double GRAB_RANGE = 2.2;
    /** How close a sculk sensor going off must be, how close a noisy player must be, how close a player wakes it from the ground, how far it chases before giving up. */
    static final int SENSOR_RANGE = 12;
    static final double HEAR_RANGE = 4.0;
@@ -91,7 +101,7 @@ public class Odium extends Monster {
    static final double GIVE_UP = 56.0;
    /** Breathing room after a lunge before the next one. */
    static final int TRAP_COOLDOWN = 80;
-   static final int FAIL_COOLDOWN = 40;
+   static final int FAIL_COOLDOWN = 60;
 
    /** Players that are being held right now, by any Odium. Cleared when the server stops. */
    static final Set<UUID> HELD = new HashSet<>();
@@ -101,7 +111,8 @@ public class Odium extends Monster {
    private int hitTicks = -1;
    private int trapCooldown;
    private int noPathTicks;
-   private float escapeDamage;
+   private float progress;
+   private Vec3 lungeDir;
    private ServerPlayer quarry;
    private ServerPlayer held;
 
@@ -122,10 +133,33 @@ public class Odium extends Monster {
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(STATE, PASSIVE);
+      builder.define(HELD_ID, -1);
+      builder.define(STRUGGLE, 0.0F);
    }
 
    public int getState() {
       return this.entityData.get(STATE);
+   }
+
+   public int getHeldId() {
+      return this.entityData.get(HELD_ID);
+   }
+
+   public float getStruggle() {
+      return this.entityData.get(STRUGGLE);
+   }
+
+   /** A tap of the jump key from a held player (sent by the client). */
+   public static void struggle(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      for (Odium odium : level.getEntitiesOfClass(Odium.class, player.getBoundingBox().inflate(6.0))) {
+         if (odium.held == player && odium.getState() == TRAPPED) {
+            odium.progress = Math.min(1.0F, odium.progress + STRUGGLE_PER_PRESS);
+            odium.entityData.set(STRUGGLE, odium.progress);
+         }
+      }
    }
 
    /** Used by the world generator: it starts buried and rises when someone comes near. */
@@ -183,7 +217,10 @@ public class Odium extends Monster {
                level.sendParticles(ParticleTypes.SONIC_BOOM, this.getX(), this.getY() + 1.2, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
                level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.2, this.getZ(), 30, 0.6, 0.6, 0.6, 0.1);
             }
-            case ESCAPE -> this.play(level, ModSounds.ODIUM_ESCAPE, 2.5F);
+            case ESCAPE -> {
+               this.stopSounds(level, "odium_trapped", "odium_trap_success");
+               this.play(level, ModSounds.ODIUM_ESCAPE, 2.5F);
+            }
             default -> {
             }
          }
@@ -192,6 +229,15 @@ public class Odium extends Monster {
 
    private void play(ServerLevel level, SoundEvent sound, float volume) {
       level.playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.HOSTILE, volume, 1.0F);
+   }
+
+   /** Cuts its long sounds short for everyone (it was still shrieking after it died or let go). */
+   private void stopSounds(ServerLevel level, String... names) {
+      for (ServerPlayer player : level.players()) {
+         for (String name : names) {
+            player.connection.send(new ClientboundStopSoundPacket(Breathless.id(name), SoundSource.HOSTILE));
+         }
+      }
    }
 
    private void freeze() {
@@ -261,8 +307,14 @@ public class Odium extends Monster {
          return;
       }
       List<ServerPlayer> near = level.getEntitiesOfClass(ServerPlayer.class, this.getBoundingBox().inflate(WAKE_RANGE), Odium::valid);
-      if (!near.isEmpty() || (level.getNearestPlayer(this, 24.0) != null && this.sensorGoingOff(level, 10))) {
+      if (!near.isEmpty()) {
          this.setState(EMERGE);
+      } else if (level.getNearestPlayer(this, 24.0) != null) {
+         BlockPos sensor = this.activeSensor(level, 10);
+         if (sensor != null) {
+            SensorPing.ping(level, sensor, this);
+            this.setState(EMERGE);
+         }
       }
    }
 
@@ -315,18 +367,25 @@ public class Odium extends Monster {
             return p;
          }
       }
-      return this.sensorGoingOff(level, SENSOR_RANGE) ? nearest : null;
+      BlockPos sensor = this.activeSensor(level, SENSOR_RANGE);
+      if (sensor == null) {
+         return null;
+      }
+      // The signal arrives: a trail from the sensor to it, so it is plain it heard.
+      SensorPing.ping(level, sensor, this);
+      return nearest;
    }
 
-   private boolean sensorGoingOff(ServerLevel level, int range) {
+   /** The position of a sculk sensor going off within range, or null. */
+   private BlockPos activeSensor(ServerLevel level, int range) {
       BlockPos centre = this.blockPosition();
       for (BlockPos pos : BlockPos.betweenClosed(centre.offset(-range, -4, -range), centre.offset(range, 4, range))) {
          BlockState st = level.getBlockState(pos);
          if (st.hasProperty(BlockStateProperties.SCULK_SENSOR_PHASE) && st.getValue(BlockStateProperties.SCULK_SENSOR_PHASE).name().equals("ACTIVE")) {
-            return true;
+            return pos.immutable();
          }
       }
-      return false;
+      return null;
    }
 
    private void tickHunt(ServerLevel level) {
@@ -360,16 +419,25 @@ public class Odium extends Monster {
    }
 
    private void tickAttempt() {
-      this.face(this.quarry);
-      if (this.stateTicks < LUNGE_AT) {
+      int t = this.stateTicks;
+      if (t < 5) {
+         // It turns to face you...
+         this.face(this.quarry);
          this.freeze();
-      } else if (this.stateTicks == LUNGE_AT && this.quarry != null) {
-         // The spring.
-         double dx = this.quarry.getX() - this.getX();
-         double dz = this.quarry.getZ() - this.getZ();
-         double len = Math.max(0.001, Math.sqrt(dx * dx + dz * dz));
-         this.setDeltaMovement(dx / len * 0.95, 0.22, dz / len * 0.95);
-      } else if (this.stateTicks >= DECIDE_AT) {
+         if (t == 4 && this.quarry != null) {
+            // ...and aims. From here the lunge goes where it was aimed, not where you are.
+            double dx = this.quarry.getX() - this.getX();
+            double dz = this.quarry.getZ() - this.getZ();
+            double len = Math.max(0.001, Math.sqrt(dx * dx + dz * dz));
+            this.lungeDir = new Vec3(dx / len, 0.0, dz / len);
+         }
+      } else if (t < LUNGE_AT) {
+         this.freeze();
+      } else if (t == LUNGE_AT) {
+         if (this.lungeDir != null) {
+            this.setDeltaMovement(this.lungeDir.x * 0.95, 0.22, this.lungeDir.z * 0.95);
+         }
+      } else if (t >= DECIDE_AT) {
          this.freeze();
          boolean caught = valid(this.quarry) && !HELD.contains(this.quarry.getUUID())
             && Math.hypot(this.quarry.getX() - this.getX(), this.quarry.getZ() - this.getZ()) <= GRAB_RANGE
@@ -394,7 +462,6 @@ public class Odium extends Monster {
          this.hold(this.held);
       }
       if (this.stateTicks >= SUCCESS_TICKS) {
-         this.escapeDamage = 0.0F;
          this.setState(TRAPPED);
       }
    }
@@ -403,11 +470,14 @@ public class Odium extends Monster {
    private void grab(ServerPlayer player) {
       this.held = player;
       HELD.add(player.getUUID());
+      this.progress = 0.0F;
+      this.entityData.set(HELD_ID, player.getId());
+      this.entityData.set(STRUGGLE, 0.0F);
       Vec3 away = this.position().subtract(player.position());
       double len = Math.max(0.001, Math.sqrt(away.x * away.x + away.z * away.z));
       Vec3 old = this.position();
       float yaw = this.getYRot();
-      this.snapTo(player.getX() + away.x / len * 0.9, player.getY(), player.getZ() + away.z / len * 0.9, yaw, 0.0F);
+      this.snapTo(player.getX() + away.x / len * 1.05, player.getY(), player.getZ() + away.z / len * 1.05, yaw, 0.0F);
       if (!this.level().noCollision(this)) {
          this.snapTo(old.x, old.y, old.z, yaw, 0.0F);
       }
@@ -429,6 +499,8 @@ public class Odium extends Monster {
          HELD.remove(this.held.getUUID());
          this.held.removeEffect(MobEffects.SLOWNESS);
          this.held = null;
+         this.entityData.set(HELD_ID, -1);
+         this.entityData.set(STRUGGLE, 0.0F);
       }
    }
 
@@ -442,6 +514,13 @@ public class Odium extends Monster {
       }
       this.face(this.held);
       this.hold(this.held);
+      // The struggle bar drains by itself; only tapping the jump key (or hitting it) fills it.
+      this.progress = Math.max(0.0F, this.progress - STRUGGLE_DRAIN);
+      this.entityData.set(STRUGGLE, this.progress);
+      if (this.progress >= 1.0F) {
+         this.setState(ESCAPE);
+         return;
+      }
       if (this.stateTicks % 10 == 0) {
          level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 3, 0.5, 0.6, 0.5, 0.02);
       }
@@ -508,8 +587,9 @@ public class Odium extends Monster {
       boolean hurt = super.hurtServer(level, source, amount);
       if (hurt && source.getEntity() instanceof ServerPlayer player && valid(player)) {
          if (state == TRAPPED && player == this.held) {
-            this.escapeDamage += amount;
-            if (this.escapeDamage >= ESCAPE_DAMAGE) {
+            this.progress = Math.min(1.0F, this.progress + STRUGGLE_PER_HIT);
+            this.entityData.set(STRUGGLE, this.progress);
+            if (this.progress >= 1.0F) {
                this.setState(ESCAPE);
             }
          } else if (state == PASSIVE) {
@@ -522,7 +602,26 @@ public class Odium extends Monster {
    @Override
    public void die(DamageSource source) {
       this.release();
+      if (this.level() instanceof ServerLevel level) {
+         // Its long sounds stop with it.
+         this.stopSounds(level, "odium_trapped", "odium_trap_success", "odium_trap_attempt", "odium_spot_1", "odium_spot_2");
+      }
       super.die(source);
+   }
+
+   /** Not pushed (and not pushing the player it holds) while it has someone in its arms: that pushing is what let you drift backwards. */
+   @Override
+   public boolean isPushable() {
+      int state = this.getState();
+      return state != DORMANT && state != EMERGE && state != SUCCESS && state != TRAPPED;
+   }
+
+   @Override
+   protected void doPush(Entity entity) {
+      if (this.held != null && entity == this.held) {
+         return;
+      }
+      super.doPush(entity);
    }
 
    @Override

@@ -132,11 +132,13 @@ public class OdiumModel extends EntityModel<OdiumRenderState> {
       }
       switch (state.state) {
          case Odium.DORMANT -> this.apply(OdiumAnims.EMERGE, 0.0F);
+         // The fake: stuck half in the ground, the way the emerge clip looks 2.6 s in.
+         case Odium.HUSK -> this.apply(OdiumAnims.EMERGE, 2.6F);
          case Odium.EMERGE -> this.apply(OdiumAnims.EMERGE, Math.min(s, OdiumAnims.EMERGE.length()));
          case Odium.SPOT -> this.apply(OdiumAnims.SPOT, Math.min(s, OdiumAnims.SPOT.length()));
          case Odium.HUNT -> this.apply(OdiumAnims.CHASING, state.ageInTicks / 20.0F);
          // The lunge winds up, then freezes at 0.63 s until it is known whether it caught you.
-         case Odium.ATTEMPT -> this.apply(OdiumAnims.TRAP_ATTEMPT, Math.min(s, 0.625F));
+         case Odium.ATTEMPT -> this.apply(OdiumAnims.TRAP_ATTEMPT, Math.min(s / Odium.ATTEMPT_SLOW, 0.625F));
          case Odium.SUCCESS -> this.apply(OdiumAnims.TRAP_SUCCESS, Math.min(s, OdiumAnims.TRAP_SUCCESS.length()));
          case Odium.FAIL -> this.apply(OdiumAnims.TRAP_FAIL, Math.min(s, OdiumAnims.TRAP_FAIL.length()));
          case Odium.TRAPPED -> this.apply(OdiumAnims.TRAPPED, s);

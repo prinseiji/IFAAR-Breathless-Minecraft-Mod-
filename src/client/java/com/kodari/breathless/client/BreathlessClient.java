@@ -43,6 +43,7 @@ public class BreathlessClient implements ClientModInitializer {
       EntityRendererRegistry.register(ModEntities.CARRION, CarrionRenderer::new);
       ModelLayerRegistry.registerModelLayer(OdiumModel.LAYER, OdiumModel::createBodyLayer);
       EntityRendererRegistry.register(ModEntities.ODIUM, OdiumRenderer::new);
+      EntityRendererRegistry.register(ModEntities.ODIUM_HUSK, OdiumHuskRenderer::new);
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
       ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.EliPayload.TYPE, (payload, context) -> EliBoss.ping(payload.phase(), payload.health(), payload.timer()));
@@ -51,9 +52,12 @@ public class BreathlessClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(SpotPayload.TYPE, (payload, context) -> SlothText.spotted());
       ClientPlayNetworking.registerGlobalReceiver(OpenLorePayload.TYPE, (payload, context) -> net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new LoreScreen(payload.doc())));
       ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
+      ClientTickEvents.END_CLIENT_TICK.register(Struggle::tick);
       ClientTickEvents.START_CLIENT_TICK.register(EliBoss::silenceVanilla);
       ClientTickEvents.END_CLIENT_TICK.register(EliBoss::tick);
       HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("eli_bar"), EliBoss::render);
+      // The spacebar struggle while an Odium holds you.
+      HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Breathless.id("struggle"), SporeHud::renderStruggle);
 
       // Under the vanilla overlays: spore haze, vision pulses, floating spores, then the mask visor.
       HudElementRegistry.attachElementBefore(VanillaHudElements.MISC_OVERLAYS, Breathless.id("fog_and_mask"), SporeHud::renderFogAndMask);

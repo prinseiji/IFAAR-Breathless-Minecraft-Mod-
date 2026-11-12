@@ -180,5 +180,10 @@
   "block.breathless.sculk_nidus": "Sculk Anathema",
   "entity.breathless.anathema": "Sculk Anathema",
   "entity.breathless.carrion": "Carrion",
-  "entity.breathless.odium": "Odium"
+  "entity.breathless.odium": "Odium",
+  "entity.breathless.odium_husk": "Odium",
+  "item.breathless.stagnated_spawn_egg": "Stagnated Spawn Egg",
+  "item.breathless.carrion_spawn_egg": "Carrion Spawn Egg",
+  "item.breathless.anathema_spawn_egg": "Sculk Anathema Spawn Egg",
+  "item.breathless.odium_spawn_egg": "Odium Spawn Egg"
 }

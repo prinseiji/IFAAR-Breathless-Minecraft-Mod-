@@ -176,6 +176,8 @@ public class Carrion extends Mob {
             for (BlockPos pos : BlockPos.betweenClosed(centre.offset(-SENSOR_RANGE, -3, -SENSOR_RANGE), centre.offset(SENSOR_RANGE, 3, SENSOR_RANGE))) {
                BlockState st = level.getBlockState(pos);
                if (st.hasProperty(BlockStateProperties.SCULK_SENSOR_PHASE) && st.getValue(BlockStateProperties.SCULK_SENSOR_PHASE).name().equals("ACTIVE")) {
+                  // The signal arrives: a trail from the sensor to it, so it is plain it heard.
+                  SensorPing.ping(level, pos.immutable(), this);
                   return true;
                }
             }
