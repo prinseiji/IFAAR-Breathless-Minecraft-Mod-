@@ -179,5 +179,6 @@
   "death.attack.breathless_sloth_blast": "%1$s was erased by the weight of %2$s",
   "block.breathless.sculk_nidus": "Sculk Anathema",
   "entity.breathless.anathema": "Sculk Anathema",
-  "entity.breathless.carrion": "Carrion"
+  "entity.breathless.carrion": "Carrion",
+  "entity.breathless.odium": "Odium"
 }

@@ -28,6 +28,14 @@ public final class ModSounds {
    /** The Carrion: three idle sounds and the explosion (a 1.8 s build-up, then the boom). */
    public static SoundEvent[] CARRION_IDLE = new SoundEvent[3];
    public static SoundEvent CARRION_EXPLODE;
+   /** The Odium: idle (3), the roar when it locks on (2), and one each for the lunge, a catch, a miss, being held (11.3 s) and a break free. */
+   public static SoundEvent[] ODIUM_IDLE = new SoundEvent[3];
+   public static SoundEvent[] ODIUM_SPOT = new SoundEvent[2];
+   public static SoundEvent ODIUM_TRAP_ATTEMPT;
+   public static SoundEvent ODIUM_TRAP_SUCCESS;
+   public static SoundEvent ODIUM_TRAP_FAIL;
+   public static SoundEvent ODIUM_TRAPPED;
+   public static SoundEvent ODIUM_ESCAPE;
    public static SoundEvent[] BURST_IN_P1 = new SoundEvent[2];
    public static SoundEvent[] BURST_IN_P2 = new SoundEvent[2];
    public static SoundEvent[] BURST_EX_P1 = new SoundEvent[2];
@@ -109,6 +117,17 @@ public final class ModSounds {
          CARRION_IDLE[i] = reg("carrion_idle_" + (i + 1));
       }
       CARRION_EXPLODE = reg("carrion_explode");
+      for (int i = 0; i < ODIUM_IDLE.length; i++) {
+         ODIUM_IDLE[i] = reg("odium_idle_" + (i + 1));
+      }
+      for (int i = 0; i < ODIUM_SPOT.length; i++) {
+         ODIUM_SPOT[i] = reg("odium_spot_" + (i + 1));
+      }
+      ODIUM_TRAP_ATTEMPT = reg("odium_trap_attempt");
+      ODIUM_TRAP_SUCCESS = reg("odium_trap_success");
+      ODIUM_TRAP_FAIL = reg("odium_trap_fail");
+      ODIUM_TRAPPED = reg("odium_trapped");
+      ODIUM_ESCAPE = reg("odium_escape");
       for (int i = 0; i < 2; i++) {
          BURST_IN_P1[i] = reg("eli_burst_in_p1_" + (i + 1));
          BURST_IN_P2[i] = reg("eli_burst_in_p2_" + (i + 1));

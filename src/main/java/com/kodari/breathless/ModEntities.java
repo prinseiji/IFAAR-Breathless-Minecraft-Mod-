@@ -1,5 +1,6 @@
 package com.kodari.breathless;
 
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -12,6 +13,7 @@ public final class ModEntities {
    public static EntityType<Stagnated> STAGNATED;
    public static EntityType<Anathema> ANATHEMA;
    public static EntityType<Carrion> CARRION;
+   public static EntityType<Odium> ODIUM;
 
    private ModEntities() {
    }
@@ -29,6 +31,12 @@ public final class ModEntities {
       CARRION = Registry.register(BuiltInRegistries.ENTITY_TYPE, carrionKey,
          EntityType.Builder.of(Carrion::new, MobCategory.MISC).sized(1.4F, 1.7F).eyeHeight(1.2F).clientTrackingRange(10).build(carrionKey));
       FabricDefaultAttributeRegistry.register(CARRION, Carrion.createAttributes());
+      ResourceKey<EntityType<?>> odiumKey = ResourceKey.create(Registries.ENTITY_TYPE, Breathless.id("odium"));
+      ODIUM = Registry.register(BuiltInRegistries.ENTITY_TYPE, odiumKey,
+         EntityType.Builder.of(Odium::new, MobCategory.MONSTER).sized(1.0F, 1.7F).eyeHeight(1.4F).clientTrackingRange(10).build(odiumKey));
+      FabricDefaultAttributeRegistry.register(ODIUM, Odium.createAttributes());
+      // Nobody stays "held" across a server stopping.
+      ServerLifecycleEvents.SERVER_STOPPED.register(server -> Odium.HELD.clear());
       // The gas clouds and sculk spread that Carrions leave behind tick on the server.
       GasClouds.init();
    }

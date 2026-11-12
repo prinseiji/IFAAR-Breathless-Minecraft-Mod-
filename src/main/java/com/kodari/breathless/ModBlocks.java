@@ -19,6 +19,8 @@ public final class ModBlocks {
    public static Block SCULK_NIDUS;
    /** Placed by world generation where a Carrion belongs; turns into the Carrion entity when it ticks. Has no item. */
    public static Block CARRION_MARKER;
+   /** Placed by world generation where a buried Odium belongs; turns into the entity when it ticks. Has no item. */
+   public static Block ODIUM_MARKER;
 
    public static void register() {
       ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Breathless.id("sculk_nidus"));
@@ -27,5 +29,7 @@ public final class ModBlocks {
       Registry.register(BuiltInRegistries.ITEM, itemKey, new BlockItem(SCULK_NIDUS, new Item.Properties().setId(itemKey).useBlockDescriptionPrefix()));
       ResourceKey<Block> markerKey = ResourceKey.create(Registries.BLOCK, Breathless.id("carrion_marker"));
       CARRION_MARKER = Registry.register(BuiltInRegistries.BLOCK, markerKey, new CarrionMarkerBlock(BlockBehaviour.Properties.of().setId(markerKey).strength(0.6F).sound(SoundType.SCULK).noOcclusion()));
+      ResourceKey<Block> odiumMarkerKey = ResourceKey.create(Registries.BLOCK, Breathless.id("odium_marker"));
+      ODIUM_MARKER = Registry.register(BuiltInRegistries.BLOCK, odiumMarkerKey, new OdiumMarkerBlock(BlockBehaviour.Properties.of().setId(odiumMarkerKey).strength(0.6F).sound(SoundType.SCULK).noOcclusion()));
    }
 }

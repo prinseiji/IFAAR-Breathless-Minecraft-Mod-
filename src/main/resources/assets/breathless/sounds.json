@@ -1463,5 +1463,85 @@
         "stream": false
       }
     ]
+  },
+  "odium_idle_1": {
+    "sounds": [
+      {
+        "name": "breathless:odium_idle_1",
+        "stream": false
+      }
+    ]
+  },
+  "odium_idle_2": {
+    "sounds": [
+      {
+        "name": "breathless:odium_idle_2",
+        "stream": false
+      }
+    ]
+  },
+  "odium_idle_3": {
+    "sounds": [
+      {
+        "name": "breathless:odium_idle_3",
+        "stream": false
+      }
+    ]
+  },
+  "odium_spot_1": {
+    "sounds": [
+      {
+        "name": "breathless:odium_spot_1",
+        "stream": false
+      }
+    ]
+  },
+  "odium_spot_2": {
+    "sounds": [
+      {
+        "name": "breathless:odium_spot_2",
+        "stream": false
+      }
+    ]
+  },
+  "odium_trap_attempt": {
+    "sounds": [
+      {
+        "name": "breathless:odium_trap_attempt",
+        "stream": false
+      }
+    ]
+  },
+  "odium_trap_success": {
+    "sounds": [
+      {
+        "name": "breathless:odium_trap_success",
+        "stream": false
+      }
+    ]
+  },
+  "odium_trap_fail": {
+    "sounds": [
+      {
+        "name": "breathless:odium_trap_fail",
+        "stream": false
+      }
+    ]
+  },
+  "odium_trapped": {
+    "sounds": [
+      {
+        "name": "breathless:odium_trapped",
+        "stream": false
+      }
+    ]
+  },
+  "odium_escape": {
+    "sounds": [
+      {
+        "name": "breathless:odium_escape",
+        "stream": false
+      }
+    ]
   }
 }

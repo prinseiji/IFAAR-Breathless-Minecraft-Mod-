@@ -28,9 +28,11 @@ public final class ModWorldgen {
       Registry.register(BuiltInRegistries.FEATURE, Breathless.id("sculk_splotch"), new SculkPatchFeature(SculkPatchFeature.Kind.SPLOTCH));
       Registry.register(BuiltInRegistries.FEATURE, Breathless.id("carrion_patch"), new SculkPatchFeature(SculkPatchFeature.Kind.CARRION_PATCH));
       Registry.register(BuiltInRegistries.FEATURE, Breathless.id("carrion_deep"), new SculkPatchFeature(SculkPatchFeature.Kind.DEEP_CARRION));
+      Registry.register(BuiltInRegistries.FEATURE, Breathless.id("odium_deep"), new SculkPatchFeature(SculkPatchFeature.Kind.ODIUM_DEEP));
       // The Nidus cave and the Carrions in the deep dark; the splotches and Carrion patches in every other overworld biome (they only generate below Y=0).
       BiomeModifications.addFeature(BiomeSelectors.includeByKey(Biomes.DEEP_DARK), GenerationStep.Decoration.UNDERGROUND_STRUCTURES, placed("nidus_cave"));
       BiomeModifications.addFeature(BiomeSelectors.includeByKey(Biomes.DEEP_DARK), GenerationStep.Decoration.UNDERGROUND_DECORATION, placed("carrion_deep"));
+      BiomeModifications.addFeature(BiomeSelectors.includeByKey(Biomes.DEEP_DARK), GenerationStep.Decoration.UNDERGROUND_DECORATION, placed("odium_deep"));
       BiomeModifications.addFeature(BiomeSelectors.foundInOverworld().and(BiomeSelectors.excludeByKey(Biomes.DEEP_DARK)), GenerationStep.Decoration.UNDERGROUND_DECORATION, placed("sculk_splotch"));
       BiomeModifications.addFeature(BiomeSelectors.foundInOverworld().and(BiomeSelectors.excludeByKey(Biomes.DEEP_DARK)), GenerationStep.Decoration.UNDERGROUND_DECORATION, placed("carrion_patch"));
    }

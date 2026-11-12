@@ -16,13 +16,15 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
  * SPLOTCH: a small patch of sculk in an ordinary deepslate cave, nothing on it (uncommon).
  * CARRION_PATCH: a patch with a Carrion in the middle, in ordinary caves below Y=0 (rare).
  * DEEP_CARRION: a Carrion on an existing sculk floor in the deep dark (abundant, at most MAX_DEEP per chunk).
+ * ODIUM_DEEP: a buried Odium on a sculk floor in the deep dark (rare, at most one per chunk).
  * Each try picks a random spot in the chunk and a random height, and looks down for a cave floor, so most tries find nothing.
  */
 public class SculkPatchFeature extends Feature<NoneFeatureConfiguration> {
    public enum Kind {
       SPLOTCH(4, -58, -2),
       CARRION_PATCH(3, -58, -4),
-      DEEP_CARRION(8, -56, -12);
+      DEEP_CARRION(8, -56, -12),
+      ODIUM_DEEP(6, -56, -12);
 
       final int tries;
       final int minY;
@@ -84,6 +86,14 @@ public class SculkPatchFeature extends Feature<NoneFeatureConfiguration> {
                if (placed >= MAX_DEEP) {
                   return true;
                }
+            }
+            case ODIUM_DEEP -> {
+               if (!level.getBlockState(floor.below()).is(Blocks.SCULK)) {
+                  continue;
+               }
+               level.setBlock(floor, ModBlocks.ODIUM_MARKER.defaultBlockState(), 2);
+               level.scheduleTick(floor, ModBlocks.ODIUM_MARKER, 5);
+               return true;
             }
          }
       }
