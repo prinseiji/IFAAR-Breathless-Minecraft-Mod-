@@ -426,12 +426,16 @@ public final class SporeHud {
       int x = (w - barW) / 2;
       int y = h - 80;
       float p = Math.max(0.0F, Math.min(1.0F, holder.getStruggle()));
-      g.blit(RenderPipelines.GUI_TEXTURED, Struggle.pressed() ? SPACE_IN : SPACE_OUT, w / 2 - 18, y - 40, 0.0F, 0.0F, 36, 36, 36, 36);
+      // A slow pulsing shadow around the screen while it has hold of you. Only darkens (never a bright flash), about one pulse every 2 s, and it eases off as you break free.
+      float pulse = 0.5F + 0.5F * (float)Math.sin(ClientState.clock * Math.PI / 20.0);
+      drawVignette(g, w, h, 0x02060A, (0.30F + 0.30F * pulse) * (1.0F - 0.6F * p), 0.45F);
+      // The spacebar icon, 1.5 times its size (54 px).
+      g.blit(RenderPipelines.GUI_TEXTURED, Struggle.pressed() ? SPACE_IN : SPACE_OUT, w / 2 - 27, y - 60, 0.0F, 0.0F, 54, 54, 36, 36, 36, 36, 0xFFFFFFFF);
       g.fill(x - 1, y - 1, x + barW + 1, y + barH + 1, 0xFF000000);
-      g.fill(x, y, x + barW, y + barH, 0xFF1C2230);
+      g.fill(x, y, x + barW, y + barH, 0xFF0D1118);
       int fw = Math.round(barW * p);
       if (fw > 0) {
-         g.fill(x, y, x + fw, y + barH, 0xFF4FB8E0);
+         g.fill(x, y, x + fw, y + barH, 0xFF1B6F94);
       }
       // The hint, just under the bar, in the VCR font and a dark sculk cyan (the plain font is used if it fails to load).
       net.minecraft.network.chat.Component hint = net.minecraft.network.chat.Component.literal("Keep pressing to break free.")

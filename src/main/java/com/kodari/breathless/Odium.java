@@ -158,6 +158,10 @@ public class Odium extends Monster {
          if (odium.held == player && odium.getState() == TRAPPED) {
             odium.progress = Math.min(1.0F, odium.progress + STRUGGLE_PER_PRESS);
             odium.entityData.set(STRUGGLE, odium.progress);
+            // Free the moment the bar is full (it used to drain a little first, so it never counted).
+            if (odium.progress >= 1.0F) {
+               odium.setState(ESCAPE);
+            }
          }
       }
    }
@@ -515,12 +519,12 @@ public class Odium extends Monster {
       this.face(this.held);
       this.hold(this.held);
       // The struggle bar drains by itself; only tapping the jump key (or hitting it) fills it.
-      this.progress = Math.max(0.0F, this.progress - STRUGGLE_DRAIN);
-      this.entityData.set(STRUGGLE, this.progress);
       if (this.progress >= 1.0F) {
          this.setState(ESCAPE);
          return;
       }
+      this.progress = Math.max(0.0F, this.progress - STRUGGLE_DRAIN);
+      this.entityData.set(STRUGGLE, this.progress);
       if (this.stateTicks % 10 == 0) {
          level.sendParticles(ParticleTypes.SCULK_SOUL, this.getX(), this.getY() + 1.0, this.getZ(), 3, 0.5, 0.6, 0.5, 0.02);
       }
