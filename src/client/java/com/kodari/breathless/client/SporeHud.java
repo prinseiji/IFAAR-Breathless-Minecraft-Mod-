@@ -433,5 +433,10 @@ public final class SporeHud {
       if (fw > 0) {
          g.fill(x, y, x + fw, y + barH, 0xFF4FB8E0);
       }
+      // The hint, just under the bar, in the VCR font and a dark sculk cyan (the plain font is used if it fails to load).
+      net.minecraft.network.chat.Component hint = net.minecraft.network.chat.Component.literal("Keep pressing to break free.")
+         .withStyle(net.minecraft.network.chat.Style.EMPTY.withFont(new net.minecraft.network.chat.FontDescription.Resource(Breathless.id("vcr"))));
+      Minecraft mc = Minecraft.getInstance();
+      g.text(mc.font, hint, (w - mc.font.width(hint)) / 2, y + barH + 4, 0xFF1F9DB5);
    }
 }
