@@ -185,5 +185,7 @@
   "item.breathless.stagnated_spawn_egg": "Stagnated Spawn Egg",
   "item.breathless.carrion_spawn_egg": "Carrion Spawn Egg",
   "item.breathless.anathema_spawn_egg": "Sculk Anathema Spawn Egg",
-  "item.breathless.odium_spawn_egg": "Odium Spawn Egg"
+  "item.breathless.odium_spawn_egg": "Odium Spawn Egg",
+  "entity.breathless.ire": "Ire",
+  "entity.breathless.ire_husk": "Ire"
 }

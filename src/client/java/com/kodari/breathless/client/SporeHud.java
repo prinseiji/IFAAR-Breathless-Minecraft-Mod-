@@ -415,7 +415,7 @@ public final class SporeHud {
 
    /** Held by an Odium: a spacebar icon that presses in with each tap of the jump key, and a bar above the hotbar that fills with each tap and drains when you stop. */
    static void renderStruggle(GuiGraphicsExtractor g, DeltaTracker tracker) {
-      com.kodari.breathless.Odium holder = Struggle.holder();
+      com.kodari.breathless.StruggleHolder holder = Struggle.holder();
       if (holder == null) {
          return;
       }
@@ -438,7 +438,7 @@ public final class SporeHud {
          g.fill(x, y, x + fw, y + barH, 0xFF1B6F94);
       }
       // The hint, just under the bar, in the VCR font and a dark sculk cyan (the plain font is used if it fails to load).
-      net.minecraft.network.chat.Component hint = net.minecraft.network.chat.Component.literal("Keep pressing to break free.")
+      net.minecraft.network.chat.Component hint = net.minecraft.network.chat.Component.literal(holder.tapsCount() ? "Keep pressing to break free." : "Break free by hitting it.")
          .withStyle(net.minecraft.network.chat.Style.EMPTY.withFont(new net.minecraft.network.chat.FontDescription.Resource(Breathless.id("vcr"))));
       Minecraft mc = Minecraft.getInstance();
       g.text(mc.font, hint, (w - mc.font.width(hint)) / 2, y + barH + 4, 0xFF1F9DB5);

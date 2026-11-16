@@ -1,6 +1,8 @@
 package com.kodari.breathless.client;
 
+import com.kodari.breathless.Ire;
 import com.kodari.breathless.Odium;
+import com.kodari.breathless.StruggleHolder;
 import com.kodari.breathless.StrugglePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -13,8 +15,8 @@ public final class Struggle {
    private Struggle() {
    }
 
-   /** The Odium holding the local player, or null. */
-   static Odium holder() {
+   /** The Odium or Ire holding the local player, or null. */
+   static StruggleHolder holder() {
       Minecraft mc = Minecraft.getInstance();
       if (mc.player == null || mc.level == null) {
          return null;
@@ -22,6 +24,11 @@ public final class Struggle {
       for (Odium odium : mc.level.getEntitiesOfClass(Odium.class, mc.player.getBoundingBox().inflate(8.0))) {
          if (odium.getHeldId() == mc.player.getId()) {
             return odium;
+         }
+      }
+      for (Ire ire : mc.level.getEntitiesOfClass(Ire.class, mc.player.getBoundingBox().inflate(10.0))) {
+         if (ire.getHeldId() == mc.player.getId()) {
+            return ire;
          }
       }
       return null;
@@ -36,7 +43,8 @@ public final class Struggle {
          flash--;
       }
       boolean down = mc.options.keyJump.isDown();
-      if (down && !wasDown && holder() != null) {
+      StruggleHolder holder = holder();
+      if (down && !wasDown && holder != null && holder.tapsCount()) {
          ClientPlayNetworking.send(new StrugglePayload());
          flash = 3;
       }

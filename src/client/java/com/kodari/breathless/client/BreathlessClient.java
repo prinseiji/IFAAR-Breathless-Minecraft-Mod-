@@ -44,6 +44,9 @@ public class BreathlessClient implements ClientModInitializer {
       ModelLayerRegistry.registerModelLayer(OdiumModel.LAYER, OdiumModel::createBodyLayer);
       EntityRendererRegistry.register(ModEntities.ODIUM, OdiumRenderer::new);
       EntityRendererRegistry.register(ModEntities.ODIUM_HUSK, OdiumHuskRenderer::new);
+      ModelLayerRegistry.registerModelLayer(IreModel.LAYER, IreModel::createBodyLayer);
+      EntityRendererRegistry.register(ModEntities.IRE, IreRenderer::new);
+      EntityRendererRegistry.register(ModEntities.IRE_HUSK, IreHuskRenderer::new);
       ClientPlayNetworking.registerGlobalReceiver(ExposurePayload.TYPE, (payload, context) -> ClientState.exposure = payload.exposure());
       ClientPlayNetworking.registerGlobalReceiver(FiendPayload.TYPE, (payload, context) -> ClientState.startFiend(payload.seed()));
       ClientPlayNetworking.registerGlobalReceiver(com.kodari.breathless.EliPayload.TYPE, (payload, context) -> EliBoss.ping(payload.phase(), payload.health(), payload.timer()));

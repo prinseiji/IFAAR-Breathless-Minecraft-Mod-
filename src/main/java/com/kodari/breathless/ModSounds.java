@@ -36,6 +36,16 @@ public final class ModSounds {
    public static SoundEvent ODIUM_TRAP_FAIL;
    public static SoundEvent ODIUM_TRAPPED;
    public static SoundEvent ODIUM_ESCAPE;
+   /** The Ire: idle, hit, ambush, reaching, pulling, trap attempt, trapped, escape and two attacks. Its death uses the Stagnated one. */
+   public static SoundEvent IRE_IDLE;
+   public static SoundEvent IRE_HIT;
+   public static SoundEvent IRE_AMBUSH;
+   public static SoundEvent IRE_REACHING;
+   public static SoundEvent IRE_PULLING;
+   public static SoundEvent IRE_TRAP_ATTEMPT;
+   public static SoundEvent IRE_TRAPPED;
+   public static SoundEvent IRE_ESCAPE;
+   public static SoundEvent[] IRE_ATTACK = new SoundEvent[2];
    public static SoundEvent[] BURST_IN_P1 = new SoundEvent[2];
    public static SoundEvent[] BURST_IN_P2 = new SoundEvent[2];
    public static SoundEvent[] BURST_EX_P1 = new SoundEvent[2];
@@ -128,6 +138,16 @@ public final class ModSounds {
       ODIUM_TRAP_FAIL = reg("odium_trap_fail");
       ODIUM_TRAPPED = reg("odium_trapped");
       ODIUM_ESCAPE = reg("odium_escape");
+      IRE_IDLE = reg("ire_idle");
+      IRE_HIT = reg("ire_hit");
+      IRE_AMBUSH = reg("ire_ambush");
+      IRE_REACHING = reg("ire_reaching");
+      IRE_PULLING = reg("ire_pulling");
+      IRE_TRAP_ATTEMPT = reg("ire_trap_attempt");
+      IRE_TRAPPED = reg("ire_trapped");
+      IRE_ESCAPE = reg("ire_escape");
+      IRE_ATTACK[0] = reg("ire_attack_1");
+      IRE_ATTACK[1] = reg("ire_attack_2");
       for (int i = 0; i < 2; i++) {
          BURST_IN_P1[i] = reg("eli_burst_in_p1_" + (i + 1));
          BURST_IN_P2[i] = reg("eli_burst_in_p2_" + (i + 1));

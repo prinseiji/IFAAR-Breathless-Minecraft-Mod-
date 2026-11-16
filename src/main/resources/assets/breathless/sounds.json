@@ -1543,5 +1543,85 @@
         "stream": false
       }
     ]
+  },
+  "ire_idle": {
+    "sounds": [
+      {
+        "name": "breathless:ire_idle",
+        "stream": false
+      }
+    ]
+  },
+  "ire_hit": {
+    "sounds": [
+      {
+        "name": "breathless:ire_hit",
+        "stream": false
+      }
+    ]
+  },
+  "ire_ambush": {
+    "sounds": [
+      {
+        "name": "breathless:ire_ambush",
+        "stream": false
+      }
+    ]
+  },
+  "ire_reaching": {
+    "sounds": [
+      {
+        "name": "breathless:ire_reaching",
+        "stream": false
+      }
+    ]
+  },
+  "ire_pulling": {
+    "sounds": [
+      {
+        "name": "breathless:ire_pulling",
+        "stream": false
+      }
+    ]
+  },
+  "ire_trap_attempt": {
+    "sounds": [
+      {
+        "name": "breathless:ire_trap_attempt",
+        "stream": false
+      }
+    ]
+  },
+  "ire_trapped": {
+    "sounds": [
+      {
+        "name": "breathless:ire_trapped",
+        "stream": false
+      }
+    ]
+  },
+  "ire_escape": {
+    "sounds": [
+      {
+        "name": "breathless:ire_escape",
+        "stream": false
+      }
+    ]
+  },
+  "ire_attack_1": {
+    "sounds": [
+      {
+        "name": "breathless:ire_attack_1",
+        "stream": false
+      }
+    ]
+  },
+  "ire_attack_2": {
+    "sounds": [
+      {
+        "name": "breathless:ire_attack_2",
+        "stream": false
+      }
+    ]
   }
 }

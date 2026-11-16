@@ -41,7 +41,7 @@ import net.minecraft.world.phys.Vec3;
  * finish, and it lets go (ESCAPE), then goes back to chasing. A missed lunge (FAIL) gives you a moment to run.
  * The state is synced to the client, which picks the matching clip (OdiumModel).
  */
-public class Odium extends Monster {
+public class Odium extends Monster implements StruggleHolder {
    public static final int DORMANT = 0;
    public static final int EMERGE = 1;
    public static final int PASSIVE = 2;
@@ -141,10 +141,17 @@ public class Odium extends Monster {
       return this.entityData.get(STATE);
    }
 
+   @Override
+   public boolean tapsCount() {
+      return true;
+   }
+
+   @Override
    public int getHeldId() {
       return this.entityData.get(HELD_ID);
    }
 
+   @Override
    public float getStruggle() {
       return this.entityData.get(STRUGGLE);
    }
